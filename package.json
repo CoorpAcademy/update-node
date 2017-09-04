@@ -1,6 +1,6 @@
 {
-  "name": "update-node",
-  "version": "0.0.0",
+  "name": "@coorpacademy/update-node",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "files": [

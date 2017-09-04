@@ -1,5 +1,7 @@
 # Update node
 
+[![Build Status](https://travis-ci.org/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.org/CoorpAcademy/update-node)
+
 ```bash
 $ update-node [options]
 
