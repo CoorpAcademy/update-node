@@ -1,0 +1,27 @@
+{
+  "name": "update-node",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "files": [
+    "src",
+    "packages.json",
+    "README.md"
+  ],
+  "bin": {
+    "update-node": "./src/index.js"
+  },
+  "scripts": {
+    "test": "exit 0"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "js-yaml": "^3.9.1",
+    "lodash": "^4.17.4",
+    "minimist": "^1.2.0",
+    "request": "^2.81.0",
+    "shelljs": "^0.7.8"
+  }
+}
