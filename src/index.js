@@ -106,10 +106,11 @@ const commitFiles = message =>
     .tap(() => process.stdout.write(`Commit files\n`))
     .tapCatch(() => process.stderr.write('Nothing to commit\n'));
 
-const pushFiles = (head, message) =>
+const pushFiles = (head, message, githubToken, repoSlug) =>
   executeScript(
     `
-    git push origin HEAD:refs/heads/${head} -f
+    git remote add gh https://${githubToken}@github.com/${repoSlug}.git
+    git push gh HEAD:refs/heads/${head} -f
     `
   ).tap(() => process.stdout.write(`Push files on ${head}\n`));
 
@@ -195,7 +196,7 @@ const syncGithub = (
   return commitFiles(message).then(
     () =>
       // eslint-disable-next-line promise/no-nesting
-      pushFiles(head, message)
+      pushFiles(head, message, githubToken, repoSlug)
         .then(() => createPullRequest(repoSlug, head, base, message, githubToken))
         .then(pullRequest =>
           assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
