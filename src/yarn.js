@@ -6,12 +6,12 @@ const install = (options = '') => dependencies => {
   if (_.isEmpty(dependencies)) return Promise.resolve();
   return executeScript(
     `
-    yarn add ${_.join(' ', dependencies)} ${options}
+    yarn add ${_.join(' ', dependencies)} --exact ${options}
     `
   ).tap(() => process.stdout.write(`${dependencies} installed\n`));
 };
 
 module.exports = {
   install: install(),
-  installDev: install('-D')
+  installDev: install('--dev')
 };
