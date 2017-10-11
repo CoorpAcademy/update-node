@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@coorpacademy/eslint-plugin-coorpacademy@^7.0.0":
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-7.0.0.tgz#23361945e829b3b095c785a0a9f04077013f2e16"
+"@coorpacademy/eslint-plugin-coorpacademy@^7.0.1":
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-7.0.1.tgz#1efe52060105e234324640f7d3ae2bd4270caf95"
   dependencies:
     babel-eslint "^8.0.1"
     eslint-ast-utils "^1.1.0"
