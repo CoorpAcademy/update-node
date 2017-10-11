@@ -17,15 +17,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.5.1",
-    "js-yaml": "^3.10.0",
-    "lodash": "^4.17.4",
-    "minimist": "^1.2.0",
-    "request": "^2.83.0",
-    "shelljs": "^0.7.8"
+    "bluebird": "3.5.1",
+    "js-yaml": "3.10.0",
+    "lodash": "4.17.4",
+    "minimist": "1.2.0",
+    "request": "2.83.0",
+    "shelljs": "0.7.8"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "^7.0.1",
-    "eslint": "^4.8.0"
+    "@coorpacademy/eslint-plugin-coorpacademy": "7.0.2",
+    "eslint": "4.8.0"
   }
 }
