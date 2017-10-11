@@ -9,7 +9,7 @@ deploy:
     script: >-
       node ./src/index.js --travis ./.travis.yml --repo_slug $TRAVIS_REPO_SLUG
       --team_reviewers $TEAM_REVIEWERS --branch "upgrade-nodejs" --base master
-      --github_token $GH_TOKEN
+      --github_token $GH_TOKEN --dependencies "bluebird,js-yaml,lodash,minimist,request,shelljs" --dev_dependencies "@coorpacademy/eslint-plugin-coorpacademy,eslint"
     'on':
       branch: master
   - provider: npm
