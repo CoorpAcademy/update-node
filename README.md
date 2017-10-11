@@ -19,6 +19,9 @@ $ update-node [options]
     --reviewers [USER[,USER]]       Assign pull request to user
     --team_reviewers [TEAM[,TEAM]]  Assign pull request to team
 
+    --dependencies                  Update dependencies with yarn
+    --dev_dependencies              Update devDependencies with yarn
+
   Examples
-    update-node --package ./package.json --dockerfiles ./Dockerfile,./test/Dockerfile --nvmrc ./nvmrc --branch update-node --message "Upgrade NODEJS" --repo_slug CoorpAcademy/update-node --github_token $GH_TOKEN --base master --reviewers CoorpAcademy --team_reviewers dev,reviewers
+    update-node --package ./package.json --dockerfiles ./Dockerfile,./test/Dockerfile --nvmrc ./nvmrc --branch update-node --message "Upgrade NODEJS" --repo_slug CoorpAcademy/update-node --github_token $GH_TOKEN --base master --reviewers CoorpAcademy --team_reviewers dev,reviewers --dependencies lodash --dev_dependencies mocha
 ```
