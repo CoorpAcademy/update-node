@@ -1,15 +1,12 @@
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
 const executeScript = require('./script');
 
-const install = (options = '') => dependency => {
-  if (_.isArray(dependency)) return Promise.map(dependency, p => install(options)(p));
-
+const install = (options = '') => dependencies => {
   return executeScript(
     `
-    yarn add ${dependency} ${options}
+    yarn add ${_.join(' ', dependencies)} ${options}
     `
-  ).tap(() => process.stdout.write(`${dependency} installed\n`));
+  ).tap(() => process.stdout.write(`${dependencies} installed\n`));
 };
 
 module.exports = {
