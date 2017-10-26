@@ -6,7 +6,7 @@ const install = (options = '') => dependencies => {
   if (_.isEmpty(dependencies)) return Promise.resolve();
   return executeScript(
     `
-    yarn add ${_.join(' ', dependencies)} --exact ${options}
+    yarn add ${_.join(' ', dependencies)} --exact --ignore-engines --ignore-scripts ${options}
     `
   ).tap(() => process.stdout.write(`${dependencies} installed\n`));
 };
