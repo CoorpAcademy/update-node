@@ -5,7 +5,9 @@
   },
   "extends": [
     "plugin:@coorpacademy/coorpacademy/core",
-    "plugin:@coorpacademy/coorpacademy/es20XX"
+    "plugin:@coorpacademy/coorpacademy/es20XX",
+    "plugin:@coorpacademy/coorpacademy/lodash-fp",
+    "plugin:@coorpacademy/coorpacademy/prettier"
   ],
   "plugins": [
     "@coorpacademy/coorpacademy"

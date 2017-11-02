@@ -21,11 +21,13 @@ const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 
 const versionsP = request({uri: NODE_VERSIONS, json: true}).then(([response, body]) => {
   if (response.statusCode !== 200) throw new Error();
-  return _.head(body);
+  return body;
 });
 
-const nodeP = versionsP.get('version').then(_.trimCharsStart('v'));
-const npmP = versionsP.get('npm');
+const versionP = versionsP.then(_.find(_.pipe(_.get('version'), _.startsWith('v8.'))));
+
+const nodeP = versionP.get('version').then(_.trimCharsStart('v'));
+const npmP = versionP.get('npm');
 
 const syncGithub = (
   repoSlug,
