@@ -12,7 +12,10 @@
     "update-node": "./src/index.js"
   },
   "scripts": {
-    "test": "exit 0"
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "ava",
+    "lint": "eslint src/ *.js *.json --ext .js,.json",
+    "lint:fix": "npm run lint -- --fix"
   },
   "author": "",
   "license": "ISC",
@@ -26,6 +29,7 @@
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "7.0.2",
+    "ava": "^0.24.0",
     "eslint": "4.12.1"
   }
 }
