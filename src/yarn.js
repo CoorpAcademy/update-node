@@ -2,7 +2,7 @@ const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const executeScript = require('./script');
 
-const install = (options = '') => dependencies => {
+const install = options => dependencies => {
   if (_.isEmpty(dependencies)) return Promise.resolve();
   return executeScript(
     `
@@ -12,6 +12,6 @@ const install = (options = '') => dependencies => {
 };
 
 module.exports = {
-  install: install(),
+  install: install(''),
   installDev: install('--dev')
 };
