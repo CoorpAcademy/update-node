@@ -23,8 +23,10 @@ const updatePackage = (node, npm, pkg, exact = false) => {
     .then(npm ? _.set('engines.npm', `${SAVE_PREFIX}${npm}`) : _.identity);
 
   return newPackageP
-    .then(obj => JSON.stringify(obj, null, 2))
-    .then(newPackage => writeFile(packagePath, `${newPackage}\n`, 'utf8'))
+    .then(obj => {
+      const newPackage = JSON.stringify(obj, null, 2);
+      return writeFile(packagePath, `${newPackage}\n`, 'utf8');
+    })
     .tap(() => process.stdout.write(`Write ${pkg}\n`));
 };
 

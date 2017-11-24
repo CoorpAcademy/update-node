@@ -1,22 +1,24 @@
 const executeScript = require('./script');
 
-const commitFiles = message =>
+const commitFiles = (branch, message) =>
   executeScript(
     `
+    git checkout -b ${branch}
     git add .
     git commit -m "${message}"
+    git checkout -
     `
   )
     .tap(() => process.stdout.write('Commit files\n'))
     .tapCatch(() => process.stderr.write('Nothing to commit\n'));
 
-const pushFiles = (head, message, githubToken, repoSlug) =>
+const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript(
     `
     git remote add gh https://${githubToken}@github.com/${repoSlug}.git
-    git push gh HEAD:refs/heads/${head} -f
+    git push gh ${branch}:refs/heads/${branch} --force-with-lease
     `
-  ).tap(() => process.stdout.write(`Push files on ${head}\n`));
+  ).tap(() => process.stdout.write(`Push files on ${branch}\n`));
 
 module.exports = {
   commitFiles,
