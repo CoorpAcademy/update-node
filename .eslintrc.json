@@ -5,6 +5,7 @@
   },
   "extends": [
     "plugin:@coorpacademy/coorpacademy/core",
+    "plugin:@coorpacademy/coorpacademy/ava",
     "plugin:@coorpacademy/coorpacademy/es20XX",
     "plugin:@coorpacademy/coorpacademy/lodash-fp",
     "plugin:@coorpacademy/coorpacademy/prettier"
