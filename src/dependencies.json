@@ -1,0 +1,35 @@
+[
+  {
+    "name": "components",
+    "dependencies": [
+      "@coorpacademy/app-player",
+      "@coorpacademy/components",
+      "@coorpacademy/css-modules-require-hook",
+      "@coorpacademy/history",
+      "@coorpacademy/nova-icons",
+      "@coorpacademy/progression-engine",
+      "@coorpacademy/redux-history",
+      "@coorpacademy/redux-router",
+      "@coorpacademy/translate",
+      "@coorpacademy/treantjs-adapter-angular",
+      "@coorpacademy/treantjs-adapter-dust",
+      "@coorpacademy/webpack-config"
+    ],
+    "devDependencies": []
+  },
+  {
+    "name": "misc-tools",
+    "dependencies": ["bluebird", "js-yaml", "lodash", "minimist", "request", "shelljs"],
+    "devDependencies": []
+  },
+  {
+    "name": "testing-tools",
+    "dependencies": [],
+    "devDependencies": ["ava", "istanbul", "mocha", "nyc"]
+  },
+  {
+    "name": "eslint",
+    "dependencies": [],
+    "devDependencies": ["eslint", "@coorpacademy/eslint-plugin-coorpacademy"]
+  }
+]

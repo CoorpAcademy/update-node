@@ -7,7 +7,12 @@ const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
 
 const EXACT_PREFIX = '';
+
 const MINOR_PREFIX = '^';
+const readPackage = pkg => {
+  const packagePath = path.join(process.cwd(), pkg);
+  return readFile(packagePath, 'utf8').then(JSON.parse);
+};
 
 const updatePackage = (node, npm, pkg, exact = false) => {
   if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackage(node, npm, p, exact));
@@ -15,7 +20,7 @@ const updatePackage = (node, npm, pkg, exact = false) => {
   if (!pkg) return Promise.resolve();
 
   const packagePath = path.join(process.cwd(), pkg);
-  const packageP = readFile(packagePath, 'utf8').then(JSON.parse);
+  const packageP = readPackage(pkg);
 
   const SAVE_PREFIX = exact ? EXACT_PREFIX : MINOR_PREFIX;
   const newPackageP = packageP
@@ -30,4 +35,7 @@ const updatePackage = (node, npm, pkg, exact = false) => {
     .tap(() => process.stdout.write(`Write ${pkg}\n`));
 };
 
-module.exports = updatePackage;
+module.exports = {
+  readPackage,
+  updatePackage
+};
