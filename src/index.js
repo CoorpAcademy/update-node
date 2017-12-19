@@ -1,6 +1,5 @@
 #! /usr/bin/env node
 
-const Request = require('request');
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
@@ -11,13 +10,10 @@ const {install, installDev} = require('./yarn');
 const updateDockerfile = require('./dockerfile');
 const {commitFiles, pushFiles} = require('./git');
 const {createPullRequest, assignReviewers} = require('./github');
+const {findLatest} = require('./node');
 const dependenciesClusters = require('./dependencies.json');
 
-const request = Promise.promisify(Request, {multiArgs: true});
-
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
-
-const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 
 const syncGithub = (
   repoSlug,
@@ -50,7 +46,7 @@ const bumpNodeVersion = (latestNode, argv) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   return Promise.all([
     updateTravis(nodeVersion, parseArgvToArray(argv.travis)),
-    updatePackage(nodeVersion, latestNode.npm, parseArgvToArray(argv.package)),
+    updatePackage(nodeVersion, latestNode.npm, parseArgvToArray(argv.package), !!argv.exact),
     updateNvmrc(nodeVersion, parseArgvToArray(argv.nvmrc)),
     updateDockerfile(nodeVersion, parseArgvToArray(argv.dockerfile))
   ]).then(() => {
@@ -124,14 +120,10 @@ if (!module.parent) {
   const blacklistedDependencies = parseArgvToArray(argv.blacklist);
   const clusters = dependenciesClusters.concat(customClusters(argv));
 
-  const versionsP = request({uri: NODE_VERSIONS, json: true}).then(([response, body]) => {
-    if (response.statusCode !== 200) throw new Error('Status code isnt 200');
-    return body;
-  });
+  const RANGE = argv.node_range || '^8';
+  const versionP = findLatest(RANGE);
 
-  const latestNodeP = versionsP.then(_.find(_.pipe(_.get('version'), _.startsWith('v8.'))));
-
-  latestNodeP
+  versionP
     .then(latestNode => bumpNodeVersion(latestNode, argv))
     .then(_makePullRequest)
     .then(() => readPackage(argv.package || './package.json'))

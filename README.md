@@ -6,6 +6,7 @@
 $ update-node [options]
 
   Options
+    --node_range semver             Target specific node version
     --package [FILE[,FILE]]         Update package's engine.node & engine.npm
     --exact                         Save exact version in package.json
     --nvmrc [FILE[,FILE]]           Update nvmrc's node version
@@ -24,5 +25,5 @@ $ update-node [options]
     --dev_dependencies              Update devDependencies with yarn
 
   Examples
-    update-node --package ./package.json --dockerfiles ./Dockerfile,./test/Dockerfile --nvmrc ./nvmrc --branch update-node --message "Upgrade NODEJS" --repo_slug CoorpAcademy/update-node --github_token $GH_TOKEN --base master --reviewers CoorpAcademy --team_reviewers dev,reviewers --dependencies lodash --dev_dependencies mocha
+    update-node --node_range ^8 --package ./package.json --dockerfiles ./Dockerfile,./test/Dockerfile --nvmrc ./nvmrc --branch update-node --message "Upgrade NODEJS" --repo_slug CoorpAcademy/update-node --github_token $GH_TOKEN --base master --reviewers CoorpAcademy --team_reviewers dev,reviewers --dependencies lodash --dev_dependencies mocha
 ```
