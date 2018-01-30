@@ -22,10 +22,10 @@
     "lodash": "4.17.4",
     "minimist": "1.2.0",
     "request": "2.83.0",
-    "shelljs": "0.8.0"
+    "shelljs": "0.8.1"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "7.0.2",
-    "eslint": "4.15.0"
+    "eslint": "4.16.0"
   }
 }
