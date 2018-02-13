@@ -19,13 +19,13 @@
   "dependencies": {
     "bluebird": "3.5.1",
     "js-yaml": "3.10.0",
-    "lodash": "4.17.4",
+    "lodash": "4.17.5",
     "minimist": "1.2.0",
     "request": "2.83.0",
     "shelljs": "0.8.1"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "7.0.2",
-    "eslint": "4.16.0"
+    "eslint": "4.17.0"
   }
 }
