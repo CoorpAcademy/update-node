@@ -18,14 +18,14 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "3.5.1",
-    "js-yaml": "3.10.0",
+    "js-yaml": "3.11.0",
     "lodash": "4.17.5",
     "minimist": "1.2.0",
-    "request": "2.83.0",
+    "request": "2.85.0",
     "shelljs": "0.8.1"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "7.0.2",
-    "eslint": "4.18.1"
+    "@coorpacademy/eslint-plugin-coorpacademy": "8.1.1",
+    "eslint": "4.19.1"
   }
 }
