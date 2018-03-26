@@ -7,6 +7,7 @@ $ update-node [options]
 
   Options
     --package [FILE[,FILE]]         Update package's engine.node & engine.npm
+    --exact                         Save exact version in package.json
     --nvmrc [FILE[,FILE]]           Update nvmrc's node version
     --dockerfile [FILE[,FILE]]      Update dockerfile's base image
 

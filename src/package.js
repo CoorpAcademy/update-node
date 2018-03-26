@@ -6,17 +6,21 @@ const Promise = require('bluebird');
 const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
 
-const updatePackage = (node, npm, pkg) => {
-  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackage(node, npm, p));
+const EXACT_PREFIX = '';
+const MINOR_PREFIX = '^';
+
+const updatePackage = (node, npm, pkg, exact = false) => {
+  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackage(node, npm, p, exact));
 
   if (!pkg) return Promise.resolve();
 
   const packagePath = path.join(process.cwd(), pkg);
   const packageP = readFile(packagePath, 'utf8').then(JSON.parse);
 
+  const SAVE_PREFIX = exact ? EXACT_PREFIX : MINOR_PREFIX;
   const newPackageP = packageP
-    .then(node ? _.set('engines.node', `^${node}`) : _.identity)
-    .then(npm ? _.set('engines.npm', `^${npm}`) : _.identity);
+    .then(node ? _.set('engines.node', `${SAVE_PREFIX}${node}`) : _.identity)
+    .then(npm ? _.set('engines.npm', `${SAVE_PREFIX}${npm}`) : _.identity);
 
   return newPackageP
     .then(obj => JSON.stringify(obj, null, 2))

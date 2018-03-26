@@ -20,11 +20,12 @@ const parseArgvToArray = _.pipe(_.split(','), _.compact);
 const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 
 const versionsP = request({uri: NODE_VERSIONS, json: true}).then(([response, body]) => {
-  if (response.statusCode !== 200) throw new Error('nodejs.org isn\'t available');
+  if (response.statusCode !== 200) throw new Error("nodejs.org isn't available");
   return body;
 });
 
-const DOCKER_TAGS = version =>  `https://hub.docker.com/v2/repositories/library/node/tags/${_.trimCharsStart('v')(version)}/`;
+const DOCKER_TAGS = version =>
+  `https://hub.docker.com/v2/repositories/library/node/tags/${_.trimCharsStart('v')(version)}/`;
 
 const availableOnDockerHub = ({version, npm}) =>
   request({uri: DOCKER_TAGS(version), json: true}).then(([response, body]) => {
@@ -32,7 +33,9 @@ const availableOnDockerHub = ({version, npm}) =>
     return body;
   });
 
-const versionP = versionsP.then(_.find(_.pipe(_.get('version'), _.startsWith('v8.')))).tap(availableOnDockerHub);
+const versionP = versionsP
+  .then(_.find(_.pipe(_.get('version'), _.startsWith('v8.'))))
+  .tap(availableOnDockerHub);
 
 const nodeP = versionP.get('version').then(_.trimCharsStart('v'));
 const npmP = versionP.get('npm');
@@ -60,17 +63,17 @@ const syncGithub = (
 };
 
 const updateNodeNpm = (nodeP, npmP, argv) =>
-  Promise.all([nodeP, npmP]).catch(err =>
-    Promise.resolve([null, null])
-  ).then(([node, npm]) => {
-    if (!node || !npm) return null;
-    return Promise.all([
-      updateTravis(node, parseArgvToArray(argv.travis)),
-      updatePackage(node, npm, parseArgvToArray(argv.package)),
-      updateNvmrc(node, parseArgvToArray(argv.nvmrc)),
-      updateDockerfile(node, parseArgvToArray(argv.dockerfile))
-    ]);
-  });
+  Promise.all([nodeP, npmP])
+    .catch(err => Promise.resolve([null, null]))
+    .then(([node, npm]) => {
+      if (!node || !npm) return null;
+      return Promise.all([
+        updateTravis(node, parseArgvToArray(argv.travis)),
+        updatePackage(node, npm, parseArgvToArray(argv.package), !!argv.exact),
+        updateNvmrc(node, parseArgvToArray(argv.nvmrc)),
+        updateDockerfile(node, parseArgvToArray(argv.dockerfile))
+      ]);
+    });
 
 if (!module.parent) {
   const argv = minimist(process.argv);
