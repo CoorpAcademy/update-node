@@ -1,7 +1,7 @@
 {
   "name": "@coorpacademy/update-node",
   "version": "1.2.0",
-  "description": "",
+  "description": "Update your node dependencies while you sleep",
   "main": "index.js",
   "files": [
     "src",
@@ -18,7 +18,7 @@
     "lint:fix": "npm run lint -- --fix",
     "start": "node ./src/index.js"
   },
-  "author": "",
+  "author": "Coorpacademy Tech Team",
   "license": "ISC",
   "dependencies": {
     "bluebird": "3.5.3",

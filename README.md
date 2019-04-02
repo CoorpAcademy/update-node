@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.org/CoorpAcademy/update-node)
 
+:warning: README to be update post to refactor
+
 ```bash
 $ update-node [options]
 
