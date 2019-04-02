@@ -3,6 +3,9 @@
   "version": "1.2.0",
   "description": "Update your node dependencies while you sleep",
   "main": "index.js",
+  "engines": {
+    "node": ">=8.10.0"
+  },
   "files": [
     "src",
     "packages.json",
