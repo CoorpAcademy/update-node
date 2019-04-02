@@ -10,9 +10,8 @@ const updateNvmrc = (node, nvmrc) => {
 
   if (!nvmrc || !node) return Promise.resolve();
 
-  const nvmrcPath = path.join(process.cwd(), nvmrc);
-  return writeFile(nvmrcPath, `v${node}\n`, 'utf8').tap(() =>
-    process.stdout.write(`Write ${nvmrc}\n`)
+  return writeFile(nvmrc, `v${node}\n`, 'utf8').tap(() =>
+    process.stdout.write(`Write ${path.basename(nvmrc)}\n`)
   );
 };
 

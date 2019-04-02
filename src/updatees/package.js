@@ -18,7 +18,6 @@ const updatePackage = (node, npm, pkg, exact = false) => {
 
   if (!pkg) return Promise.resolve();
 
-  const packagePath = path.join(process.cwd(), pkg);
   const packageP = readPackage(pkg);
 
   const SAVE_PREFIX = exact ? EXACT_PREFIX : MINOR_PREFIX;
@@ -29,9 +28,9 @@ const updatePackage = (node, npm, pkg, exact = false) => {
   return newPackageP
     .then(obj => {
       const newPackage = JSON.stringify(obj, null, 2);
-      return writeFile(packagePath, `${newPackage}\n`, 'utf8');
+      return writeFile(pkg, `${newPackage}\n`, 'utf8');
     })
-    .tap(() => process.stdout.write(`Write ${pkg}\n`));
+    .tap(() => process.stdout.write(`Write ${path.basename(pkg)}\n`));
 };
 
 module.exports = {

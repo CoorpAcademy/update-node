@@ -11,16 +11,15 @@ const updateDockerfile = (node, dockerfile) => {
 
   if (!dockerfile || !node) return Promise.resolve();
 
-  const dockerFilePath = path.join(process.cwd(), dockerfile);
-  const dockerFileP = readFile(dockerFilePath, 'utf8');
+  const dockerFileP = readFile(dockerfile, 'utf8');
 
   const newDockerFileP = dockerFileP.then(
     _.replace(/FROM node:\d+\.\d+\.\d+/, `FROM node:${node}`)
   );
 
   return newDockerFileP
-    .then(newDockerFile => writeFile(dockerFilePath, newDockerFile, 'utf8'))
-    .tap(() => process.stdout.write(`Write ${dockerfile}\n`));
+    .then(newDockerFile => writeFile(dockerfile, newDockerFile, 'utf8'))
+    .tap(() => process.stdout.write(`Write ${path.basename(dockerfile)}\n`));
 };
 
 module.exports = updateDockerfile;

@@ -21,7 +21,7 @@ const resolveConfig = (config, configPath, argv) => {
   const defaultWithPath = (value, defaulte) => {
     const resolvedValue =
       // eslint-disable-next-line no-nested-ternary
-      value === true ? [defaulte] : _.isArray(value) ? value : value.split(',') || [];
+      value === true ? [defaulte] : _.isArray(value) ? value : value && value.split(',') || [];
     return _.map(val => path.join(path.dirname(configPath), val), resolvedValue);
   };
 

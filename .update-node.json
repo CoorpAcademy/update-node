@@ -8,7 +8,7 @@
   "node": {
     "branch": "upgrade-nodejs",
     "nvmrc": true,
-    "dockerfile": true,
+    "dockerfile": false,
     "travis": true,
     "package": true
   },
