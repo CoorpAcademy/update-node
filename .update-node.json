@@ -5,6 +5,7 @@
   "teamReviewers": [
     "development-mooc"
   ],
+  "label": "Upgrades :outbox_tray:",
   "node": {
     "branch": "upgrade-nodejs",
     "nvmrc": true,

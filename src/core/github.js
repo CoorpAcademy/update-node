@@ -79,13 +79,36 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
     })
     .tap(() => process.stdout.write('Create assignations\n'));
 };
+const addLabel = (label, pullRequest, githubToken) => {
+  if (!githubToken || !pullRequest || !label) return Promise.resolve();
+
+  const {issue_url} = pullRequest;
+  return request({
+    uri: issue_url,
+    method: 'PATCH',
+    headers: {
+      'User-Agent': 'Travis',
+      Accept: 'application/vnd.github.symmetra-preview+json',
+      Authorization: `token ${githubToken}`
+    },
+    json: true,
+    body: {
+      labels: [label]
+    }
+  })
+    .then(([response, body]) => {
+      if (response.statusCode === 200) return Promise.resolve();
+      return Promise.reject(new Error(_.get('message', body)));
+    })
+    .tap(() => process.stdout.write('Added label\n'));
+};
 
 const syncGithub = (
   repoSlug,
   base,
   branch,
   message,
-  {team_reviewers = [], reviewers = []} = {},
+  {team_reviewers = [], reviewers = [], label = ''} = {},
   githubToken
 ) => {
   if (!branch) return Promise.resolve();
@@ -100,7 +123,10 @@ const syncGithub = (
       return pushFiles(branch, message, githubToken, repoSlug)
         .then(() => createPullRequest(repoSlug, branch, base, message, githubToken))
         .then(pullRequest =>
-          assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
+          Promise.all([
+            addLabel(label, pullRequest, githubToken), // TODO handle asignee
+            assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
+          ])
         );
     },
     () => Promise.resolve()

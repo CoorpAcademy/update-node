@@ -83,6 +83,7 @@ const commitAndMakePullRequest = config => ({branch, message}) => {
     branch,
     message,
     {
+      label: config.label,
       reviewers: parseArgvToArray(config.reviewers),
       team_reviewers: parseArgvToArray(config.team_reviewers)
     },
