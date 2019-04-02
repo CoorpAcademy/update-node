@@ -11,6 +11,7 @@ const executeScript = commands =>
         resolve();
       });
       child.stdout.on('data', data => process.stdout.write(c.dim(data)));
+      child.stderr.on('data', data => process.stderr.write(c.red(data)));
     });
   });
 

@@ -78,7 +78,7 @@ const commitAndMakePullRequest = config => ({branch, message}) => {
     return commitFiles(null, message)
   }
   return syncGithub(
-    config.repo_slug,
+    config.repoSlug,
     config.baseBranch,
     branch,
     message,
@@ -112,6 +112,7 @@ const main = async argv => {
   const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
   await _commitAndMakePullRequest({branch, message});
   const pkg = await readPackage(extendedConfig.package);
+  /*
   await Promise.mapSeries(
     clusters,
     cluster => bumpDependencies(pkg, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
@@ -119,6 +120,7 @@ const main = async argv => {
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
+  */
 };
 
 if (!module.parent) {
