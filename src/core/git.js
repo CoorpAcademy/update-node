@@ -2,7 +2,8 @@ const executeScript = require('./script');
 
 const commitFiles = (branch, message) =>
   executeScript([
-    branch && `git checkout -b ${branch}`,
+    branch && `git checkout -b ${branch} || git branch -D ${branch} && git checkout -b ${branch}`,
+    // make it an option
     'git add .',
     `git commit -m "${message}"`,
     branch && 'git checkout -'
