@@ -1,6 +1,7 @@
 #! /usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
@@ -10,11 +11,10 @@ const updateTravis = require('./updatees/travis');
 const {readPackage, updatePackage} = require('./updatees/package');
 const {install, installDev} = require('./updatees/yarn');
 const updateDockerfile = require('./updatees/dockerfile');
-const {createPullRequest, assignReviewers} = require('./core/github');
+const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
+
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
-
-
 
 const bumpNodeVersion = (latestNode, argv) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
@@ -32,11 +32,11 @@ const bumpNodeVersion = (latestNode, argv) => {
   });
 };
 
-const bumpDependencies = (blacklistedDependencies, pkg, cluster) => {
-  return install(pkg, blacklistedDependencies, cluster.dependencies)
+const bumpDependencies = (pkg, cluster) => {
+  return install(pkg, cluster.dependencies)
     .then(installedDeps =>
       // eslint-disable-next-line promise/no-nesting
-      installDev(pkg, blacklistedDependencies, cluster.devDependencies).then(installedDevDeps =>
+      installDev(pkg, cluster.devDependencies).then(installedDevDeps =>
         installedDeps.concat(installedDevDeps)
       )
     )
@@ -51,74 +51,53 @@ const bumpDependencies = (blacklistedDependencies, pkg, cluster) => {
     });
 };
 
-const makePullRequest = argv => ({branch, message}) => {
-  if (!argv.base) return Promise.resolve();
+const makePullRequest = config => ({branch, message}) => {
+  if (!config.base || config.local) return Promise.resolve();
   return syncGithub(
-    argv.repo_slug,
-    argv.base,
+    config.repo_slug,
+    config.base,
     branch,
     message,
     {
-      reviewers: parseArgvToArray(argv.reviewers),
-      team_reviewers: parseArgvToArray(argv.team_reviewers)
+      reviewers: parseArgvToArray(config.reviewers),
+      team_reviewers: parseArgvToArray(config.team_reviewers)
     },
-    argv.github_token
+    config.token
   );
 };
 
-const customClusters = argv => {
-  if (!argv.dependencies && !argv.dev_dependencies) {
-    return [];
-  }
-
-  const allCoreDependencies = _.flatMap(
-    cluster => cluster.dependencies.concat(cluster.devDependencies),
-    dependenciesClusters
-  );
-
-  const dependencies = _.without(allCoreDependencies, parseArgvToArray(argv.dependencies));
-  const devDependencies = _.without(allCoreDependencies, parseArgvToArray(argv.dev_dependencies));
-
-  return [
-    {
-      name: 'custom',
-      dependencies,
-      devDependencies
-    }
-  ];
-};
-
-if (!module.parent) {
-  const argv = minimist(process.argv);
+const main = async argv => {
+  /* eslint-disable no-console */
   // FIXME drop for yargs
   const configFile = argv.config || findUp.sync('.update-node.json');
   if (!configFile) {
     console.error('No .update-node.json was found, neither a --config was given');
-    process.exit(12)
+    process.exit(12);
   }
-  const config = JSON.parse(fs.readFileSync(configFile))
-  console.log(config);
-  return
+  const config = JSON.parse(fs.readFileSync(configFile));
+  // FIXME perform schema validation
+  config.local = argv.local;
+  config.token = argv.token;
 
-  const _makePullRequest = makePullRequest(argv);
-  const blacklistedDependencies = parseArgvToArray(argv.blacklist);
-  const clusters = dependenciesClusters.concat(customClusters(argv));
+  const _makePullRequest = makePullRequest(config);
+  const clusters = config.dependencies;
 
   const RANGE = argv.node_range || '^8';
-  const versionP = findLatest(RANGE);
+  const latestNode = await findLatest(RANGE);
 
-  versionP
-    .then(latestNode => bumpNodeVersion(latestNode, argv))
-    .then(_makePullRequest)
-    .then(() => readPackage(argv.package || './package.json'))
-    .then(pkg =>
-      Promise.mapSeries(
-        clusters,
-        cluster => bumpDependencies(blacklistedDependencies, pkg, cluster).then(_makePullRequest) // eslint-disable-line promise/no-nesting
-      )
-    )
-    .catch(err => {
-      process.stdout.write(`${err.stack}\n`);
-      return process.exit(1);
-    });
+  const {branch, message} = await bumpNodeVersion(latestNode, argv);
+  await _makePullRequest({branch, message});
+  const pkg = await readPackage(path.join(path.dirname(configFile), config.package || 'package.json'));
+  await Promise.mapSeries(
+    clusters,
+    cluster => bumpDependencies(pkg, cluster).then(_makePullRequest) // eslint-disable-line promise/no-nesting
+  ).catch(err => {
+    process.stdout.write(`${err.stack}\n`);
+    return process.exit(1);
+  });
+};
+
+if (!module.parent) {
+  const argv = minimist(process.argv);
+  main(argv);
 }

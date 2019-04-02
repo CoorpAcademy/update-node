@@ -101,7 +101,6 @@ const syncGithub = (
   );
 };
 
-
 module.exports = {
   createPullRequest,
   syncGithub,

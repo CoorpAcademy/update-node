@@ -2,21 +2,13 @@ const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const executeScript = require('../core/script');
 
-const __listDependencies = (isDev, pkg, blacklistedDependencies, requestedDependencies) => {
+const __listDependencies = (isDev, pkg, requestedDependencies) => {
   const depsKey = isDev ? 'devDependencies' : 'dependencies';
-  return _.without(
-    blacklistedDependencies,
-    _.intersection(requestedDependencies, Object.keys(pkg[depsKey] || {}))
-  );
+  return _.intersection(requestedDependencies, Object.keys(pkg[depsKey] || {}));
 };
 
-const install = isDev => (pkg, blacklistedDependencies, requestedDependencies) => {
-  const dependencies = __listDependencies(
-    isDev,
-    pkg,
-    blacklistedDependencies,
-    requestedDependencies
-  );
+const install = isDev => (pkg, requestedDependencies) => {
+  const dependencies = __listDependencies(isDev, pkg, requestedDependencies);
 
   if (_.isEmpty(dependencies)) {
     return Promise.resolve([]);

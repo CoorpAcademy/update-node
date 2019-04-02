@@ -9,8 +9,7 @@ const readFile = Promise.promisify(fs.readFile);
 const EXACT_PREFIX = '';
 
 const MINOR_PREFIX = '^';
-const readPackage = pkg => {
-  const packagePath = path.join(process.cwd(), pkg);
+const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);
 };
 
