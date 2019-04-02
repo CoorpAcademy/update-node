@@ -29,10 +29,7 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
 const createPullRequest = (repoSlug, head, base, message, githubToken) => {
   const lines = _.split('\n', message);
   const title = lines[0];
-  const bdy = _.pipe(
-    _.slice(1),
-    _.join('\n')
-  )(lines);
+  const bdy = _.pipe(_.slice(1), _.join('\n'))(lines);
   return request({
     uri: `https://api.github.com/repos/${repoSlug}/pulls`,
     method: 'POST',
@@ -55,7 +52,7 @@ const createPullRequest = (repoSlug, head, base, message, githubToken) => {
       if (response.statusCode === 422) return searchPullRequest(repoSlug, head, base, githubToken);
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('Create pull request\n'));
+    .tap(() => process.stdout.write('  - Create pull request\n'));
 };
 
 const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest, githubToken) => {
@@ -80,7 +77,7 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
       if (response.statusCode === 201) return Promise.resolve();
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('Create assignations\n'));
+    .tap(() => process.stdout.write('  - Create assignations\n'));
 };
 const documentPr = ({label, message}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
@@ -104,7 +101,7 @@ const documentPr = ({label, message}, pullRequest, githubToken) => {
       if (response.statusCode === 200) return Promise.resolve();
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('Added label\n'));
+    .tap(() => process.stdout.write('  - Added label\n'));
 };
 
 const syncGithub = (

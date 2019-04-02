@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
@@ -22,7 +23,7 @@ const resolveConfig = (config, configPath, argv) => {
   const defaultWithPath = (value, defaulte) => {
     const resolvedValue =
       // eslint-disable-next-line no-nested-ternary
-      value === true ? [defaulte] : _.isArray(value) ? value : value && value.split(',') || [];
+      value === true ? [defaulte] : _.isArray(value) ? value : (value && value.split(',')) || [];
     return _.map(val => path.join(path.dirname(configPath), val), resolvedValue);
   };
 
@@ -53,6 +54,9 @@ const bumpNodeVersion = (latestNode, config) => {
 };
 
 const bumpDependencies = (pkg, cluster) => {
+  process.stdout.write(
+    c.bold.blue(`About to bump depencies cluster ${c.bold.white(cluster.name)}`)
+  );
   return install(pkg, cluster.dependencies)
     .then(installedDeps =>
       // eslint-disable-next-line promise/no-nesting
@@ -75,7 +79,7 @@ const bumpDependencies = (pkg, cluster) => {
 const commitAndMakePullRequest = config => ({branch, message}) => {
   if (!config.baseBranch) return Promise.resolve();
   if (config.local) {
-    return commitFiles(null, message)
+    return commitFiles(null, message);
   }
   return syncGithub(
     config.repoSlug,
@@ -85,7 +89,7 @@ const commitAndMakePullRequest = config => ({branch, message}) => {
     {
       label: config.label,
       reviewers: parseArgvToArray(config.reviewers),
-      team_reviewers: parseArgvToArray(config.team_reviewers)
+      team_reviewers: parseArgvToArray(config.teamReviewers)
     },
     config.token
   );
@@ -119,6 +123,7 @@ const main = async argv => {
     process.stdout.write(`${err}\n`);
     return process.exit(1);
   });
+  process.stdout.write(c.bold.green('Update-node run with success'));
 };
 
 if (!module.parent) {
