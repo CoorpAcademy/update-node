@@ -1,5 +1,6 @@
 const Promise = require('bluebird');
 const _ = require('lodash/fp');
+const c = require('chalk');
 const executeScript = require('../core/script');
 
 const __listDependencies = (isDev, pkg, requestedDependencies) => {
@@ -19,7 +20,7 @@ const install = isDev => (pkg, requestedDependencies) => {
   return executeScript([
     `yarn add ${dependencies.join(' ')} --exact --ignore-engines --ignore-scripts ${mode}`
   ]).then(() => {
-    process.stdout.write(`${dependencies} installed\n`);
+    process.stdout.write(`+ ${dependencies.map(d => c.bold.dim(d)).join(', ')} installed\n`);
     return dependencies;
   });
 };
