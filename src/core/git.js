@@ -20,7 +20,8 @@ const commitFiles = (branch, message) =>
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
-    `git push gh ${branch}:refs/heads/${branch} --force-with-lease; git remote remove gh`
+    `git push gh ${branch}:refs/heads/${branch} --force-with-lease || git remote remove gh && exit 1`,
+    'git remote remove gh'
   ]).tap(() => process.stdout.write(`Push files on ${branch}\n`));
 
 module.exports = {
