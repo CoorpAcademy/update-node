@@ -3,14 +3,14 @@
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
-const updateNvmrc = require('./nvmrc');
-const updateTravis = require('./travis');
-const {readPackage, updatePackage} = require('./package');
-const {install, installDev} = require('./yarn');
-const updateDockerfile = require('./dockerfile');
-const {commitFiles, pushFiles} = require('./git');
-const {createPullRequest, assignReviewers} = require('./github');
-const {findLatest} = require('./node');
+const updateNvmrc = require('./updatees/nvmrc');
+const updateTravis = require('./updatees/travis');
+const {readPackage, updatePackage} = require('./updatees/package');
+const {install, installDev} = require('./updatees/yarn');
+const updateDockerfile = require('./updatees/dockerfile');
+const {commitFiles, pushFiles} = require('./core/git');
+const {createPullRequest, assignReviewers} = require('./core/github');
+const {findLatest} = require('./core/node');
 const dependenciesClusters = require('./dependencies.json');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);

@@ -1,6 +1,6 @@
 const Promise = require('bluebird');
 const _ = require('lodash/fp');
-const executeScript = require('./script');
+const executeScript = require('../core/script');
 
 const __listDependencies = (isDev, pkg, blacklistedDependencies, requestedDependencies) => {
   const depsKey = isDev ? 'devDependencies' : 'dependencies';
