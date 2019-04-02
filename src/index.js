@@ -1,46 +1,20 @@
 #! /usr/bin/env node
 
+const fs = require('fs');
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
+const findUp = require('find-up');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {readPackage, updatePackage} = require('./updatees/package');
 const {install, installDev} = require('./updatees/yarn');
 const updateDockerfile = require('./updatees/dockerfile');
-const {commitFiles, pushFiles} = require('./core/git');
 const {createPullRequest, assignReviewers} = require('./core/github');
 const {findLatest} = require('./core/node');
-const dependenciesClusters = require('./dependencies.json');
-
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
-const syncGithub = (
-  repoSlug,
-  base,
-  branch,
-  message,
-  {team_reviewers = [], reviewers = []} = {},
-  githubToken
-) => {
-  if (!branch) return Promise.resolve();
 
-  return commitFiles(branch, message).then(
-    branchHasCommits => {
-      if (!branchHasCommits) {
-        return;
-      }
-
-      // eslint-disable-next-line promise/no-nesting
-      return pushFiles(branch, message, githubToken, repoSlug)
-        .then(() => createPullRequest(repoSlug, branch, base, message, githubToken))
-        .then(pullRequest =>
-          assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
-        );
-    },
-    () => Promise.resolve()
-  );
-};
 
 const bumpNodeVersion = (latestNode, argv) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
@@ -116,6 +90,16 @@ const customClusters = argv => {
 
 if (!module.parent) {
   const argv = minimist(process.argv);
+  // FIXME drop for yargs
+  const configFile = argv.config || findUp.sync('.update-node.json');
+  if (!configFile) {
+    console.error('No .update-node.json was found, neither a --config was given');
+    process.exit(12)
+  }
+  const config = JSON.parse(fs.readFileSync(configFile))
+  console.log(config);
+  return
+
   const _makePullRequest = makePullRequest(argv);
   const blacklistedDependencies = parseArgvToArray(argv.blacklist);
   const clusters = dependenciesClusters.concat(customClusters(argv));

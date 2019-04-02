@@ -1,6 +1,7 @@
 const Request = require('request');
 const Promise = require('bluebird');
 const _ = require('lodash/fp');
+const {commitFiles, pushFiles} = require('./git');
 
 const request = Promise.promisify(Request, {multiArgs: true});
 
@@ -73,7 +74,36 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
     .tap(() => process.stdout.write('Create assignations\n'));
 };
 
+const syncGithub = (
+  repoSlug,
+  base,
+  branch,
+  message,
+  {team_reviewers = [], reviewers = []} = {},
+  githubToken
+) => {
+  if (!branch) return Promise.resolve();
+
+  return commitFiles(branch, message).then(
+    branchHasCommits => {
+      if (!branchHasCommits) {
+        return;
+      }
+
+      // eslint-disable-next-line promise/no-nesting
+      return pushFiles(branch, message, githubToken, repoSlug)
+        .then(() => createPullRequest(repoSlug, branch, base, message, githubToken))
+        .then(pullRequest =>
+          assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
+        );
+    },
+    () => Promise.resolve()
+  );
+};
+
+
 module.exports = {
   createPullRequest,
+  syncGithub,
   assignReviewers
 };

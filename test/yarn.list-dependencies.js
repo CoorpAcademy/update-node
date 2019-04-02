@@ -1,5 +1,5 @@
 const test = require('ava');
-const {__listDependencies} = require('../src/yarn');
+const {__listDependencies} = require('../src/updatees/yarn');
 
 const packageFixture = {
   dependencies: {

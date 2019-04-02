@@ -22,6 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "3.5.3",
+    "find-up": "^3.0.0",
     "js-yaml": "3.12.1",
     "lodash": "4.17.11",
     "minimist": "1.2.0",
