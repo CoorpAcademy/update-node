@@ -29,7 +29,10 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
 const createPullRequest = (repoSlug, head, base, message, githubToken) => {
   const lines = _.split('\n', message);
   const title = lines[0];
-  const bdy = _.slice(1, lines).join('\n');
+  const bdy = _.pipe(
+    _.slice(1),
+    _.join('\n')
+  )(lines);
   return request({
     uri: `https://api.github.com/repos/${repoSlug}/pulls`,
     method: 'POST',
