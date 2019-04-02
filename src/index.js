@@ -55,7 +55,7 @@ const bumpNodeVersion = (latestNode, config) => {
 
 const bumpDependencies = (pkg, cluster) => {
   process.stdout.write(
-    c.bold.blue(`About to bump depencies cluster ${c.bold.white(cluster.name)}`)
+    c.bold.blue(`\nAbout to bump depencies cluster ${c.bold.white(cluster.name)}\n`)
   );
   return install(pkg, cluster.dependencies)
     .then(installedDeps =>
