@@ -5,8 +5,7 @@ const commitFiles = (branch, message) =>
     branch && `git checkout -b ${branch} || git branch -D ${branch} && git checkout -b ${branch}`,
     // make it an option
     'git add .',
-    `git commit -m "${message}"`,
-    branch && 'git checkout -'
+    `git commit -m "${message}" ${branch && '; git checkout -'}`
   ])
     .tap(() => {
       process.stdout.write('Commit files\n');
