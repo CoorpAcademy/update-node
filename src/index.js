@@ -16,13 +16,32 @@ const {findLatest} = require('./core/node');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
-const bumpNodeVersion = (latestNode, argv) => {
+const resolveConfig = (config, configPath, argv) => {
+  const base = _.cloneDeep(config);
+  const defaultWithPath = (value, defaulte) => {
+    const resolvedValue =
+      // eslint-disable-next-line no-nested-ternary
+      value === true ? [defaulte] : _.isArray(value) ? value : value.split(',') || [];
+    return _.map(val => path.join(path.dirname(configPath), val), resolvedValue);
+  };
+
+  base.package = path.join(path.dirname(configPath), base.package || 'package.json');
+  base.node.nvmrc = defaultWithPath(base.node.nvmrc, '.nvmrc');
+  base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
+  base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
+  base.node.package = defaultWithPath(base.node.package, 'package.json');
+  config.local = argv.local;
+  config.token = argv.token;
+  return base;
+};
+
+const bumpNodeVersion = (latestNode, config) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   return Promise.all([
-    updateTravis(nodeVersion, parseArgvToArray(argv.travis)),
-    updatePackage(nodeVersion, latestNode.npm, parseArgvToArray(argv.package), !!argv.exact),
-    updateNvmrc(nodeVersion, parseArgvToArray(argv.nvmrc)),
-    updateDockerfile(nodeVersion, parseArgvToArray(argv.dockerfile))
+    updateTravis(nodeVersion, config.node.travis),
+    updatePackage(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
+    updateNvmrc(nodeVersion, config.node.nvmrc),
+    updateDockerfile(nodeVersion, config.node.dockerfile)
   ]).then(() => {
     process.stdout.write(`Successfully bumped Node version to v${nodeVersion}\n`);
     return {
@@ -70,27 +89,24 @@ const makePullRequest = config => ({branch, message}) => {
 const main = async argv => {
   /* eslint-disable no-console */
   // FIXME drop for yargs
-  const configFile = argv.config || findUp.sync('.update-node.json');
-  if (!configFile) {
+  const configPath = argv.config || findUp.sync('.update-node.json');
+  if (!configPath) {
     console.error('No .update-node.json was found, neither a --config was given');
     process.exit(12);
   }
-  const config = JSON.parse(fs.readFileSync(configFile));
+  const config = JSON.parse(fs.readFileSync(configPath));
   // FIXME perform schema validation
-  config.local = argv.local;
-  config.token = argv.token;
+  const extendedConfig = resolveConfig(config, configPath, argv);
 
-  const _makePullRequest = makePullRequest(config);
-  const clusters = config.dependencies;
+  const _makePullRequest = makePullRequest(extendedConfig);
+  const clusters = extendedConfig.dependencies;
 
   const RANGE = argv.node_range || '^8';
   const latestNode = await findLatest(RANGE);
 
-  const {branch, message} = await bumpNodeVersion(latestNode, argv);
+  const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
   await _makePullRequest({branch, message});
-  const pkg = await readPackage(
-    path.join(path.dirname(configFile), config.package || 'package.json')
-  );
+  const pkg = await readPackage(extendedConfig.package);
   await Promise.mapSeries(
     clusters,
     cluster => bumpDependencies(pkg, cluster).then(_makePullRequest) // eslint-disable-line promise/no-nesting

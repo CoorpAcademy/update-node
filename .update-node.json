@@ -9,7 +9,8 @@
     "branch": "upgrade-nodejs",
     "nvmrc": true,
     "dockerfile": true,
-    "travis": true
+    "travis": true,
+    "package": true
   },
   "dependencies": [
     {
