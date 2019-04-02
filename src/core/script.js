@@ -1,9 +1,19 @@
-const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const shelljs = require('shelljs');
+const c = require('chalk');
 
-const exec = Promise.promisify(shelljs.exec);
-
-const executeScript = _.reduce((acc, cmd) => acc.then(() => exec(cmd)), Promise.resolve());
+const executeScript = commands =>
+  Promise.reduce(
+    commands,
+    (acc, cmd) =>
+      new Promise((resolve, reject) => {
+        const child = shelljs.exec(cmd, {async: true, silent: true}, err => {
+          if (err) return reject(err);
+          resolve();
+        });
+        child.stdout.on('data', data => process.stdout.write(c.dim(data)));
+      }),
+    null
+  );
 
 module.exports = executeScript;

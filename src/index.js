@@ -41,12 +41,13 @@ const bumpDependencies = (pkg, cluster) => {
       )
     )
     .then(allInstalledDeps => {
-      process.stdout.write(`Successfully updated ${allInstalledDeps.length} dependencies of cluster ${cluster.name}`);
+      process.stdout.write(
+        `Successfully updated ${allInstalledDeps.length} dependencies of cluster ${cluster.name}`
+      );
       return {
         branch: cluster.branch || `update-dependencies-${cluster.name}`,
-        message: ? `${cluster.message || 'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDeps.join(
-          '\n- '
-        )}`
+        message: `${cluster.message ||
+          'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDeps.join('\n- ')}`
       };
     });
 };
@@ -87,7 +88,9 @@ const main = async argv => {
 
   const {branch, message} = await bumpNodeVersion(latestNode, argv);
   await _makePullRequest({branch, message});
-  const pkg = await readPackage(path.join(path.dirname(configFile), config.package || 'package.json'));
+  const pkg = await readPackage(
+    path.join(path.dirname(configFile), config.package || 'package.json')
+  );
   await Promise.mapSeries(
     clusters,
     cluster => bumpDependencies(pkg, cluster).then(_makePullRequest) // eslint-disable-line promise/no-nesting
