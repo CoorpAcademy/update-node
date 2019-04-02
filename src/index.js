@@ -62,7 +62,7 @@ const bumpDependencies = (pkg, cluster) => {
     )
     .then(allInstalledDeps => {
       process.stdout.write(
-        `Successfully updated ${allInstalledDeps.length} dependencies of cluster ${cluster.name}`
+        `Successfully updated ${allInstalledDeps.length} dependencies of cluster ${cluster.name}\n`
       );
       return {
         branch: cluster.branch || `update-dependencies-${cluster.name}`,
@@ -116,7 +116,7 @@ const main = async argv => {
     clusters,
     cluster => bumpDependencies(pkg, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
   ).catch(err => {
-    process.stdout.write(`${err.stack}\n`);
+    process.stdout.write(`${err}\n`);
     return process.exit(1);
   });
 };
@@ -124,7 +124,7 @@ const main = async argv => {
 if (!module.parent) {
   const argv = minimist(process.argv);
   main(argv).catch(err => {
-    console.error(err);
+    console.error('ERR', err);
     process.exit(2);
   });
 }

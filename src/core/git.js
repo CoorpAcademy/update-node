@@ -2,10 +2,10 @@ const executeScript = require('./script');
 
 const commitFiles = (branch, message) =>
   executeScript([
-    branch && `git checkout -b ${branch} || git branch -D ${branch} && git checkout -b ${branch}`,
+    branch && `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
     // make it an option
     'git add .',
-    `git commit -m "${message}" ${branch && '; git checkout -'}`
+    `git commit -m "${message}" ${branch && ';exit_status=$?; git checkout -; exit $exit_status'}`
   ])
     .tap(() => {
       process.stdout.write('Commit files\n');
@@ -19,7 +19,7 @@ const commitFiles = (branch, message) =>
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
-    `git push gh ${branch}:refs/heads/${branch} --force-with-lease || git remote remove gh && exit 1`,
+    `git push gh ${branch}:refs/heads/${branch} || git push gh ${branch}:refs/heads/${branch} --force-with-lease || (git remote remove gh && exit 12)`,
     'git remote remove gh'
   ]).tap(() => process.stdout.write(`Push files on ${branch}\n`));
 
