@@ -19,7 +19,8 @@
     "test:unit": "ava",
     "lint": "eslint src/ *.json --ext .js,.json",
     "lint:fix": "npm run lint -- --fix",
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "update": "node src"
   },
   "author": "Coorpacademy Tech Team",
   "license": "ISC",

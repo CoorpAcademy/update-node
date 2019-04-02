@@ -26,8 +26,11 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
     .get(0);
 };
 
-const createPullRequest = (repoSlug, head, base, message, githubToken) =>
-  request({
+const createPullRequest = (repoSlug, head, base, message, githubToken) => {
+  const lines = _.split('\n', message);
+  const title = lines[0];
+  const bdy = _.slice(1, lines).join('\n');
+  return request({
     uri: `https://api.github.com/repos/${repoSlug}/pulls`,
     method: 'POST',
     headers: {
@@ -37,9 +40,11 @@ const createPullRequest = (repoSlug, head, base, message, githubToken) =>
     },
     json: true,
     body: {
-      title: message,
+      title,
       head,
-      base
+      base,
+      maintainer_can_modify: true,
+      body: bdy
     }
   })
     .then(([response, body]) => {
@@ -48,6 +53,7 @@ const createPullRequest = (repoSlug, head, base, message, githubToken) =>
       return Promise.reject(new Error(_.get('message', body)));
     })
     .tap(() => process.stdout.write('Create pull request\n'));
+};
 
 const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest) return Promise.resolve();
