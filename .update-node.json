@@ -7,7 +7,7 @@
   ],
   "label": "Upgrades :outbox_tray:",
   "node": {
-    "branch": "upgrade-nodejs",
+    "branch": "upgrade-node",
     "nvmrc": true,
     "dockerfile": false,
     "travis": true,

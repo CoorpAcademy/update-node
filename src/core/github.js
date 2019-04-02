@@ -82,7 +82,7 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
     })
     .tap(() => process.stdout.write('Create assignations\n'));
 };
-const addLabel = (label, pullRequest, githubToken) => {
+const documentPr = ({label, message}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
 
   const {issue_url} = pullRequest;
@@ -96,7 +96,8 @@ const addLabel = (label, pullRequest, githubToken) => {
     },
     json: true,
     body: {
-      labels: [label]
+      labels: [label],
+      body: message.replace(/[^\n]*[\n]/, '')
     }
   })
     .then(([response, body]) => {
@@ -127,7 +128,7 @@ const syncGithub = (
         .then(() => createPullRequest(repoSlug, branch, base, message, githubToken))
         .then(pullRequest =>
           Promise.all([
-            addLabel(label, pullRequest, githubToken), // TODO handle asignee
+            documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
             assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
           ])
         );
