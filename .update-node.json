@@ -1,6 +1,6 @@
 {
   "repoSlug": "Coorpacademy/update-node",
-  "baseBrach": "master",
+  "baseBranch": "master",
   "reviewers": [],
   "teamReviewers": [
     "development-mooc"

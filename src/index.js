@@ -11,6 +11,7 @@ const updateTravis = require('./updatees/travis');
 const {readPackage, updatePackage} = require('./updatees/package');
 const {install, installDev} = require('./updatees/yarn');
 const updateDockerfile = require('./updatees/dockerfile');
+const {commitFiles} = require('./core/git');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 
@@ -30,8 +31,8 @@ const resolveConfig = (config, configPath, argv) => {
   base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
   base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
   base.node.package = defaultWithPath(base.node.package, 'package.json');
-  config.local = argv.local;
-  config.token = argv.token;
+  base.local = argv.local;
+  base.token = argv.token;
   return base;
 };
 
@@ -71,11 +72,14 @@ const bumpDependencies = (pkg, cluster) => {
     });
 };
 
-const makePullRequest = config => ({branch, message}) => {
-  if (!config.base || config.local) return Promise.resolve();
+const commitAndMakePullRequest = config => ({branch, message}) => {
+  if (!config.baseBranch) return Promise.resolve();
+  if (config.local) {
+    return commitFiles(null, message)
+  }
   return syncGithub(
     config.repo_slug,
-    config.base,
+    config.baseBranch,
     branch,
     message,
     {
@@ -98,18 +102,18 @@ const main = async argv => {
   // FIXME perform schema validation
   const extendedConfig = resolveConfig(config, configPath, argv);
 
-  const _makePullRequest = makePullRequest(extendedConfig);
+  const _commitAndMakePullRequest = commitAndMakePullRequest(extendedConfig);
   const clusters = extendedConfig.dependencies;
 
   const RANGE = argv.node_range || '^8';
   const latestNode = await findLatest(RANGE);
 
   const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
-  await _makePullRequest({branch, message});
+  await _commitAndMakePullRequest({branch, message});
   const pkg = await readPackage(extendedConfig.package);
   await Promise.mapSeries(
     clusters,
-    cluster => bumpDependencies(pkg, cluster).then(_makePullRequest) // eslint-disable-line promise/no-nesting
+    cluster => bumpDependencies(pkg, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
   ).catch(err => {
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
@@ -118,5 +122,8 @@ const main = async argv => {
 
 if (!module.parent) {
   const argv = minimist(process.argv);
-  main(argv);
+  main(argv).catch(err => {
+    console.error(err);
+    process.exit(2);
+  });
 }

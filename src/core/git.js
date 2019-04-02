@@ -2,10 +2,10 @@ const executeScript = require('./script');
 
 const commitFiles = (branch, message) =>
   executeScript([
-    `git checkout -b ${branch}`,
+    branch && `git checkout -b ${branch}`,
     'git add .',
     `git commit -m "${message}"`,
-    'git checkout -'
+    branch && 'git checkout -'
   ])
     .tap(() => {
       process.stdout.write('Commit files\n');
