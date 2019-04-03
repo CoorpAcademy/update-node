@@ -51,7 +51,7 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile)
   ]);
 
-  process.stdout.write(`Successfully bumped Node version to v${nodeVersion}\n`);
+  process.stdout.write(`+ Successfully bumped Node version to v${nodeVersion}\n`);
   return {
     branch: `update-node-v${nodeVersion}`,
     message: `Upgrade Node to v${nodeVersion}`,
