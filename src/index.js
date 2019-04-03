@@ -174,6 +174,11 @@ if (!module.parent) {
       string: true,
       alias: 't'
     })
+    .option('config', {
+      describe: 'Override update-node configuration default path',
+      string: true,
+      alias: 'c'
+    })
     .parse(process.argv);
 
   if (!argv.local && !argv.token) {
