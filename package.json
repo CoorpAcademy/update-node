@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "8.3.0",
-    "ava": "^1.2.0",
+    "ava": "^1.4.1",
     "eslint": "5.16.0"
   }
 }
