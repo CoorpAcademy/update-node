@@ -175,6 +175,12 @@ if (!module.parent) {
       alias: 't'
     })
     .parse(process.argv);
+
+  if (!argv.local && !argv.token) {
+    process.stdout.write(c.red.bold('Could not run without either options --token or --local'));
+    process.stdout.write('Update-Node behavior was changed starting from 2.0');
+    process.exit(22);
+  }
   main(argv).catch(err => {
     console.error(err);
     process.exit(2);
