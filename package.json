@@ -38,12 +38,14 @@
     "request": "2.88.0",
     "semver": "^5.4.1",
     "shelljs": "0.8.3",
+    "shortstop": "^1.0.3",
+    "shortstop-handlers": "^1.0.1",
     "split2": "^3.1.1",
     "through2": "^3.0.1"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "8.3.0",
-    "ava": "^1.2.0",
+    "ava": "^1.4.1",
     "eslint": "5.16.0"
   }
 }

@@ -1,12 +1,11 @@
 #! /usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const minimist = require('minimist');
 const Promise = require('bluebird');
 const findUp = require('find-up');
+const {readConfig, resolveConfig} = require('./core/config');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
@@ -21,25 +20,6 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
-
-const resolveConfig = (config, configPath, argv) => {
-  const base = _.cloneDeep(config);
-  const defaultWithPath = (value, defaulte) => {
-    const resolvedValue =
-      // eslint-disable-next-line no-nested-ternary
-      value === true ? [defaulte] : _.isArray(value) ? value : (value && value.split(',')) || [];
-    return _.map(val => path.join(path.dirname(configPath), val), resolvedValue);
-  };
-
-  base.package = path.join(path.dirname(configPath), base.package || 'package.json');
-  base.node.nvmrc = defaultWithPath(base.node.nvmrc, '.nvmrc');
-  base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
-  base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
-  base.node.package = defaultWithPath(base.node.package, 'package.json');
-  base.local = argv.local;
-  base.token = argv.token;
-  return base;
-};
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
@@ -147,9 +127,9 @@ const main = async argv => {
     console.error('No .update-node.json was found, neither a --config was given');
     process.exit(12);
   }
-  const config = JSON.parse(fs.readFileSync(configPath));
+  const config = readConfig(configPath);
   // FIXME perform schema validation
-  const extendedConfig = resolveConfig(config, configPath, argv);
+  const extendedConfig = await resolveConfig(config, configPath, argv);
 
   const _commitAndMakePullRequest = commitAndMakePullRequest(extendedConfig);
   const clusters = extendedConfig.dependencies;
