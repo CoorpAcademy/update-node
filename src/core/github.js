@@ -83,6 +83,10 @@ const documentPr = ({label, message}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
 
   const {issue_url} = pullRequest;
+  const originalLabels = pullRequest.labels;
+  const labels = _.find(l => label === _.get('name', l), originalLabels)
+    ? originalLabels
+    : originalLabels.concat(label);
   return request({
     uri: issue_url,
     method: 'PATCH',
@@ -93,7 +97,7 @@ const documentPr = ({label, message}, pullRequest, githubToken) => {
     },
     json: true,
     body: {
-      labels: [label],
+      labels,
       body: message.replace(/[^\n]*[\n]/, '')
     }
   })
