@@ -1,5 +1,6 @@
 const Request = require('request');
 const Promise = require('bluebird');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const {commitFiles, pushFiles, headCommit} = require('./git');
 
@@ -54,6 +55,7 @@ const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
 
 const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest) return Promise.resolve();
+  if (_.isEmpty(reviewers) && _.isEmpty(team_reviewers)) return Promise.resolve();
 
   const {url} = pullRequest;
   return request({
@@ -74,7 +76,13 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
       if (response.statusCode === 201) return Promise.resolve();
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('  - 👥  Create assignations\n'));
+    .tap(() =>
+      process.stdout.write(
+        `  - 👥  Create assignations ${_.concat(reviewers, team_reviewers)
+          .map(r => `@${c.dim.bold(r)}`)
+          .join(', ')}\n`
+      )
+    );
 };
 const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();

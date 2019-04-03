@@ -76,9 +76,7 @@ const updateLock = async packager => {
   const packageManager = packager || 'npm';
   if (!_.includes(packageManager, ['npm', 'yarn']))
     throw new Error(`Invalid Package Manager: ${packageManager}`);
-  process.stdout.write(
-    `+ Updating dependencies lock with ${c.bold.yellow(packageManager)}  🔐 :\n`
-  );
+  process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)} 🔐 :\n`);
 
   await executeScript([
     packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts ',
