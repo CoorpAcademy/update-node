@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const semver = require('semver');
@@ -57,7 +58,7 @@ const __updateDependencies = (dev = false) => {
         if (!currentVersion) return pkgAcc;
         const newVersion = await latestVersionForPackage(dependency);
         const newVersionWithPrefix = preservePrefix(currentVersion, newVersion);
-        if (semver.lt(newVersion, trimPrefix(currentVersion))) return pkgAcc;
+        if (semver.lte(newVersion, trimPrefix(currentVersion))) return pkgAcc;
         return [
           _.set([DEPENDENCY_KEY, dependency], newVersionWithPrefix, pkgAcc[0]),
           [...pkgAcc[1], [dependency, currentVersion, newVersion]]
@@ -75,6 +76,7 @@ const updateLock = async packager => {
   const packageManager = packager || 'npm';
   if (!_.includes(packageManager, ['npm', 'yarn']))
     throw new Error(`Invalid Package Manager: ${packageManager}`);
+  process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)}`);
 
   await executeScript([
     packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts ',

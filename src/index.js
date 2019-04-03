@@ -70,7 +70,7 @@ const bumpDependencies = async (pkg, cluster) => {
     }:\n${allInstalledDependencies
       .map(
         ([dep, oldVersion, newVersion]) =>
-          `- ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+          `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
       )
       .join('\n')}\n`
   );
@@ -83,12 +83,12 @@ const bumpDependencies = async (pkg, cluster) => {
   };
 };
 
-const commitAndMakePullRequest = config => ({branch, message}) => {
+const commitAndMakePullRequest = config => async ({branch, message}) => {
   if (!config.baseBranch) return Promise.resolve();
   if (config.local) {
     return commitFiles(null, message);
   }
-  return syncGithub(
+  const status = await syncGithub(
     config.repoSlug,
     config.baseBranch,
     branch,
@@ -100,6 +100,9 @@ const commitAndMakePullRequest = config => ({branch, message}) => {
     },
     config.token
   );
+  process.stdout.write('- Successfulley handle pull request');
+  // TODO paste uri
+  return status;
 };
 
 const main = async argv => {
@@ -131,7 +134,7 @@ const main = async argv => {
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
-  process.stdout.write(c.bold.green('Update-node run with success\n'));
+  process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
 };
 
 if (!module.parent) {

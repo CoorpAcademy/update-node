@@ -1,8 +1,7 @@
 const shelljs = require('shelljs');
 const _ = require('lodash/fp');
 const semver = require('semver');
-// const Promise = require('bluebird');
-
+const Promise = require('bluebird');
 
 const EXACT_PREFIX = '';
 
@@ -22,9 +21,13 @@ const versionsForPackage = async (pkg, includePrerelease = false) => {
 };
 
 const latestVersionForPackage = async (pkg, includePrerelease = false) => {
-    return _.last(await versionsForPackage(pkg, includePrerelease))
+  return _.last(await versionsForPackage(pkg, includePrerelease));
 };
 
 module.exports = {
-    EXACT_PREFIX, MINOR_PREFIX, PATCH_PREFIX, versionsForPackage, latestVersionForPackage
-}
+  EXACT_PREFIX,
+  MINOR_PREFIX,
+  PATCH_PREFIX,
+  versionsForPackage,
+  latestVersionForPackage
+};

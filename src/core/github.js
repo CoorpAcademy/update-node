@@ -104,7 +104,7 @@ const documentPr = ({label, message}, pullRequest, githubToken) => {
     .tap(() => process.stdout.write('  - Added label\n'));
 };
 
-const syncGithub = (
+const syncGithub = async (
   repoSlug,
   base,
   branch,
@@ -112,26 +112,24 @@ const syncGithub = (
   {team_reviewers = [], reviewers = [], label = ''} = {},
   githubToken
 ) => {
-  if (!branch) return Promise.resolve();
+  if (!branch) return;
 
-  return commitFiles(branch, message).then(
-    branchHasCommits => {
-      if (!branchHasCommits) {
-        return;
-      }
+  const branchHasCommits = await commitFiles(branch, message);
+  if (!branchHasCommits) {
+    return;
+  }
 
-      // eslint-disable-next-line promise/no-nesting
-      return pushFiles(branch, message, githubToken, repoSlug)
-        .then(() => createPullRequest(repoSlug, branch, base, message, githubToken))
-        .then(pullRequest =>
-          Promise.all([
-            documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
-            assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
-          ])
-        );
-    },
-    () => Promise.resolve()
-  );
+  try {
+    // eslint-disable-next-line promise/no-nesting
+    await pushFiles(branch, message, githubToken, repoSlug);
+    const pullRequest = await createPullRequest(repoSlug, branch, base, message, githubToken);
+    await Promise.all([
+      documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
+      assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
+    ]);
+  } catch (err) {
+    return;
+  }
 };
 
 module.exports = {
