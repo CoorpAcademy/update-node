@@ -14,7 +14,7 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
       Authorization: `token ${githubToken}`
     },
     qs: {
-      head,
+      head: `${repoSlug.split('/')[0]}:${head}`,
       base
     },
     json: true
@@ -117,7 +117,6 @@ const syncGithub = async (
   githubToken
 ) => {
   if (!branch) return {};
-
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
     return {commit: null, branch};
