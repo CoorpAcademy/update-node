@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 
@@ -19,7 +20,7 @@ const updateDockerfile = (node, dockerfile) => {
 
   return newDockerFileP
     .then(newDockerFile => writeFile(dockerfile, newDockerFile, 'utf8'))
-    .tap(() => process.stdout.write(`Write ${path.basename(dockerfile)}\n`));
+    .tap(() => process.stdout.write(`- Write ${c.dim.bold(path.basename(dockerfile))}\n`));
 };
 
 module.exports = updateDockerfile;

@@ -37,7 +37,7 @@ const updatePackageEngines = (node, npm, pkg, exact = false) => {
       const newPackage = JSON.stringify(obj, null, 2);
       return writeFile(pkg, `${newPackage}\n`, 'utf8');
     })
-    .tap(() => process.stdout.write(`Write ${path.basename(pkg)}\n`));
+    .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`));
 };
 
 const preservePrefix = (oldVersion, newVersion) => {
@@ -76,7 +76,7 @@ const updateLock = async packager => {
   const packageManager = packager || 'npm';
   if (!_.includes(packageManager, ['npm', 'yarn']))
     throw new Error(`Invalid Package Manager: ${packageManager}`);
-  process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)}\n`);
+  process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)}🔐 :\n`);
 
   await executeScript([
     packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts ',
