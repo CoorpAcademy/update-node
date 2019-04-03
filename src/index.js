@@ -69,7 +69,10 @@ const bumpDependencies = async (pkg, cluster) => {
   const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
   const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
   const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
-  if (_.isEmpty(allInstalledDependencies)) return {};
+  if (_.isEmpty(allInstalledDependencies)) {
+    process.stdout.write('+ No dependencies to update were found');
+    return {};
+  }
   process.stdout.write(
     `+ Successfully updated ${
       allInstalledDependencies.length
@@ -158,6 +161,7 @@ const main = async argv => {
   await _commitAndMakePullRequest(bumpCommitConfig);
   const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
     const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
+    if (!branchDetails.branch) return {};
     await updateLock(config.packageManager);
     const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
     return {branchDetails, pullRequest, branch, commit};
