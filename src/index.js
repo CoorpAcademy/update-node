@@ -100,8 +100,9 @@ const commitAndMakePullRequest = config => async ({branch, message}) => {
     },
     config.token
   );
-  process.stdout.write('- Successfulley handle pull request');
-  // TODO paste uri
+  if (!status.commit) process.stdout.write('+ Did not made a Pull request, nothing has changed\n');
+  else process.stdout.write('+ Successfulley handled pull request\n');
+  // TODO paste uri of PR
   return status;
 };
 

@@ -116,19 +116,20 @@ const syncGithub = async (
 
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
-    return;
+    return {commit: null};
   }
+  // TODO: retrieve commit id
 
   try {
-    // eslint-disable-next-line promise/no-nesting
     await pushFiles(branch, message, githubToken, repoSlug);
     const pullRequest = await createPullRequest(repoSlug, branch, base, message, githubToken);
     await Promise.all([
       documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
     ]);
+    return {commit: true, pullRequest};
   } catch (err) {
-    return;
+    return {commit: true, error: err};
   }
 };
 

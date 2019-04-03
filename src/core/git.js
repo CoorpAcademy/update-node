@@ -1,21 +1,22 @@
 const c = require('chalk');
 const executeScript = require('./script');
 
-const commitFiles = (branch, message) =>
-  executeScript([
-    branch && `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
-    // make it an option
-    'git add .',
-    `git commit -m "${message}" ${branch && ';exit_status=$?; git checkout -; exit $exit_status'}`
-  ])
-    .tap(() => {
-      process.stdout.write('+ Commit files\n');
-      return true;
-    })
-    .tapCatch(() => {
-      process.stderr.write('+ Nothing to commit\n');
-      return false;
-    });
+const commitFiles = async (branch, message) => {
+  try {
+    await executeScript([
+      branch &&
+        `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
+      // make it an option
+      'git add .',
+      `git commit -m "${message}" ${branch && ';exit_status=$?; git checkout -; exit $exit_status'}`
+    ]);
+    process.stdout.write('+ Commit files\n');
+    return true;
+  } catch (er) {
+    process.stderr.write('+ Nothing to commit\n');
+    return false;
+  }
+};
 
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
