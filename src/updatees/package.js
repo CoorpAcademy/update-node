@@ -43,10 +43,11 @@ const preservePrefix = (oldVersion, newVersion) => {
   if (oldVersion.startsWith(PATCH_PREFIX)) return PATCH_PREFIX + newVersion;
   return newVersion;
 };
-
+const trimPrefix = version => version.replace(PATCH_PREFIX, '').replace(MINOR_PREFIX, '');
 const __updateDependencies = (dev = false) => {
   const DEPENDENCY_KEY = dev ? 'devDependencies' : 'dependencies';
   return async (pkg, dependencies) => {
+    if (_.isEmpty(dependencies)) return [];
     const pkgObj = await readPackage(pkg);
     const [newPkgObj, installedPackages] = await Promise.reduce(
       dependencies,
@@ -55,7 +56,7 @@ const __updateDependencies = (dev = false) => {
         if (!currentVersion) return pkgAcc;
         const newVersion = await latestVersionForPackage(dependency);
         const newVersionWithPrefix = preservePrefix(currentVersion, newVersion);
-        if (semver.lt(newVersion, currentVersion)) return pkgAcc;
+        if (semver.lt(newVersion, trimPrefix(currentVersion))) return pkgAcc;
         return [
           _.set([DEPENDENCY_KEY, dependency], newVersionWithPrefix, pkgAcc[0]),
           [...pkgAcc[1], [dependency, currentVersion, newVersion]]

@@ -10,12 +10,10 @@ const findUp = require('find-up');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
-  readPackage,
   updateDependencies,
   updateDevDependencies,
   updatePackageEngines
 } = require('./updatees/package');
-const {install, installDev} = require('./updatees/yarn');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles} = require('./core/git');
 const {syncGithub} = require('./core/github');
@@ -68,16 +66,18 @@ const bumpDependencies = async (pkg, cluster) => {
   process.stdout.write(
     `+ Successfully updated ${allInstalledDependencies.length} dependencies of cluster ${
       cluster.name
-    }\n`
+    }\n: ${allInstalledDependencies
+      .map(
+        ([dep, oldVersion, newVersion]) =>
+          `- ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+      )
+      .join('\n')}`
   );
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
     message: `${cluster.message ||
       'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDependencies
-      .map(
-        ([dep, oldVersion, newVersion]) =>
-          `- ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
-      )
+      .map(([dep, oldVersion, newVersion]) => `- ${dep}: ${oldVersion} -> ${newVersion}`)
       .join('\n')}`
   };
 };
@@ -121,12 +121,12 @@ const main = async argv => {
 
   const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
   await _commitAndMakePullRequest({branch, message});
-  const pkg = await readPackage(extendedConfig.package);
   await Promise.mapSeries(
     clusters,
-    cluster => bumpDependencies(pkg, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
+    cluster => bumpDependencies(extendedConfig.package, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
   ).catch(err => {
     process.stdout.write(`${err}\n`);
+    process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
   process.stdout.write(c.bold.green('Update-node run with success\n'));
