@@ -103,14 +103,16 @@ const commitAndMakePullRequest = config => async ({branch, message}) => {
   if (!status.commit) process.stdout.write('+ Did not made a Pull request, nothing has changed\n');
   else if (status.pullRequest) {
     process.stdout.write(
-      `+ Successfully handled pull request ${c.bold.blue(
-        `(#${status.pullRequest.number})`
-      )}\n  - 📎 ${status.pullRequest.url}`
+      `+ Successfully handled pull request ${c.bold.blue(`(#${status.pullRequest.number})`)}
+  - 📎 ${c.bold.cyan(status.pullRequest.url)}
+  - 🔖 ${c.bold.dim(status.commit)}
+  - 🌳 ${c.bold.green(status.branch)}`
     );
   } else {
-    process.stdout.write('+ Some issue seems to have occured with publication of changes\n');
+    process.stdout.write(
+      `+ Some issue seems to have occured with publication of changes ${status.commit}\n`
+    );
   }
-  // TODO paste uri of PR
   return status;
 };
 

@@ -1,4 +1,5 @@
 const c = require('chalk');
+const shelljs = require('shelljs');
 const executeScript = require('./script');
 
 const commitFiles = async (branch, message) => {
@@ -18,6 +19,11 @@ const commitFiles = async (branch, message) => {
   }
 };
 
+const headCommit = () => {
+  const res = shelljs.exec('git rev-parse --short HEAD');
+  return res.stdout;
+}
+
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
@@ -27,5 +33,6 @@ const pushFiles = (branch, message, githubToken, repoSlug) =>
 
 module.exports = {
   commitFiles,
-  pushFiles
+  pushFiles,
+  headCommit
 };

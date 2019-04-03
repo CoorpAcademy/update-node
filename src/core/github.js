@@ -1,7 +1,7 @@
 const Request = require('request');
 const Promise = require('bluebird');
 const _ = require('lodash/fp');
-const {commitFiles, pushFiles} = require('./git');
+const {commitFiles, pushFiles, headCommit} = require('./git');
 
 const request = Promise.promisify(Request, {multiArgs: true});
 
@@ -116,10 +116,9 @@ const syncGithub = async (
 
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
-    return {commit: null};
+    return {commit: null, branch};
   }
-  // TODO: retrieve commit id
-
+  const commit = headCommit();
   try {
     await pushFiles(branch, message, githubToken, repoSlug);
     const pullRequest = await createPullRequest(repoSlug, branch, base, message, githubToken);
@@ -127,9 +126,9 @@ const syncGithub = async (
       documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
     ]);
-    return {commit: true, pullRequest};
+    return {commit, branch, pullRequest};
   } catch (err) {
-    return {commit: true, error: err};
+    return {commit, branch, error: err};
   }
 };
 
