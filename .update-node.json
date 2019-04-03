@@ -20,7 +20,7 @@
       "message": "Update core dependencies",
       "branch": "update-core",
       "dependencies": [
-        "bluebird",
+        "blue{bird,cat}",
         "js-yaml",
         "lodash",
         "minimist",
