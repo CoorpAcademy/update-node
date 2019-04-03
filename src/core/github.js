@@ -76,7 +76,7 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
     })
     .tap(() => process.stdout.write('  - 👥  Create assignations\n'));
 };
-const documentPullRequest = ({label, message}, pullRequest, githubToken) => {
+const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
 
   const {issue_url} = pullRequest;
@@ -95,12 +95,13 @@ const documentPullRequest = ({label, message}, pullRequest, githubToken) => {
     json: true,
     body: {
       labels,
-      body: message.replace(/[^\n]*[\n]/, '')
+      body,
+      title
     }
   })
-    .then(([response, body]) => {
+    .then(([response, responseBody]) => {
       if (response.statusCode === 200) return Promise.resolve();
-      return Promise.reject(new Error(_.get('message', body)));
+      return Promise.reject(new Error(_.get('message', responseBody)));
     })
     .tap(() => process.stdout.write('  - 🏷  Added label\n'));
 };
@@ -123,7 +124,7 @@ const syncGithub = async (
     await pushFiles(branch, message, githubToken, repoSlug);
     const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
     await Promise.all([
-      documentPullRequest({message, label}, pullRequest, githubToken), // TODO handle assignee!
+      documentPullRequest({label, body, title}, pullRequest, githubToken), // TODO handle assignee!
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
     ]);
     return {commit, branch, pullRequest};
