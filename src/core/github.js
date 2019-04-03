@@ -26,10 +26,7 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
     .get(0);
 };
 
-const createPullRequest = (repoSlug, head, base, message, githubToken) => {
-  const lines = _.split('\n', message);
-  const title = lines[0];
-  const bdy = _.pipe(_.slice(1), _.join('\n'))(lines);
+const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
   return request({
     uri: `https://api.github.com/repos/${repoSlug}/pulls`,
     method: 'POST',
@@ -44,13 +41,13 @@ const createPullRequest = (repoSlug, head, base, message, githubToken) => {
       head,
       base,
       maintainer_can_modify: true,
-      body: bdy
+      body
     }
   })
-    .then(([response, body]) => {
-      if (response.statusCode === 201) return Promise.resolve(body);
+    .then(([response, responseBody]) => {
+      if (response.statusCode === 201) return Promise.resolve(responseBody);
       if (response.statusCode === 422) return searchPullRequest(repoSlug, head, base, githubToken);
-      return Promise.reject(new Error(_.get('message', body)));
+      return Promise.reject(new Error(_.get('message', responseBody)));
     })
     .tap(() => process.stdout.write('  - 📬  Create/Update pull request\n'));
 };
@@ -113,7 +110,7 @@ const syncGithub = async (
   base,
   branch,
   message,
-  {team_reviewers = [], reviewers = [], label = ''} = {},
+  {body = '', title = message, team_reviewers = [], reviewers = [], label = ''} = {},
   githubToken
 ) => {
   if (!branch) return {};
@@ -124,9 +121,9 @@ const syncGithub = async (
   const commit = headCommit();
   try {
     await pushFiles(branch, message, githubToken, repoSlug);
-    const pullRequest = await createPullRequest(repoSlug, branch, base, message, githubToken);
+    const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
     await Promise.all([
-      documentPr({message, label}, pullRequest, githubToken), // TODO handle asignee
+      documentPr({message, label}, pullRequest, githubToken), // TODO handle assignee!
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
     ]);
     return {commit, branch, pullRequest};

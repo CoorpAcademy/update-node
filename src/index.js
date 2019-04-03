@@ -41,20 +41,24 @@ const resolveConfig = (config, configPath, argv) => {
   return base;
 };
 
-const bumpNodeVersion = (latestNode, config) => {
+const bumpNodeVersion = async (latestNode, config) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
-  return Promise.all([
+  await Promise.all([
     updateTravis(nodeVersion, config.node.travis),
     updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
     updateNvmrc(nodeVersion, config.node.nvmrc),
     updateDockerfile(nodeVersion, config.node.dockerfile)
-  ]).then(() => {
-    process.stdout.write(`Successfully bumped Node version to v${nodeVersion}\n`);
-    return {
-      branch: `update-node-v${nodeVersion}`,
-      message: `Upgrade Node to v${nodeVersion}`
-    };
-  });
+  ]);
+
+  process.stdout.write(`Successfully bumped Node version to v${nodeVersion}\n`);
+  return {
+    branch: `update-node-v${nodeVersion}`,
+    message: `Upgrade Node to v${nodeVersion}`,
+    pullRequest: {
+      title: `Upgrade Node to v${nodeVersion}`,
+      body: `:rocket: Upgraded Node version to v${nodeVersion}`
+    }
+  };
 };
 
 const bumpDependencies = async (pkg, cluster) => {
@@ -79,15 +83,23 @@ const bumpDependencies = async (pkg, cluster) => {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
     message: `${cluster.message ||
       'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
-      .map(
-        ([dep, oldVersion, newVersion]) =>
-          `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
-      )
-      .join('\n')}\n`
+      .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
+      .join('\n')}\n`,
+    pullRequest: {
+      title: cluster.message || 'Upgrade dependencies',
+      body: `### :outbox_tray: Upgraded dependencies:\n${allInstalledDependencies
+        .map(
+          ([dep, oldVersion, newVersion]) =>
+            `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
+        )
+        .join('\n')}\n`
+    }
   };
 };
 
-const commitAndMakePullRequest = config => async ({branch, message}) => {
+const commitAndMakePullRequest = config => async options => {
+  const {branch, message, pullRequest} = options;
+
   if (!config.baseBranch) return Promise.resolve();
   if (config.local) {
     return commitFiles(null, message);
@@ -98,6 +110,8 @@ const commitAndMakePullRequest = config => async ({branch, message}) => {
     branch,
     message,
     {
+      body: _.get('body', pullRequest),
+      title: _.get('title', pullRequest),
       label: config.label,
       reviewers: parseArgvToArray(config.reviewers),
       team_reviewers: parseArgvToArray(config.teamReviewers)
@@ -139,8 +153,8 @@ const main = async argv => {
   const RANGE = argv.node_range || '^8';
   const latestNode = await findLatest(RANGE);
 
-  const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
-  await _commitAndMakePullRequest({branch, message});
+  const bumpCommitConfig = await bumpNodeVersion(latestNode, extendedConfig);
+  await _commitAndMakePullRequest(bumpCommitConfig);
   await Promise.mapSeries(clusters, async cluster => {
     const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
     await updateLock(config.packageManager);
