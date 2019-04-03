@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const yaml = require('js-yaml');
@@ -19,7 +20,7 @@ const updateTravis = (node, travis) => {
   return newTravisYamlP
     .then(yaml.safeDump)
     .then(newTravisYaml => writeFile(travis, newTravisYaml, 'utf8'))
-    .tap(() => process.stdout.write(`Write ${path.basename(travis)}\n`));
+    .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(travis))}\n`));
 };
 
 module.exports = updateTravis;

@@ -42,6 +42,7 @@ const resolveConfig = (config, configPath, argv) => {
 };
 
 const bumpNodeVersion = async (latestNode, config) => {
+  process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
     updateTravis(nodeVersion, config.node.travis),
@@ -50,7 +51,7 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile)
   ]);
 
-  process.stdout.write(`Successfully bumped Node version to v${nodeVersion}\n`);
+  process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
   return {
     branch: `update-node-v${nodeVersion}`,
     message: `Upgrade Node to v${nodeVersion}`,
@@ -155,16 +156,26 @@ const main = async argv => {
 
   const bumpCommitConfig = await bumpNodeVersion(latestNode, extendedConfig);
   await _commitAndMakePullRequest(bumpCommitConfig);
-  await Promise.mapSeries(clusters, async cluster => {
+  const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
     const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
     await updateLock(config.packageManager);
-    await _commitAndMakePullRequest(branchDetails);
+    const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
+    return {branchDetails, pullRequest, branch, commit};
   }).catch(err => {
     process.stdout.write(`${err}\n`);
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
   process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
+  _.forEach(clusterDetail => {
+    if (clusterDetail.branch)
+      process.stdout.write(
+        `- ${c.bold.green(clusterDetail.branch)}: ${c.dim.bold(
+          clusterDetail.pullRequest.html_url
+        )}\n`
+      );
+  }, clusterDetails);
+  process.stdout.write('\n');
 };
 
 if (!module.parent) {

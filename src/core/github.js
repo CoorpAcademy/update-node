@@ -76,7 +76,7 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
     })
     .tap(() => process.stdout.write('  - 👥  Create assignations\n'));
 };
-const documentPr = ({label, message}, pullRequest, githubToken) => {
+const documentPullRequest = ({label, message}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
 
   const {issue_url} = pullRequest;
@@ -123,7 +123,7 @@ const syncGithub = async (
     await pushFiles(branch, message, githubToken, repoSlug);
     const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
     await Promise.all([
-      documentPr({message, label}, pullRequest, githubToken), // TODO handle assignee!
+      documentPullRequest({message, label}, pullRequest, githubToken), // TODO handle assignee!
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
     ]);
     return {commit, branch, pullRequest};
