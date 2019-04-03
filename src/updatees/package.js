@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const c = require('chalk');
+const minimatch = require('minimatch');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const semver = require('semver');
@@ -51,8 +52,19 @@ const __updateDependencies = (dev = false) => {
   return async (pkg, dependencies) => {
     if (_.isEmpty(dependencies)) return [];
     const pkgObj = await readPackage(pkg);
+
+    const matchingDependencies = _.flatMap(
+      dependency =>
+        dependency.match(/[*{},]/)
+          ? _.keys(_.get(DEPENDENCY_KEY, pkgObj)).filter(dependencyName =>
+              minimatch(dependencyName, dependency)
+            )
+          : dependency,
+      dependencies
+    );
+
     const [newPkgObj, installedPackages] = await Promise.reduce(
-      dependencies,
+      matchingDependencies,
       async (pkgAcc, dependency) => {
         const currentVersion = _.get([DEPENDENCY_KEY, dependency], pkgObj);
         if (!currentVersion) return pkgAcc;
