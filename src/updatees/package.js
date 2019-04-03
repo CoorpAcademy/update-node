@@ -2,7 +2,8 @@ const path = require('path');
 const fs = require('fs');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
-const {EXACT_PREFIX, MINOR_PREFIX} = require('../core/versions');
+const semver = require('semver');
+const {EXACT_PREFIX, MINOR_PREFIX, latestVersionForPackage} = require('../core/versions');
 
 const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
@@ -11,8 +12,8 @@ const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);
 };
 
-const updatePackage = (node, npm, pkg, exact = false) => {
-  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackage(node, npm, p, exact));
+const updatePackageEngines = (node, npm, pkg, exact = false) => {
+  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackageEngines(node, npm, p, exact));
 
   if (!pkg) return Promise.resolve();
 
@@ -32,7 +33,34 @@ const updatePackage = (node, npm, pkg, exact = false) => {
     .tap(() => process.stdout.write(`Write ${path.basename(pkg)}\n`));
 };
 
+const __updateDependencies = (dev = false) => {
+  const DEPENDENCY_KEY = dev ? 'devDependencies' : 'dependencies';
+  return async (pkg, dependencies) => {
+    const pkgObj = await readPackage(pkg);
+    const [newPkgObj, installedPackages] = await Promise.reduce(
+      dependencies,
+      async (pkgAcc, dependency) => {
+        const currentVersion = _.get([DEPENDENCY_KEY, dependency], pkgObj);
+        if (!currentVersion) return pkgAcc;
+        const newVersion = await latestVersionForPackage(dependency);
+        if (semver.lt(newVersion, currentVersion)) return pkgAcc;
+        return [
+          _.set([DEPENDENCY_KEY, dependency], newVersion, pkgAcc[0]),
+          [...pkgAcc[1], [dependency, currentVersion, newVersion]]
+        ];
+      },
+      [pkgObj, []]
+    );
+
+    await writeFile(pkg, `${JSON.stringify(newPkgObj, null, 2)}\n`, 'utf-8');
+    return installedPackages;
+  };
+};
+
 module.exports = {
   readPackage,
-  updatePackage
+  updatePackageEngines,
+  __updateDependencies,
+  updateDependencies: __updateDependencies(),
+  updateDevDependencies: __updateDependencies(true)
 };

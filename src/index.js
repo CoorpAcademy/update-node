@@ -9,7 +9,12 @@ const Promise = require('bluebird');
 const findUp = require('find-up');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
-const {readPackage, updatePackage} = require('./updatees/package');
+const {
+  readPackage,
+  updateDependencies,
+  updateDevDependencies,
+  updatePackageEngines
+} = require('./updatees/package');
 const {install, installDev} = require('./updatees/yarn');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles} = require('./core/git');
@@ -41,7 +46,7 @@ const bumpNodeVersion = (latestNode, config) => {
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   return Promise.all([
     updateTravis(nodeVersion, config.node.travis),
-    updatePackage(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
+    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
     updateNvmrc(nodeVersion, config.node.nvmrc),
     updateDockerfile(nodeVersion, config.node.dockerfile)
   ]).then(() => {
@@ -53,29 +58,28 @@ const bumpNodeVersion = (latestNode, config) => {
   });
 };
 
-const bumpDependencies = (pkg, cluster) => {
+const bumpDependencies = async (pkg, cluster) => {
   process.stdout.write(
     c.bold.blue(`\nAbout to bump depencies cluster ${c.bold.white(cluster.name)}\n`)
   );
-  return install(pkg, cluster.dependencies)
-    .then(installedDeps =>
-      // eslint-disable-next-line promise/no-nesting
-      installDev(pkg, cluster.devDependencies).then(installedDevDeps =>
-        installedDeps.concat(installedDevDeps)
+  const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
+  const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
+  const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
+  process.stdout.write(
+    `+ Successfully updated ${allInstalledDependencies.length} dependencies of cluster ${
+      cluster.name
+    }\n`
+  );
+  return {
+    branch: cluster.branch || `update-dependencies-${cluster.name}`,
+    message: `${cluster.message ||
+      'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDependencies
+      .map(
+        ([dep, oldVersion, newVersion]) =>
+          `- ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
       )
-    )
-    .then(allInstalledDeps => {
-      process.stdout.write(
-        `+ Successfully updated ${allInstalledDeps.length} dependencies of cluster ${
-          cluster.name
-        }\n`
-      );
-      return {
-        branch: cluster.branch || `update-dependencies-${cluster.name}`,
-        message: `${cluster.message ||
-          'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDeps.join('\n- ')}`
-      };
-    });
+      .join('\n')}`
+  };
 };
 
 const commitAndMakePullRequest = config => ({branch, message}) => {
