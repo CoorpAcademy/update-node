@@ -2,7 +2,7 @@
 
 const c = require('chalk');
 const _ = require('lodash/fp');
-const minimist = require('minimist');
+const yargs = require('yargs');
 const Promise = require('bluebird');
 const findUp = require('find-up');
 const {readConfig, resolveConfig} = require('./core/config');
@@ -163,7 +163,18 @@ const main = async argv => {
 };
 
 if (!module.parent) {
-  const argv = minimist(process.argv);
+  const argv = yargs
+    .option('local', {
+      describe: 'Run in local mode with github publication',
+      boolean: true,
+      alias: 'l'
+    })
+    .option('token', {
+      describe: 'Token to authentificate to github',
+      string: true,
+      alias: 't'
+    })
+    .parse(process.argv);
   main(argv).catch(err => {
     console.error(err);
     process.exit(2);
