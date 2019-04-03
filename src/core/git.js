@@ -9,7 +9,9 @@ const commitFiles = async (branch, message) => {
         `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
       // make it an option
       'git add .',
-      `git commit -m "${message}" ${branch && ';exit_status=$?; git checkout -; exit $exit_status'}`
+      `git commit -m "${message}"${
+        branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''
+      }`
     ]);
     process.stdout.write('+ Commit files 💾\n');
     return true;
