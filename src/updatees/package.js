@@ -3,7 +3,12 @@ const fs = require('fs');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const semver = require('semver');
-const {EXACT_PREFIX, MINOR_PREFIX, latestVersionForPackage} = require('../core/versions');
+const {
+  EXACT_PREFIX,
+  PATCH_PREFIX,
+  MINOR_PREFIX,
+  latestVersionForPackage
+} = require('../core/versions');
 
 const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
@@ -33,6 +38,12 @@ const updatePackageEngines = (node, npm, pkg, exact = false) => {
     .tap(() => process.stdout.write(`Write ${path.basename(pkg)}\n`));
 };
 
+const preservePrefix = (oldVersion, newVersion) => {
+  if (oldVersion.startsWith(MINOR_PREFIX)) return MINOR_PREFIX + newVersion;
+  if (oldVersion.startsWith(PATCH_PREFIX)) return PATCH_PREFIX + newVersion;
+  return newVersion;
+};
+
 const __updateDependencies = (dev = false) => {
   const DEPENDENCY_KEY = dev ? 'devDependencies' : 'dependencies';
   return async (pkg, dependencies) => {
@@ -43,9 +54,10 @@ const __updateDependencies = (dev = false) => {
         const currentVersion = _.get([DEPENDENCY_KEY, dependency], pkgObj);
         if (!currentVersion) return pkgAcc;
         const newVersion = await latestVersionForPackage(dependency);
+        const newVersionWithPrefix = preservePrefix(currentVersion, newVersion);
         if (semver.lt(newVersion, currentVersion)) return pkgAcc;
         return [
-          _.set([DEPENDENCY_KEY, dependency], newVersion, pkgAcc[0]),
+          _.set([DEPENDENCY_KEY, dependency], newVersionWithPrefix, pkgAcc[0]),
           [...pkgAcc[1], [dependency, currentVersion, newVersion]]
         ];
       },
