@@ -9,6 +9,7 @@ const {
   MINOR_PREFIX,
   latestVersionForPackage
 } = require('../core/versions');
+const executeScript = require('../core/script');
 
 const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
@@ -70,10 +71,22 @@ const __updateDependencies = (dev = false) => {
   };
 };
 
+const updateLock = async packager => {
+  const packageManager = packager || 'npm';
+  if (!_.includes(packageManager, ['npm', 'yarn']))
+    throw new Error(`Invalid Package Manager: ${packageManager}`);
+
+  await executeScript([
+    packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts ',
+    'echo "Updated Locks"'
+  ]);
+};
+
 module.exports = {
   readPackage,
   updatePackageEngines,
   __updateDependencies,
   updateDependencies: __updateDependencies(),
-  updateDevDependencies: __updateDependencies(true)
+  updateDevDependencies: __updateDependencies(true),
+  updateLock
 };

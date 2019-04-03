@@ -10,6 +10,7 @@ const findUp = require('find-up');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
+  updateLock,
   updateDependencies,
   updateDevDependencies,
   updatePackageEngines
@@ -66,19 +67,19 @@ const bumpDependencies = async (pkg, cluster) => {
   process.stdout.write(
     `+ Successfully updated ${allInstalledDependencies.length} dependencies of cluster ${
       cluster.name
-    }\n: ${allInstalledDependencies
+    }:\n${allInstalledDependencies
       .map(
         ([dep, oldVersion, newVersion]) =>
           `- ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
       )
-      .join('\n')}`
+      .join('\n')}\n`
   );
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
     message: `${cluster.message ||
-      'Upgrade dependencies'}\n\nUpgraded dependencies:\n- ${allInstalledDependencies
+      'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
       .map(([dep, oldVersion, newVersion]) => `- ${dep}: ${oldVersion} -> ${newVersion}`)
-      .join('\n')}`
+      .join('\n')}\n`
   };
 };
 
@@ -121,10 +122,11 @@ const main = async argv => {
 
   const {branch, message} = await bumpNodeVersion(latestNode, extendedConfig);
   await _commitAndMakePullRequest({branch, message});
-  await Promise.mapSeries(
-    clusters,
-    cluster => bumpDependencies(extendedConfig.package, cluster).then(_commitAndMakePullRequest) // eslint-disable-line promise/no-nesting
-  ).catch(err => {
+  await Promise.mapSeries(clusters, async cluster => {
+    const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
+    await updateLock(config.packageManager);
+    await _commitAndMakePullRequest(branchDetails);
+  }).catch(err => {
     process.stdout.write(`${err}\n`);
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);

@@ -1,6 +1,7 @@
 {
   "repoSlug": "Coorpacademy/update-node",
   "baseBranch": "master",
+  "packageManager": "yarn",
   "reviewers": [],
   "teamReviewers": [
     "development-mooc"
