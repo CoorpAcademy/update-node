@@ -2,9 +2,9 @@
   "repoSlug": "Coorpacademy/update-node",
   "baseBranch": "master",
   "packageManager": "yarn",
-  "reviewers": ["env:GIT_ME"],
+  "reviewers": [],
   "teamReviewers": [
-    "development-mooc"
+    "env:TEAM_REVIEWERS"
   ],
   "label": "Upgrades :outbox_tray:",
   "node": {
