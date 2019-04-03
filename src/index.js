@@ -59,15 +59,16 @@ const bumpNodeVersion = (latestNode, config) => {
 
 const bumpDependencies = async (pkg, cluster) => {
   process.stdout.write(
-    c.bold.blue(`\nAbout to bump depencies cluster ${c.bold.white(cluster.name)}\n`)
+    c.bold.blue(`\n\n⬆️  About to bump depencies cluster ${c.bold.white(cluster.name)}:\n`)
   );
   const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
   const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
   const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
+  if (_.isEmpty(allInstalledDependencies)) return {};
   process.stdout.write(
-    `+ Successfully updated ${allInstalledDependencies.length} dependencies of cluster ${
-      cluster.name
-    }:\n${allInstalledDependencies
+    `+ Successfully updated ${
+      allInstalledDependencies.length
+    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${allInstalledDependencies
       .map(
         ([dep, oldVersion, newVersion]) =>
           `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
@@ -78,7 +79,10 @@ const bumpDependencies = async (pkg, cluster) => {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
     message: `${cluster.message ||
       'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
-      .map(([dep, oldVersion, newVersion]) => `- ${dep}: ${oldVersion} -> ${newVersion}`)
+      .map(
+        ([dep, oldVersion, newVersion]) =>
+          `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
+      )
       .join('\n')}\n`
   };
 };
@@ -100,13 +104,14 @@ const commitAndMakePullRequest = config => async ({branch, message}) => {
     },
     config.token
   );
-  if (!status.commit) process.stdout.write('+ Did not made a Pull request, nothing has changed\n');
+  if (!status.commit)
+    process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');
   else if (status.pullRequest) {
     process.stdout.write(
       `+ Successfully handled pull request ${c.bold.blue(`(#${status.pullRequest.number})`)}
-  - 📎 ${c.bold.cyan(status.pullRequest.url)}
-  - 🔖 ${c.bold.dim(status.commit)}
-  - 🌳 ${c.bold.green(status.branch)}`
+  - 📎  ${c.bold.cyan(status.pullRequest.html_url)}
+  - 🔖  ${c.bold.dim(status.commit)}
+  - 🌳  ${c.bold.green(status.branch)}\n`
     );
   } else {
     process.stdout.write(

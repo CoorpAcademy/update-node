@@ -52,7 +52,7 @@ const createPullRequest = (repoSlug, head, base, message, githubToken) => {
       if (response.statusCode === 422) return searchPullRequest(repoSlug, head, base, githubToken);
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('  - Create pull request\n'));
+    .tap(() => process.stdout.write('  - 📬  Create/Update pull request\n'));
 };
 
 const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest, githubToken) => {
@@ -77,7 +77,7 @@ const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest
       if (response.statusCode === 201) return Promise.resolve();
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('  - Create assignations\n'));
+    .tap(() => process.stdout.write('  - 👥  Create assignations\n'));
 };
 const documentPr = ({label, message}, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
@@ -101,7 +101,7 @@ const documentPr = ({label, message}, pullRequest, githubToken) => {
       if (response.statusCode === 200) return Promise.resolve();
       return Promise.reject(new Error(_.get('message', body)));
     })
-    .tap(() => process.stdout.write('  - Added label\n'));
+    .tap(() => process.stdout.write('  - 🏷  Added label\n'));
 };
 
 const syncGithub = async (
@@ -112,7 +112,7 @@ const syncGithub = async (
   {team_reviewers = [], reviewers = [], label = ''} = {},
   githubToken
 ) => {
-  if (!branch) return;
+  if (!branch) return {};
 
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
