@@ -1,8 +1,12 @@
 {
   "name": "@coorpacademy/update-node",
-  "version": "1.2.0",
-  "description": "",
+  "version": "2.0.0-alpha.0",
+  "description": "Update your node dependencies while you sleep",
   "main": "index.js",
+  "engines": {
+    "node": "^8.15.1",
+    "npm": "^6.4.1"
+  },
   "files": [
     "src",
     "packages.json",
@@ -12,20 +16,37 @@
     "update-node": "./src/index.js"
   },
   "scripts": {
-    "test": "exit 0"
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "ava",
+    "lint": "eslint src/ *.json --ext .js,.json",
+    "lint:fix": "npm run lint -- --fix",
+    "start": "node ./src/index.js",
+    "update": "node src"
   },
-  "author": "",
+  "author": "Coorpacademy Tech Team",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "3.5.3",
-    "js-yaml": "3.12.1",
+    "bluebird": "3.5.1",
+    "chalk": "^2.4.2",
+    "find-up": "^3.0.0",
+    "js-yaml": "3.13.0",
     "lodash": "4.17.11",
-    "minimist": "1.2.0",
+    "minimatch": "^3.0.4",
+    "pad-stream": "^2.0.0",
+    "pump": "^3.0.0",
+    "pumpify": "^1.5.1",
     "request": "2.88.0",
-    "shelljs": "0.8.3"
+    "semver": "^5.4.1",
+    "shelljs": "0.8.3",
+    "shortstop": "^1.0.3",
+    "shortstop-handlers": "^1.0.1",
+    "split2": "^3.1.1",
+    "through2": "^3.0.1",
+    "yargs": "^13.2.2"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "8.1.1",
-    "eslint": "5.13.0"
+    "@coorpacademy/eslint-plugin-coorpacademy": "8.3.0",
+    "ava": "^1.4.1",
+    "eslint": "5.16.0"
   }
 }

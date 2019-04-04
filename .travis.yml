@@ -1,17 +1,12 @@
 language: node_js
 node_js:
-  - 8.15.0
-  - 6
+  - 8.15.1
 cache: yarn
 deploy:
   - provider: script
     skip_cleanup: true
     script: >-
-      node ./src/index.js --travis ./.travis.yml --repo_slug $TRAVIS_REPO_SLUG
-      --team_reviewers $TEAM_REVIEWERS --branch "upgrade-nodejs" --base master
-      --github_token $GH_TOKEN --dependencies
-      "bluebird,js-yaml,lodash,minimist,request,shelljs" --dev_dependencies
-      "@coorpacademy/eslint-plugin-coorpacademy,eslint"
+      node ./src/index.js --token $GH_TOKEN
     'on':
       branch: master
   - provider: npm
@@ -21,12 +16,3 @@ deploy:
     api_key:
       secure: >-
         ErM2I7ZSb951LSBnWSORQkNRz2IekWDNI5cK4YliYN1F2sNM9GM2JCfr2NMjkhBY1UvAvHkwg0PLtqztf2jyWIGTFKkl4THuvg43T4Nc04syanqsULHQbKtKJblyxCJKzC9yuI4nR0CHqYr3LzGknxNFESxmttndK85I0IIAOe9p2e0rzPjNTgnO5tHBLjeiJf9KF2vbf0a4N+wvixzJFUSqEeSa9D8uK8uUcw8XvxzXmJZdBOCwaQ7QgvRAkyj4RIMcbxR88JmFbLU6U5/24b01lJ0u7cXYQQQDej3qhC/9S76Dj8SNe3vToG2sCEsrD5uoQpR3UbSydUNRlmxlt6fe3T+X4noHUa/3vWuApCCggn36T2fuwhwqjl3s8LNp/eCzLqGX7GIwK4VcOXAmvmmgBtW9e0Y3VLi7sdF8ePnsULCTUqRE/nQubVfvkp8JpMv3XcObo3/xUhrCuubPr75eLvG0Rdu3z+N1dnQvTgsSTTh0qpSFgCRawrfPdptItGAhSsxtfHv+GpE+5dN9uZUmYAKJKjJcYFcXeruZwYsOapSp0xwYlXvqxz9JfQ8TKMgV5HMWVrI6559fVO63eJL2uk3WRJtlNZxf3EvQvwhsP5jsE/R0mdh9VTFSnbrh3QAVMLgfgyAxObxjtPLgxHjCzUQZ2dmCiysMrHw75d0=
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
-env:
-  global:
-    - CXX=g++-4.8

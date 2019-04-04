@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 
@@ -10,9 +11,8 @@ const updateNvmrc = (node, nvmrc) => {
 
   if (!nvmrc || !node) return Promise.resolve();
 
-  const nvmrcPath = path.join(process.cwd(), nvmrc);
-  return writeFile(nvmrcPath, `v${node}\n`, 'utf8').tap(() =>
-    process.stdout.write(`Write ${nvmrc}\n`)
+  return writeFile(nvmrc, `v${node}\n`, 'utf8').tap(() =>
+    process.stdout.write(`- Write ${c.bold.dim(path.basename(nvmrc))}\n`)
   );
 };
 

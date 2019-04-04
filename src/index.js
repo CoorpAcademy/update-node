@@ -1,108 +1,193 @@
 #! /usr/bin/env node
 
-const Request = require('request');
+const c = require('chalk');
 const _ = require('lodash/fp');
-const minimist = require('minimist');
+const yargs = require('yargs');
 const Promise = require('bluebird');
-
-const updateTravis = require('./travis');
-const updatePackage = require('./package');
-const updateNvmrc = require('./nvmrc');
-const updateDockerfile = require('./dockerfile');
-const {commitFiles, pushFiles} = require('./git');
-const {createPullRequest, assignReviewers} = require('./github');
-const {install, installDev} = require('./yarn');
-
-const request = Promise.promisify(Request, {multiArgs: true});
+const findUp = require('find-up');
+const {readConfig, resolveConfig} = require('./core/config');
+const updateNvmrc = require('./updatees/nvmrc');
+const updateTravis = require('./updatees/travis');
+const {
+  updateLock,
+  updateDependencies,
+  updateDevDependencies,
+  updatePackageEngines
+} = require('./updatees/package');
+const updateDockerfile = require('./updatees/dockerfile');
+const {commitFiles} = require('./core/git');
+const {syncGithub} = require('./core/github');
+const {findLatest} = require('./core/node');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
-const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
+const bumpNodeVersion = async (latestNode, config) => {
+  process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
+  const nodeVersion = _.trimCharsStart('v', latestNode.version);
+  await Promise.all([
+    updateTravis(nodeVersion, config.node.travis),
+    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
+    updateNvmrc(nodeVersion, config.node.nvmrc),
+    updateDockerfile(nodeVersion, config.node.dockerfile)
+  ]);
 
-const versionsP = request({uri: NODE_VERSIONS, json: true}).then(([response, body]) => {
-  if (response.statusCode !== 200) throw new Error("nodejs.org isn't available");
-  return body;
-});
-
-const DOCKER_TAGS = version =>
-  `https://hub.docker.com/v2/repositories/library/node/tags/${_.trimCharsStart('v')(version)}/`;
-
-const availableOnDockerHub = ({version, npm}) =>
-  request({uri: DOCKER_TAGS(version), json: true}).then(([response, body]) => {
-    if (response.statusCode !== 200) throw new Error(`Node's image ${version} isn't available`);
-    return body;
-  });
-
-const versionP = versionsP
-  .then(_.find(_.pipe(_.get('version'), _.startsWith('v8.'))))
-  .tap(availableOnDockerHub);
-
-const nodeP = versionP.get('version').then(_.trimCharsStart('v'));
-const npmP = versionP.get('npm');
-
-const syncGithub = (
-  repoSlug,
-  head,
-  base,
-  message = 'Upgrade NodeJS',
-  {team_reviewers = [], reviewers = []} = {},
-  githubToken
-) => {
-  if (!head) return Promise.resolve();
-
-  return commitFiles(message).then(
-    () =>
-      // eslint-disable-next-line promise/no-nesting
-      pushFiles(head, message, githubToken, repoSlug)
-        .then(() => createPullRequest(repoSlug, head, base, message, githubToken))
-        .then(pullRequest =>
-          assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken)
-        ),
-    () => Promise.resolve()
-  );
+  process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
+  return {
+    branch: `update-node-v${nodeVersion}`,
+    message: `Upgrade Node to v${nodeVersion}`,
+    pullRequest: {
+      title: `Upgrade Node to v${nodeVersion}`,
+      body: `:rocket: Upgraded Node version to v${nodeVersion}`
+    }
+  };
 };
 
-const updateNodeNpm = (nodeP, npmP, argv) =>
-  Promise.all([nodeP, npmP])
-    .catch(err => Promise.resolve([null, null]))
-    .then(([node, npm]) => {
-      if (!node || !npm) return null;
-      return Promise.all([
-        updateTravis(node, parseArgvToArray(argv.travis)),
-        updatePackage(node, npm, parseArgvToArray(argv.package), !!argv.exact),
-        updateNvmrc(node, parseArgvToArray(argv.nvmrc)),
-        updateDockerfile(node, parseArgvToArray(argv.dockerfile))
-      ]);
-    });
+const bumpDependencies = async (pkg, cluster) => {
+  process.stdout.write(
+    c.bold.blue(`\n\n⬆️  About to bump depencies cluster ${c.bold.white(cluster.name)}:\n`)
+  );
+  const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
+  const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
+  const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
+  if (_.isEmpty(allInstalledDependencies)) {
+    process.stdout.write('+ No dependencies to update were found');
+    return {};
+  }
+  process.stdout.write(
+    `+ Successfully updated ${
+      allInstalledDependencies.length
+    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${allInstalledDependencies
+      .map(
+        ([dep, oldVersion, newVersion]) =>
+          `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+      )
+      .join('\n')}\n`
+  );
+  return {
+    branch: cluster.branch || `update-dependencies-${cluster.name}`,
+    message: `${cluster.message ||
+      'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
+      .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
+      .join('\n')}\n`,
+    pullRequest: {
+      title: cluster.message || 'Upgrade dependencies',
+      body: `### :outbox_tray: Upgraded dependencies:\n${allInstalledDependencies
+        .map(
+          ([dep, oldVersion, newVersion]) =>
+            `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
+        )
+        .join('\n')}\n`
+    }
+  };
+};
+
+const commitAndMakePullRequest = config => async options => {
+  const {branch, message, pullRequest} = options;
+
+  if (!config.baseBranch) return Promise.resolve();
+  if (config.local) {
+    return commitFiles(null, message);
+  }
+  const status = await syncGithub(
+    config.repoSlug,
+    config.baseBranch,
+    branch,
+    message,
+    {
+      body: _.get('body', pullRequest),
+      title: _.get('title', pullRequest),
+      label: config.label,
+      reviewers: parseArgvToArray(config.reviewers),
+      team_reviewers: parseArgvToArray(config.teamReviewers)
+    },
+    config.token
+  );
+  if (!status.commit)
+    process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');
+  else if (status.pullRequest) {
+    process.stdout.write(
+      `+ Successfully handled pull request ${c.bold.blue(`(#${status.pullRequest.number})`)}
+  - 📎  ${c.bold.cyan(status.pullRequest.html_url)}
+  - 🔖  ${c.bold.dim(status.commit)}
+  - 🌳  ${c.bold.green(status.branch)}\n`
+    );
+  } else {
+    process.stdout.write(
+      `+ Some issue seems to have occured with publication of changes ${status.commit}\n`
+    );
+  }
+  return status;
+};
+
+const main = async argv => {
+  /* eslint-disable no-console */
+  // FIXME drop for yargs
+  const configPath = argv.config || findUp.sync('.update-node.json');
+  if (!configPath) {
+    console.error('No .update-node.json was found, neither a --config was given');
+    process.exit(12);
+  }
+  const config = readConfig(configPath);
+  // FIXME perform schema validation
+  const extendedConfig = await resolveConfig(config, configPath, argv);
+
+  const _commitAndMakePullRequest = commitAndMakePullRequest(extendedConfig);
+  const clusters = extendedConfig.dependencies;
+
+  const RANGE = argv.node_range || '^8';
+  const latestNode = await findLatest(RANGE);
+
+  const bumpCommitConfig = await bumpNodeVersion(latestNode, extendedConfig);
+  await _commitAndMakePullRequest(bumpCommitConfig);
+  const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
+    const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
+    if (!branchDetails.branch) return {};
+    await updateLock(config.packageManager);
+    const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
+    return {branchDetails, pullRequest, branch, commit};
+  }).catch(err => {
+    process.stdout.write(`${err}\n`);
+    process.stdout.write(`${err.stack}\n`);
+    return process.exit(1);
+  });
+  process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
+  _.forEach(clusterDetail => {
+    if (clusterDetail.branch)
+      process.stdout.write(
+        `- ${c.bold.green(clusterDetail.branch)}: ${c.dim.bold(
+          clusterDetail.pullRequest.html_url
+        )}\n`
+      );
+  }, clusterDetails);
+  process.stdout.write('\n');
+};
 
 if (!module.parent) {
-  const argv = minimist(process.argv);
-
-  Promise.all([
-    updateNodeNpm(nodeP, npmP, argv),
-    install(parseArgvToArray(argv.dependencies)).then(() =>
-      installDev(parseArgvToArray(argv.dev_dependencies))
-    )
-  ])
-    .then(() => {
-      process.stdout.write('Success\n');
-
-      if (!argv.branch || !argv.base) return Promise.resolve();
-      // eslint-disable-next-line promise/no-nesting
-      return syncGithub(
-        argv.repo_slug,
-        argv.branch,
-        argv.base,
-        argv.message,
-        {
-          reviewers: parseArgvToArray(argv.reviewers),
-          team_reviewers: parseArgvToArray(argv.team_reviewers)
-        },
-        argv.github_token
-      );
+  const argv = yargs
+    .option('local', {
+      describe: 'Run in local mode with github publication',
+      boolean: true,
+      alias: 'l'
     })
-    .catch(err => {
-      process.stdout.write(`${err.stack}\n`);
-      return process.exit(1); // eslint-disable-line unicorn/no-process-exit
-    });
+    .option('token', {
+      describe: 'Token to authentificate to github',
+      string: true,
+      alias: 't'
+    })
+    .option('config', {
+      describe: 'Override update-node configuration default path',
+      string: true,
+      alias: 'c'
+    })
+    .parse(process.argv);
+
+  if (!argv.local && !argv.token) {
+    process.stdout.write(c.red.bold('Could not run without either options --token or --local'));
+    process.stdout.write('Update-Node behavior was changed starting from 2.0');
+    process.exit(22);
+  }
+  main(argv).catch(err => {
+    console.error(err);
+    process.exit(2);
+  });
 }

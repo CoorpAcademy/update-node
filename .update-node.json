@@ -1,0 +1,50 @@
+{
+  "repoSlug": "Coorpacademy/update-node",
+  "baseBranch": "master",
+  "packageManager": "yarn",
+  "reviewers": [],
+  "teamReviewers": [
+    "env:TEAM_REVIEWERS"
+  ],
+  "label": "Upgrades :outbox_tray:",
+  "node": {
+    "branch": "upgrade-node",
+    "nvmrc": true,
+    "dockerfile": false,
+    "travis": true,
+    "package": true
+  },
+  "dependencies": [
+    {
+      "name": "core",
+      "message": "Update core dependencies",
+      "branch": "update-core",
+      "dependencies": [
+        "bluebird",
+        "js-yaml",
+        "lodash",
+        "minimist",
+        "request",
+        "shelljs"
+      ]
+    },
+    {
+      "name": "testing-tools",
+      "message": "Update Testing dependencies",
+      "devDependencies": [
+        "ava",
+        "istanbul",
+        "mocha",
+        "nyc"
+      ]
+    },
+    {
+      "name": "eslint",
+      "message": "Update eslint",
+      "devDependencies": [
+        "eslint",
+        "@coorpacademy/eslint-plugin-coorpacademy"
+      ]
+    }
+  ]
+}
