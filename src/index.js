@@ -59,7 +59,7 @@ const main = async argv => {
   }
   if (!cmd && argv.auto) {
     cmd = await selectCommand();
-    process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
+    if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
   const mainCommand = COMMANDS[cmd] || COMMANDS.default;
 

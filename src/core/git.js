@@ -34,6 +34,10 @@ const headBranch = () => {
   const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
   return res.stdout.trim();
 };
+const headClean = () => {
+  const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
+  return res.stdout.match(/nothing to commit, working tree clean/);
+};
 
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
@@ -47,5 +51,6 @@ module.exports = {
   pushFiles,
   headCommit,
   headBranch,
-  headMessage
+  headMessage,
+  headClean
 };
