@@ -26,6 +26,15 @@ const headCommit = () => {
   return res.stdout.trim();
 };
 
+const headMessage = () => {
+  const res = shelljs.exec('git log -1 --pretty=%B', {silent: true});
+  return res.stdout.trim();
+};
+const headBranch = () => {
+  const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
+  return res.stdout.trim();
+};
+
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
@@ -36,5 +45,7 @@ const pushFiles = (branch, message, githubToken, repoSlug) =>
 module.exports = {
   commitFiles,
   pushFiles,
-  headCommit
+  headCommit,
+  headBranch,
+  headMessage
 };
