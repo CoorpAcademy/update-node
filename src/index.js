@@ -2,8 +2,10 @@
 
 const Promise = require('bluebird');
 const c = require('chalk');
+const findUp = require('find-up');
 const bumpDependencies = require('./bump-dependencies');
-const {UPGRADE, BUMP, selectCommand} = require('./commands')
+const {UPGRADE, BUMP, selectCommand} = require('./commands');
+const {readConfig, resolveConfig} = require('./core/config');
 
 let cmd;
 const setCommand = _cmd => () => {
@@ -62,8 +64,16 @@ const main = async argv => {
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
   const mainCommand = COMMANDS[cmd] || COMMANDS.default;
+  const configPath = argv.config || findUp.sync('.update-node.json');
+  if (!configPath) {
+    process.stderr.write('No .update-node.json was found, neither a --config was given\n');
+    process.exit(12);
+  }
+  const config = readConfig(configPath);
+  // FIXME perform schema validation
+  const extendedConfig = await resolveConfig(config, configPath, argv);
 
-  await mainCommand(argv);
+  await mainCommand(extendedConfig);
 };
 
 if (!module.parent) {

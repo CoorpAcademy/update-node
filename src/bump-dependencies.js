@@ -3,8 +3,6 @@
 const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
-const findUp = require('find-up');
-const {readConfig, resolveConfig} = require('./core/config');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
@@ -118,28 +116,17 @@ const commitAndMakePullRequest = config => async options => {
   return status;
 };
 
-module.exports = async argv => {
-  /* eslint-disable no-console */
-  // FIXME drop for yargs
-  const configPath = argv.config || findUp.sync('.update-node.json');
-  if (!configPath) {
-    console.error('No .update-node.json was found, neither a --config was given');
-    process.exit(12);
-  }
-  const config = readConfig(configPath);
-  // FIXME perform schema validation
-  const extendedConfig = await resolveConfig(config, configPath, argv);
+module.exports = async config => {
+  const _commitAndMakePullRequest = commitAndMakePullRequest(config);
+  const clusters = config.dependencies;
 
-  const _commitAndMakePullRequest = commitAndMakePullRequest(extendedConfig);
-  const clusters = extendedConfig.dependencies;
-
-  const RANGE = argv.node_range || '^8';
+  const RANGE = config.node_range || '^8';
   const latestNode = await findLatest(RANGE);
 
-  const bumpCommitConfig = await bumpNodeVersion(latestNode, extendedConfig);
+  const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
   await _commitAndMakePullRequest(bumpCommitConfig);
   const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
-    const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
+    const branchDetails = await bumpDependencies(config.package, cluster);
     if (!branchDetails.branch) return {};
     await updateLock(config.packageManager);
     const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
