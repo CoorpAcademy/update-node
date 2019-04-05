@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const shortstop = require('shortstop');
 const handlers = require('shortstop-handlers');
+const findUp = require('find-up');
 
 const resolver = shortstop.create();
 resolver.use('env', handlers.env());
@@ -35,4 +36,14 @@ const resolveConfig = async (config, configPath, argv) => {
   return base;
 };
 
-module.exports = {resolveConfig, readConfig};
+const getConfig = async argv => {
+  const configPath = argv.config || findUp.sync('.update-node.json');
+  if (!configPath) {
+    throw new Error('No .update-node.json was found, neither a --config was given');
+  }
+  const config = readConfig(configPath);
+  const extendedConfig = await resolveConfig(config, configPath, argv);
+  return extendedConfig;
+};
+
+module.exports = {resolveConfig, readConfig, getConfig};

@@ -2,10 +2,10 @@
 
 const Promise = require('bluebird');
 const c = require('chalk');
-const findUp = require('find-up');
+
 const bumpDependencies = require('./bump-dependencies');
 const {UPGRADE, BUMP, selectCommand} = require('./commands');
-const {readConfig, resolveConfig} = require('./core/config');
+const {getConfig} = require('./core/config');
 
 let cmd;
 const setCommand = _cmd => () => {
@@ -55,32 +55,28 @@ const COMMANDS = {
 
 const main = async argv => {
   if (!argv.local && !argv.token) {
-    process.stdout.write(c.red.bold('Could not run without either options --token or --local\n'));
-    process.stdout.write('Update-Node behavior was changed starting from 2.0\n\n');
-    process.exit(22);
+    const error = new Error('Could not run without either options --token or --local');
+    error.details = 'Update-Node behavior was changed starting from 2.0';
+    error.exitCode = 22;
+    throw error;
   }
   if (!cmd && argv.auto) {
     cmd = await selectCommand();
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
   const mainCommand = COMMANDS[cmd] || COMMANDS.default;
-  const configPath = argv.config || findUp.sync('.update-node.json');
-  if (!configPath) {
-    process.stderr.write('No .update-node.json was found, neither a --config was given\n');
-    process.exit(12);
-  }
-  const config = readConfig(configPath);
-  // FIXME perform schema validation
-  const extendedConfig = await resolveConfig(config, configPath, argv);
 
-  await mainCommand(extendedConfig);
+  // FIXME perform schema validation
+  const config = await getConfig(argv);
+
+  await mainCommand(config);
 };
 
 if (!module.parent) {
   const argv = yargs.parse(process.argv.slice(2));
   main(argv).catch(err => {
-    process.stderr.write(err);
-    process.stderr.write('\n');
-    process.exit(2);
+    process.stderr.write(`${c.bold.red(err.message)}\n`);
+    if (err.details) process.stderr.write(`${err.details}\n`);
+    process.exit(err.exitCode || 2);
   });
 }
