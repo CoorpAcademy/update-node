@@ -5,6 +5,7 @@ const shelljs = require('shelljs');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const {headClean, headMessage} = require('./core/git');
+const executeScript = require('./core/script');
 
 const MAJOR = 'major';
 const MINOR = 'minor';
@@ -43,8 +44,8 @@ const getReleaseType = async selectionCommand => {
           exitCode: 5
         });
       })
-    : await builtInSelectReleaseType(await headMessage);
-  if (_.includes(releaseType, [MAJOR, MINOR, PATCH]))
+    : await builtInSelectReleaseType(await headMessage());
+  if (!_.includes(releaseType, [MAJOR, MINOR, PATCH]))
     throw makeError(`Invalid release type ${releaseType}`);
   return releaseType;
 };
@@ -52,9 +53,17 @@ const getReleaseType = async selectionCommand => {
 module.exports = async config => {
   if (!await headClean()) throw makeError('Not a clean state', {exitCode: 4});
   const autoBumpConfig = config['auto-bump'];
-  if (_.isEmpty(autoBumpConfig)) throw makeError('No Config for autobump', {exitCode: 3});
+  if (_.isBoolean(autoBumpConfig)) {
+    if (!autoBumpConfig) {
+      process.stdout.write(c.bold.yellow('Auto-bump is deactivated in config'));
+      return;
+    }
+  } else if (_.isEmpty(autoBumpConfig)) throw makeError('No Config for autobump', {exitCode: 3});
   const releaseSelector = autoBumpConfig['release-type-selector'];
   const releaseType = await getReleaseType(releaseSelector);
 
-  process.stdout.write(`About to make a ${releaseType} release`);
+  process.stdout.write(`About to make a ${c.bold.blue(releaseType)} release\n`);
+  const bumpVersionCommand = autoBumpConfig.bumpCommand || 'npm version -m "v%s"';
+  await executeScript([`${bumpVersionCommand} ${releaseType}`, 'git push', 'git push --tags']);
+  process.stdout.write(c.bold.green(`Successfuly made a ${releaseType} release\n`));
 };

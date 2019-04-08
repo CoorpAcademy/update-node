@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const c = require('chalk');
 
 const bumpDependencies = require('./bump-dependencies');
+const bumpVersion = require('./bump-version');
 const {UPGRADE, BUMP, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');
 
@@ -49,7 +50,7 @@ const yargs = require('yargs')
 
 const COMMANDS = {
   [UPGRADE]: bumpDependencies,
-  [BUMP]: () => Promise.resolve(process.stdout.write('🏗  Autobump to be implemented\n')),
+  [BUMP]: bumpVersion,
   default: () => Promise.resolve(process.stdout.write('😴  No command was selected\n'))
 };
 

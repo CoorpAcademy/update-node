@@ -35,7 +35,7 @@ const headBranch = () => {
   return res.stdout.trim();
 };
 const headClean = () => {
-  const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
+  const res = shelljs.exec('git status', {silent: true});
   return res.stdout.match(/nothing to commit, working tree clean/);
 };
 
