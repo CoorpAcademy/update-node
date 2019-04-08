@@ -36,7 +36,7 @@ const headBranch = () => {
 };
 const headClean = () => {
   const res = shelljs.exec('git status', {silent: true});
-  return res.stdout.match(/nothing to commit, working tree clean/);
+  return /nothing to commit, working tree clean/.test(res.stdout);
 };
 
 const pushFiles = (branch, message, githubToken, repoSlug) =>
