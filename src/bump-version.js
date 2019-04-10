@@ -5,18 +5,12 @@ const shelljs = require('shelljs');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const {headClean, headMessage} = require('./core/git');
+const {makeError} = require('./core/utils');
 const executeScript = require('./core/script');
 
 const MAJOR = 'major';
 const MINOR = 'minor';
 const PATCH = 'patch';
-
-const makeError = (message, options = {}) => {
-  const error = new Error(message.message || message);
-  error.exitCode = message.exitCode || options.exitCode;
-  error.details = message.details || options.details;
-  return error;
-};
 
 const builtInSelectReleaseType = message => {
   const firstLine = message.split('\n')[0];

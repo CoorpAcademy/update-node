@@ -2,12 +2,14 @@
 
 const Promise = require('bluebird');
 const c = require('chalk');
+const _ = require('lodash/fp');
 
 const bumpDependencies = require('./bump-dependencies');
 const bumpVersion = require('./bump-version');
 const {setup, validate} = require('./scaffold-config');
 const {UPGRADE, BUMP, VALIDATE, SETUP, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');
+const {makeError} = require('./core/utils');
 
 let cmd;
 const setCommand = _cmd => () => {
@@ -62,28 +64,38 @@ const yargs = require('yargs')
   });
 
 const COMMANDS = {
-  [UPGRADE]: ['config', bumpDependencies],
-  [BUMP]: ['config', bumpVersion],
-  [VALIDATE]: ['argv', validate],
-  [SETUP]: ['argv', setup],
-  default: () => Promise.resolve(process.stdout.write('😴  No command was selected\n'))
+  [UPGRADE]: ['config', bumpDependencies, ['local', 'token']],
+  [BUMP]: ['config', bumpVersion, ['local', 'token']],
+  [VALIDATE]: ['argv', validate, []],
+  [SETUP]: ['argv', setup, []],
+  default: [
+    'argv',
+    argv =>
+      Promise.reject(
+        makeError('😴  No command was selected', {
+          exitCode: 4,
+          details: _.isEmpty(argv._) ? 'No command given' : `Command ${argv._[0]} does not exist`
+        })
+      )
+  ]
 };
 
 const main = async argv => {
-  if (!argv.local && !argv.token) {
-    const error = new Error('Could not run without either options --token or --local');
-    error.details = 'Update-Node behavior was changed starting from 2.0';
-    error.exitCode = 22;
-    throw error;
-  }
   if (!cmd && argv.auto) {
     cmd = await selectCommand();
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
-  const commandConfig = COMMANDS[cmd];
-  const mainCommand = commandConfig ? commandConfig[1] : COMMANDS.default;
-  const commandType = commandConfig ? commandConfig[0] : 'none';
-
+  const [commandType, mainCommand, requiredOptions] = COMMANDS[cmd] || COMMANDS.default;
+  if (!_.isEmpty(requiredOptions) && !_.some(opt => _.has(opt, argv), requiredOptions)) {
+    const error = new Error(
+      `Could not run command without one of following options: ${requiredOptions
+        .map(opt => `--${opt}`)
+        .join(', ')}`
+    );
+    error.details = 'Update-Node behavior was changed starting from 2.0';
+    error.exitCode = 22;
+    throw error;
+  }
   // FIXME perform schema validation
   if (commandType === 'config') {
     const config = await getConfig(argv);

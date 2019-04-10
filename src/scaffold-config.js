@@ -3,13 +3,7 @@ const c = require('chalk');
 const findUp = require('find-up');
 const {readConfig, validateConfig} = require('./core/config');
 const {getRepoSlug} = require('./core/git');
-
-const makeError = (message, options = {}) => {
-  const error = new Error(message.message || message);
-  error.exitCode = message.exitCode || options.exitCode;
-  error.details = message.details || options.details;
-  return error;
-};
+const {makeError} = require('./core/utils');
 
 const validate = argv => {
   const configPath = argv.config || argv._[1] || findUp.sync('.update-node.json');
