@@ -39,6 +39,14 @@ const headClean = () => {
   return /nothing to commit, working tree clean/.test(res.stdout);
 };
 
+const getRepoSlug = () => {
+  const res = shelljs.exec('git remote get-url origin', {silent: true});
+  return res.stdout
+    .split(':')[1]
+    .trim()
+    .replace(/\.git$/, '');
+};
+
 const pushFiles = (branch, message, githubToken, repoSlug) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
@@ -52,5 +60,6 @@ module.exports = {
   headCommit,
   headBranch,
   headMessage,
-  headClean
+  headClean,
+  getRepoSlug
 };

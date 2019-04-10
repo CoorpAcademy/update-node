@@ -5,8 +5,8 @@ const c = require('chalk');
 
 const bumpDependencies = require('./bump-dependencies');
 const bumpVersion = require('./bump-version');
-const {validate} = require('./scaffold-config');
-const {UPGRADE, BUMP, VALIDATE, selectCommand} = require('./commands');
+const {setup, validate} = require('./scaffold-config');
+const {UPGRADE, BUMP, VALIDATE, SETUP, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');
 
 let cmd;
@@ -34,6 +34,12 @@ const yargs = require('yargs')
     describe: 'Validate a update-node configuration',
     handler: setCommand(VALIDATE)
   })
+  .command({
+    command: SETUP,
+    aliases: ['scaffold'],
+    describe: 'Scaffold a update-node configuration',
+    handler: setCommand(SETUP)
+  })
   .option('local', {
     describe: 'Run in local mode with github publication',
     boolean: true,
@@ -59,6 +65,7 @@ const COMMANDS = {
   [UPGRADE]: ['config', bumpDependencies],
   [BUMP]: ['config', bumpVersion],
   [VALIDATE]: ['argv', validate],
+  [SETUP]: ['argv', setup],
   default: () => Promise.resolve(process.stdout.write('😴  No command was selected\n'))
 };
 

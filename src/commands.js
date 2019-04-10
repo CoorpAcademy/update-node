@@ -5,6 +5,7 @@ const {headMessage, headBranch, headClean} = require('./core/git');
 const VALIDATE = 'validate';
 const UPGRADE = 'bump-dependencies';
 const BUMP = 'auto-bump';
+const SETUP = 'setup';
 const NOOP = undefined;
 
 const selectCommand = async () => {
@@ -20,5 +21,6 @@ module.exports = {
   UPGRADE,
   BUMP,
   VALIDATE,
+  SETUP,
   selectCommand
 };
