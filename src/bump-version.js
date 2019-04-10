@@ -45,7 +45,7 @@ const getReleaseType = async selectionCommand => {
 };
 
 module.exports = async config => {
-  if (!await headClean()) throw makeError('Not a clean state', {exitCode: 4});
+  if (!(await headClean())) throw makeError('Not a clean state', {exitCode: 4});
   const autoBumpConfig = config['auto-bump'];
   if (_.isBoolean(autoBumpConfig)) {
     if (!autoBumpConfig) {
