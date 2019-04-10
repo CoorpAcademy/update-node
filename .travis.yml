@@ -10,6 +10,6 @@ script: yarn test
 deploy:
   - provider: script
     skip_cleanup: true
-    script: git checkout master && node ./src/index.js --token $GH_TOKEN --auto
+    script: ./scripts/self-update.sh
     'on':
       branch: master
