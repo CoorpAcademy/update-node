@@ -5,6 +5,35 @@ const _ = require('lodash/fp');
 const shortstop = require('shortstop');
 const handlers = require('shortstop-handlers');
 const findUp = require('find-up');
+const Joi = require('joi');
+
+const nodeConfig = Joi.object().keys({
+  branch: Joi.string(),
+  nvmrc: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
+  dockerfile: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
+  travis: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
+  package: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())]
+});
+const dependencyClusterConfig = Joi.object().keys({
+  name: Joi.string().required(),
+  message: Joi.string(),
+  branch: Joi.string(),
+  dependencies: Joi.array().items(Joi.string()),
+  devDependencies: Joi.array().items(Joi.string())
+});
+const configSchema = Joi.object().keys({
+  repoSlug: Joi.string().required(),
+  baseBranch: Joi.string().required(),
+  packageManager: Joi.string(),
+  reviewers: [Joi.string(), Joi.array().items(Joi.string())],
+  teamReviewers: [Joi.string(), Joi.array().items(Joi.string())],
+  label: Joi.string(),
+  node: nodeConfig,
+  'auto-bump': Joi.bool(),
+  dependencies: Joi.array()
+    .items(dependencyClusterConfig)
+    .required()
+});
 
 const resolver = shortstop.create();
 resolver.use('env', handlers.env());
@@ -36,14 +65,20 @@ const resolveConfig = async (config, configPath, argv) => {
   return base;
 };
 
+const validateConfig = config => {
+  const result = Joi.validate(config, configSchema);
+  if (result.error) throw result.error;
+};
+
 const getConfig = async argv => {
   const configPath = argv.config || findUp.sync('.update-node.json');
   if (!configPath) {
     throw new Error('No .update-node.json was found, neither a --config was given');
   }
   const config = readConfig(configPath);
+  await validateConfig(config);
   const extendedConfig = await resolveConfig(config, configPath, argv);
   return extendedConfig;
 };
 
-module.exports = {resolveConfig, readConfig, getConfig};
+module.exports = {resolveConfig, readConfig, getConfig, validateConfig};

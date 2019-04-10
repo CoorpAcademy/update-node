@@ -5,7 +5,8 @@ const c = require('chalk');
 
 const bumpDependencies = require('./bump-dependencies');
 const bumpVersion = require('./bump-version');
-const {UPGRADE, BUMP, selectCommand} = require('./commands');
+const {validate} = require('./scaffold-config');
+const {UPGRADE, BUMP, VALIDATE, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');
 
 let cmd;
@@ -26,6 +27,12 @@ const yargs = require('yargs')
     aliases: ['version', 'ab'],
     describe: 'Auto Bump package version',
     handler: setCommand(BUMP)
+  })
+  .command({
+    command: VALIDATE,
+    aliases: ['check'],
+    describe: 'Validate a update-node configuration',
+    handler: setCommand(VALIDATE)
   })
   .option('local', {
     describe: 'Run in local mode with github publication',
@@ -49,8 +56,9 @@ const yargs = require('yargs')
   });
 
 const COMMANDS = {
-  [UPGRADE]: bumpDependencies,
-  [BUMP]: bumpVersion,
+  [UPGRADE]: ['config', bumpDependencies],
+  [BUMP]: ['config', bumpVersion],
+  [VALIDATE]: ['argv', validate],
   default: () => Promise.resolve(process.stdout.write('😴  No command was selected\n'))
 };
 
@@ -65,12 +73,19 @@ const main = async argv => {
     cmd = await selectCommand();
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
-  const mainCommand = COMMANDS[cmd] || COMMANDS.default;
+  const commandConfig = COMMANDS[cmd];
+  const mainCommand = commandConfig ? commandConfig[1] : COMMANDS.default;
+  const commandType = commandConfig ? commandConfig[0] : 'none';
 
   // FIXME perform schema validation
-  const config = await getConfig(argv);
-
-  await mainCommand(config);
+  if (commandType === 'config') {
+    const config = await getConfig(argv);
+    await mainCommand(config);
+  } else if (commandType === 'argv') {
+    await mainCommand(argv);
+  } else {
+    await mainCommand();
+  }
 };
 
 if (!module.parent) {
@@ -78,6 +93,7 @@ if (!module.parent) {
   main(argv).catch(err => {
     process.stderr.write(`${c.bold.red(err.message)}\n`);
     if (err.details) process.stderr.write(`${err.details}\n`);
+    process.stderr.write('\n');
     process.exit(err.exitCode || 2);
   });
 }
