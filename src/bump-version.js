@@ -23,8 +23,8 @@ const builtInSelectReleaseType = message => {
 
   if (hashtagBug || containsPatchKeyWords) return PATCH;
   if (hashtagMinor || containsMinorKeyWords) return MINOR;
+  if (!isSquashOrMerge) return MINOR;
   if (tooShortMessage) return PATCH;
-  if (!isSquashOrMerge) return PATCH;
   return MINOR;
 };
 
