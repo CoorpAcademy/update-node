@@ -33,7 +33,9 @@ const configSchema = Joi.object().keys({
     Joi.bool(),
     Joi.object().keys({
       'bump-command': Joi.string(),
-      'release-type-command': Joi.string()
+      'release-type-command': Joi.string(),
+      publish: Joi.bool(),
+      'publish-command': Joi.string()
     })
   ],
   dependencies: Joi.array()

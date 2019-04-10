@@ -7,7 +7,9 @@
     "env:TEAM_REVIEWERS"
   ],
   "label": "Upgrades :outbox_tray:",
-  "auto-bump": true,
+  "auto-bump": {
+    "publish": true
+  },
   "node": {
     "branch": "upgrade-node",
     "nvmrc": true,

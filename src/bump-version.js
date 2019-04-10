@@ -61,4 +61,8 @@ module.exports = async config => {
   await executeScript([`${bumpVersionCommand} ${releaseType}`]);
   if (!config.local) await pushFiles('master', config.token, config.repoSlug, true);
   process.stdout.write(c.bold.green(`Successfuly made a ${releaseType} release\n`));
+  if (autoBumpConfig.publish || autoBumpConfig['publish-command']) {
+    await executeScript([autoBumpConfig['publish-command'] || 'npm publish']);
+    process.stdout.write(c.bold.green(`Successfuly publish the ${releaseType} release\n`));
+  }
 };
