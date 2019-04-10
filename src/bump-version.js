@@ -59,6 +59,6 @@ module.exports = async config => {
   process.stdout.write(`About to make a ${c.bold.blue(releaseType)} release\n`);
   const bumpVersionCommand = autoBumpConfig['bump-command'] || 'npm version -m "v%s"';
   await executeScript([`${bumpVersionCommand} ${releaseType}`]);
-  await pushFiles('master', config.token, config.repoSlug, true);
+  if (!config.local) await pushFiles('master', config.token, config.repoSlug, true);
   process.stdout.write(c.bold.green(`Successfuly made a ${releaseType} release\n`));
 };

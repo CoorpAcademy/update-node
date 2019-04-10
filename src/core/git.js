@@ -1,4 +1,3 @@
-const c = require('chalk');
 const shelljs = require('shelljs');
 const executeScript = require('./script');
 
@@ -7,7 +6,6 @@ const commitFiles = async (branch, message) => {
     await executeScript([
       branch &&
         `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
-      // make it an option
       'git add .',
       `git commit -m "${message}"${
         branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''
