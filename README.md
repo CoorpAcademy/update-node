@@ -3,7 +3,6 @@
 [![Npm version](https://img.shields.io/npm/v/@coorpacademy/update-node.svg)](https://www.npmjs.com/package/@coorpacademy/update-node)
 [![Build Status](https://travis-ci.org/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.org/CoorpAcademy/update-node)
 
-
 ## Options :gear:
 
 ```bash
@@ -14,9 +13,9 @@ Commands:
                                  request for them            [aliases: upgrade, bd]
   update-node auto-bump          Auto Bump package version   [aliases: version, ab]
   update-node validate           Validate a update-node configuration
-                                                                [aliases: check]
+                                                                   [aliases: check]
   update-node setup              Scaffold a update-node configuration
-                                                             [aliases: scaffold]
+                                                                [aliases: scaffold]
 
 Options:
   --help        Show help                                              [boolean]
