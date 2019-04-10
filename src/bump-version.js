@@ -4,7 +4,7 @@ const c = require('chalk');
 const shelljs = require('shelljs');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
-const {headClean, headMessage} = require('./core/git');
+const {headClean, headMessage, pushFiles} = require('./core/git');
 const {makeError} = require('./core/utils');
 const executeScript = require('./core/script');
 
@@ -53,11 +53,12 @@ module.exports = async config => {
       return;
     }
   } else if (_.isEmpty(autoBumpConfig)) throw makeError('No Config for autobump', {exitCode: 3});
-  const releaseSelector = autoBumpConfig['release-type-selector'];
+  const releaseSelector = autoBumpConfig['release-type-command'];
   const releaseType = await getReleaseType(releaseSelector);
 
   process.stdout.write(`About to make a ${c.bold.blue(releaseType)} release\n`);
-  const bumpVersionCommand = autoBumpConfig.bumpCommand || 'npm version -m "v%s"';
-  await executeScript([`${bumpVersionCommand} ${releaseType}`, 'git push', 'git push --tags']);
+  const bumpVersionCommand = autoBumpConfig['bump-command'] || 'npm version -m "v%s"';
+  await executeScript([`${bumpVersionCommand} ${releaseType}`]);
+  await pushFiles('master', config.token, config.repoSlug, true);
   process.stdout.write(c.bold.green(`Successfuly made a ${releaseType} release\n`));
 };

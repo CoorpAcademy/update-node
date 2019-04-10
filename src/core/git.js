@@ -47,12 +47,14 @@ const getRepoSlug = () => {
     .replace(/\.git$/, '');
 };
 
-const pushFiles = (branch, message, githubToken, repoSlug) =>
+const pushFiles = (branch, githubToken, repoSlug, tags = false) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
-    `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
+    `(git push gh ${branch}:refs/heads/${branch} --force ${
+      tags ? '&& git push gh --tags)' : ')'
+    }|| (git remote remove gh && exit 12)`,
     'git remote remove gh'
-  ]).tap(() => process.stdout.write(`+ Push files on ${c.yellow.bold(branch)} 📡\n`));
+  ]);
 
 module.exports = {
   commitFiles,

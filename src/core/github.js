@@ -129,7 +129,8 @@ const syncGithub = async (
   }
   const commit = headCommit();
   try {
-    await pushFiles(branch, message, githubToken, repoSlug);
+    await pushFiles(branch, githubToken, repoSlug);
+    process.stdout.write(`+ Pushed files on ${c.yellow.bold(branch)} 📡\n`);
     const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
     await Promise.all([
       documentPullRequest({label, body, title}, pullRequest, githubToken), // TODO handle assignee!

@@ -29,7 +29,13 @@ const configSchema = Joi.object().keys({
   teamReviewers: [Joi.string(), Joi.array().items(Joi.string())],
   label: Joi.string(),
   node: nodeConfig,
-  'auto-bump': Joi.bool(),
+  'auto-bump': [
+    Joi.bool(),
+    Joi.object().keys({
+      'bump-command': Joi.string(),
+      'release-type-command': Joi.string()
+    })
+  ],
   dependencies: Joi.array()
     .items(dependencyClusterConfig)
     .required()
