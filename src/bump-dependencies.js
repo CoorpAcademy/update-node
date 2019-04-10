@@ -15,6 +15,7 @@ const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles} = require('./core/git');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
+const {makeError} = require('./core/utils');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
@@ -81,7 +82,7 @@ const bumpDependencies = async (pkg, cluster) => {
 const commitAndMakePullRequest = config => async options => {
   const {branch, message, pullRequest} = options;
 
-  if (!config.baseBranch) return Promise.resolve();
+  if (!config.baseBranch) throw makeError('No base branch is defined');
   if (config.local) {
     return commitFiles(null, message);
   }
