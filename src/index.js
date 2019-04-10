@@ -1,193 +1,118 @@
 #! /usr/bin/env node
 
+const Promise = require('bluebird');
 const c = require('chalk');
 const _ = require('lodash/fp');
-const yargs = require('yargs');
-const Promise = require('bluebird');
-const findUp = require('find-up');
-const {readConfig, resolveConfig} = require('./core/config');
-const updateNvmrc = require('./updatees/nvmrc');
-const updateTravis = require('./updatees/travis');
-const {
-  updateLock,
-  updateDependencies,
-  updateDevDependencies,
-  updatePackageEngines
-} = require('./updatees/package');
-const updateDockerfile = require('./updatees/dockerfile');
-const {commitFiles} = require('./core/git');
-const {syncGithub} = require('./core/github');
-const {findLatest} = require('./core/node');
 
-const parseArgvToArray = _.pipe(_.split(','), _.compact);
+const bumpDependencies = require('./bump-dependencies');
+const bumpVersion = require('./bump-version');
+const {setup, validate} = require('./scaffold-config');
+const {UPGRADE, BUMP, VALIDATE, SETUP, selectCommand} = require('./commands');
+const {getConfig} = require('./core/config');
+const {makeError} = require('./core/utils');
 
-const bumpNodeVersion = async (latestNode, config) => {
-  process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
-  const nodeVersion = _.trimCharsStart('v', latestNode.version);
-  await Promise.all([
-    updateTravis(nodeVersion, config.node.travis),
-    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
-    updateNvmrc(nodeVersion, config.node.nvmrc),
-    updateDockerfile(nodeVersion, config.node.dockerfile)
-  ]);
-
-  process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
-  return {
-    branch: `update-node-v${nodeVersion}`,
-    message: `Upgrade Node to v${nodeVersion}`,
-    pullRequest: {
-      title: `Upgrade Node to v${nodeVersion}`,
-      body: `:rocket: Upgraded Node version to v${nodeVersion}`
-    }
-  };
+let cmd;
+const setCommand = _cmd => () => {
+  cmd = _cmd;
 };
 
-const bumpDependencies = async (pkg, cluster) => {
-  process.stdout.write(
-    c.bold.blue(`\n\n⬆️  About to bump depencies cluster ${c.bold.white(cluster.name)}:\n`)
-  );
-  const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
-  const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
-  const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
-  if (_.isEmpty(allInstalledDependencies)) {
-    process.stdout.write('+ No dependencies to update were found');
-    return {};
-  }
-  process.stdout.write(
-    `+ Successfully updated ${
-      allInstalledDependencies.length
-    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${allInstalledDependencies
-      .map(
-        ([dep, oldVersion, newVersion]) =>
-          `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+// eslint-disable-next-line import/order
+const yargs = require('yargs')
+  .command({
+    command: UPGRADE,
+    aliases: ['upgrade', 'bd'],
+    describe: 'Upgrades defined dependencies and open Pull request for them',
+    handler: setCommand(UPGRADE)
+  })
+  .command({
+    command: BUMP,
+    aliases: ['version', 'ab'],
+    describe: 'Auto Bump package version',
+    handler: setCommand(BUMP)
+  })
+  .command({
+    command: VALIDATE,
+    aliases: ['check'],
+    describe: 'Validate a update-node configuration',
+    handler: setCommand(VALIDATE)
+  })
+  .command({
+    command: SETUP,
+    aliases: ['scaffold'],
+    describe: 'Scaffold a update-node configuration',
+    handler: setCommand(SETUP)
+  })
+  .option('local', {
+    describe: 'Run in local mode with github publication',
+    boolean: true,
+    alias: 'l'
+  })
+  .option('token', {
+    describe: 'Token to authentificate to github',
+    string: true,
+    alias: 't'
+  })
+  .option('config', {
+    describe: 'Override update-node configuration default path',
+    string: true,
+    alias: 'c'
+  })
+  .option('auto', {
+    describe: 'Select automatically behavior to adopt based on current commit and branch',
+    boolean: true,
+    alias: 'A'
+  });
+
+const COMMANDS = {
+  [UPGRADE]: ['config', bumpDependencies, ['local', 'token']],
+  [BUMP]: ['config', bumpVersion, ['local', 'token']],
+  [VALIDATE]: ['argv', validate, []],
+  [SETUP]: ['argv', setup, []],
+  default: [
+    'argv',
+    argv =>
+      Promise.reject(
+        makeError('😴  No command was selected', {
+          exitCode: 4,
+          details: _.isEmpty(argv._) ? 'No command given' : `Command ${argv._[0]} does not exist`
+        })
       )
-      .join('\n')}\n`
-  );
-  return {
-    branch: cluster.branch || `update-dependencies-${cluster.name}`,
-    message: `${cluster.message ||
-      'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
-      .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
-      .join('\n')}\n`,
-    pullRequest: {
-      title: cluster.message || 'Upgrade dependencies',
-      body: `### :outbox_tray: Upgraded dependencies:\n${allInstalledDependencies
-        .map(
-          ([dep, oldVersion, newVersion]) =>
-            `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
-        )
-        .join('\n')}\n`
-    }
-  };
-};
-
-const commitAndMakePullRequest = config => async options => {
-  const {branch, message, pullRequest} = options;
-
-  if (!config.baseBranch) return Promise.resolve();
-  if (config.local) {
-    return commitFiles(null, message);
-  }
-  const status = await syncGithub(
-    config.repoSlug,
-    config.baseBranch,
-    branch,
-    message,
-    {
-      body: _.get('body', pullRequest),
-      title: _.get('title', pullRequest),
-      label: config.label,
-      reviewers: parseArgvToArray(config.reviewers),
-      team_reviewers: parseArgvToArray(config.teamReviewers)
-    },
-    config.token
-  );
-  if (!status.commit)
-    process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');
-  else if (status.pullRequest) {
-    process.stdout.write(
-      `+ Successfully handled pull request ${c.bold.blue(`(#${status.pullRequest.number})`)}
-  - 📎  ${c.bold.cyan(status.pullRequest.html_url)}
-  - 🔖  ${c.bold.dim(status.commit)}
-  - 🌳  ${c.bold.green(status.branch)}\n`
-    );
-  } else {
-    process.stdout.write(
-      `+ Some issue seems to have occured with publication of changes ${status.commit}\n`
-    );
-  }
-  return status;
+  ]
 };
 
 const main = async argv => {
-  /* eslint-disable no-console */
-  // FIXME drop for yargs
-  const configPath = argv.config || findUp.sync('.update-node.json');
-  if (!configPath) {
-    console.error('No .update-node.json was found, neither a --config was given');
-    process.exit(12);
+  if (!cmd && argv.auto) {
+    cmd = await selectCommand();
+    if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
-  const config = readConfig(configPath);
+  const [commandType, mainCommand, requiredOptions] = COMMANDS[cmd] || COMMANDS.default;
+  if (!_.isEmpty(requiredOptions) && !_.some(opt => _.has(opt, argv), requiredOptions)) {
+    const error = new Error(
+      `Could not run command without one of following options: ${requiredOptions
+        .map(opt => `--${opt}`)
+        .join(', ')}`
+    );
+    error.details = 'Update-Node behavior was changed starting from 2.0';
+    error.exitCode = 22;
+    throw error;
+  }
   // FIXME perform schema validation
-  const extendedConfig = await resolveConfig(config, configPath, argv);
-
-  const _commitAndMakePullRequest = commitAndMakePullRequest(extendedConfig);
-  const clusters = extendedConfig.dependencies;
-
-  const RANGE = argv.node_range || '^8';
-  const latestNode = await findLatest(RANGE);
-
-  const bumpCommitConfig = await bumpNodeVersion(latestNode, extendedConfig);
-  await _commitAndMakePullRequest(bumpCommitConfig);
-  const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
-    const branchDetails = await bumpDependencies(extendedConfig.package, cluster);
-    if (!branchDetails.branch) return {};
-    await updateLock(config.packageManager);
-    const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
-    return {branchDetails, pullRequest, branch, commit};
-  }).catch(err => {
-    process.stdout.write(`${err}\n`);
-    process.stdout.write(`${err.stack}\n`);
-    return process.exit(1);
-  });
-  process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
-  _.forEach(clusterDetail => {
-    if (clusterDetail.branch)
-      process.stdout.write(
-        `- ${c.bold.green(clusterDetail.branch)}: ${c.dim.bold(
-          clusterDetail.pullRequest.html_url
-        )}\n`
-      );
-  }, clusterDetails);
-  process.stdout.write('\n');
+  if (commandType === 'config') {
+    const config = await getConfig(argv);
+    await mainCommand(config);
+  } else if (commandType === 'argv') {
+    await mainCommand(argv);
+  } else {
+    await mainCommand();
+  }
 };
 
 if (!module.parent) {
-  const argv = yargs
-    .option('local', {
-      describe: 'Run in local mode with github publication',
-      boolean: true,
-      alias: 'l'
-    })
-    .option('token', {
-      describe: 'Token to authentificate to github',
-      string: true,
-      alias: 't'
-    })
-    .option('config', {
-      describe: 'Override update-node configuration default path',
-      string: true,
-      alias: 'c'
-    })
-    .parse(process.argv);
-
-  if (!argv.local && !argv.token) {
-    process.stdout.write(c.red.bold('Could not run without either options --token or --local'));
-    process.stdout.write('Update-Node behavior was changed starting from 2.0');
-    process.exit(22);
-  }
+  const argv = yargs.parse(process.argv.slice(2));
   main(argv).catch(err => {
-    console.error(err);
-    process.exit(2);
+    process.stderr.write(`${c.bold.red(err.message)}\n`);
+    if (err.details) process.stderr.write(`${err.details}\n`);
+    process.stderr.write('\n');
+    process.exit(err.exitCode || 2);
   });
 }

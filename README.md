@@ -7,7 +7,16 @@
 ## Options :gear:
 
 ```bash
-$ update-node [options]
+$ update-node [command]
+
+Commands:
+  update-node bump-dependencies  Upgrades defined dependencies and open Pull
+                                 request for them            [aliases: upgrade, bd]
+  update-node auto-bump          Auto Bump package version   [aliases: version, ab]
+  update-node validate           Validate a update-node configuration
+                                                                [aliases: check]
+  update-node setup              Scaffold a update-node configuration
+                                                             [aliases: scaffold]
 
 Options:
   --help        Show help                                              [boolean]
@@ -15,7 +24,8 @@ Options:
   --local, -l   Run in local mode with github publication              [boolean]
   --token, -t   Token to authentificate to github                       [string]
   --config, -c  Override update-node configuration default path         [string]
-
+  --auto, -A    Select automatically behavior to adopt based on current commit
+                and branch                                             [boolean]
 Examples
     update-node --token=TKN
 

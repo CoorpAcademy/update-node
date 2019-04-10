@@ -1,6 +1,6 @@
 {
   "name": "@coorpacademy/update-node",
-  "version": "2.0.0",
+  "version": "3.0.0-alpha.5",
   "description": "Update your node dependencies while you sleep",
   "main": "index.js",
   "engines": {
@@ -29,6 +29,7 @@
     "bluebird": "3.5.4",
     "chalk": "^2.4.2",
     "find-up": "^3.0.0",
+    "joi": "^14.3.1",
     "js-yaml": "3.13.0",
     "lodash": "4.17.11",
     "minimatch": "^3.0.4",

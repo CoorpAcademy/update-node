@@ -5,7 +5,7 @@ cache: yarn
 deploy:
   - provider: script
     skip_cleanup: true
-    script: node ./src/index.js --token $GH_TOKEN
+    script: node ./src/index.js --token $GH_TOKEN --auto
     'on':
       branch: master
   - provider: npm

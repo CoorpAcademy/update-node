@@ -1,4 +1,3 @@
-const c = require('chalk');
 const shelljs = require('shelljs');
 const executeScript = require('./script');
 
@@ -7,7 +6,6 @@ const commitFiles = async (branch, message) => {
     await executeScript([
       branch &&
         `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
-      // make it an option
       'git add .',
       `git commit -m "${message}"${
         branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''
@@ -26,15 +24,42 @@ const headCommit = () => {
   return res.stdout.trim();
 };
 
-const pushFiles = (branch, message, githubToken, repoSlug) =>
+const headMessage = () => {
+  const res = shelljs.exec('git log -1 --pretty=%B', {silent: true});
+  return res.stdout.trim();
+};
+const headBranch = () => {
+  const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
+  return res.stdout.trim();
+};
+const headClean = () => {
+  const res = shelljs.exec('git status', {silent: true});
+  return /nothing to commit, working tree clean/.test(res.stdout);
+};
+
+const getRepoSlug = () => {
+  const res = shelljs.exec('git remote get-url origin', {silent: true});
+  return res.stdout
+    .split(':')[1]
+    .trim()
+    .replace(/\.git$/, '');
+};
+
+const pushFiles = (branch, githubToken, repoSlug, tags = false) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
-    `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
+    `(git push gh ${branch}:refs/heads/${branch} --force ${
+      tags ? '&& git push gh --tags)' : ')'
+    }|| (git remote remove gh && exit 12)`,
     'git remote remove gh'
-  ]).tap(() => process.stdout.write(`+ Push files on ${c.yellow.bold(branch)} 📡\n`));
+  ]);
 
 module.exports = {
   commitFiles,
   pushFiles,
-  headCommit
+  headCommit,
+  headBranch,
+  headMessage,
+  headClean,
+  getRepoSlug
 };
