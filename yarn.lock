@@ -364,9 +364,9 @@
   dependencies:
     arrify "^1.0.1"
 
-"@coorpacademy/eslint-plugin-coorpacademy@8.3.0":
-  version "8.3.0"
-  resolved "https://registry.npmjs.org/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-8.3.0.tgz#7fc4ba8cfa75123b6072f635839d255b74097d81"
+"@coorpacademy/eslint-plugin-coorpacademy@8.3.1":
+  version "8.3.1"
+  resolved "https://registry.yarnpkg.com/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-8.3.1.tgz#0c23a7b14a1f977fce67a3d07010fcfd7c1c8793"
   dependencies:
     babel-eslint "^8.2.2"
     eslint-ast-utils "^1.1.0"
@@ -385,7 +385,7 @@
     eslint-plugin-react "~7.4.0"
     eslint-plugin-unicorn "^4.0.2"
     lodash "^4.17.5"
-    prettier "1.11.1"
+    prettier "1.16.4"
     requireindex "^1.2.0"
 
 abbrev@1:
@@ -1928,7 +1928,6 @@ hasha@^3.0.0:
 hoek@6.x.x:
   version "6.1.3"
   resolved "https://registry.npmjs.org/hoek/-/hoek-6.1.3.tgz#73b7d33952e01fe27a38b0457294b79dd8da242c"
-  integrity sha512-YXXAAhmF9zpQbC7LEcREFtXfGq5K1fmd+4PHkBq8NUqmzW3G+Dq10bI/i0KucLRwss3YYFQ0fSfoxBZYiGUqtQ==
 
 hosted-git-info@^2.1.4:
   version "2.7.1"
@@ -2271,7 +2270,6 @@ isarray@1.0.0, isarray@^1.0.0, isarray@~1.0.0:
 isemail@3.x.x:
   version "3.2.0"
   resolved "https://registry.npmjs.org/isemail/-/isemail-3.2.0.tgz#59310a021931a9fb06bbb51e155ce0b3f236832c"
-  integrity sha512-zKqkK+O+dGqevc93KNsbZ/TqTUFd46MwWjYOoMrjIMZ51eU7DtQG3Wmd9SQQT7i7RVnuTPEiYEWHU3MSbxC1Tg==
   dependencies:
     punycode "2.x.x"
 
@@ -2300,7 +2298,6 @@ jest-docblock@^21.0.0:
 joi@^14.3.1:
   version "14.3.1"
   resolved "https://registry.npmjs.org/joi/-/joi-14.3.1.tgz#164a262ec0b855466e0c35eea2a885ae8b6c703c"
-  integrity sha512-LQDdM+pkOrpAn4Lp+neNIFV3axv1Vna3j38bisbQhETPMANYRbFJFUyOZcOClYvM/hppMhGWuKSFEK9vjrB+bQ==
   dependencies:
     hoek "6.x.x"
     isemail "3.x.x"
@@ -3148,9 +3145,9 @@ prepend-http@^1.0.1:
   version "1.0.4"
   resolved "https://registry.npmjs.org/prepend-http/-/prepend-http-1.0.4.tgz#d4f4562b0ce3696e41ac52d0e002e57a635dc6dc"
 
-prettier@1.11.1:
-  version "1.11.1"
-  resolved "https://registry.npmjs.org/prettier/-/prettier-1.11.1.tgz#61e43fc4cd44e68f2b0dfc2c38cd4bb0fccdcc75"
+prettier@1.16.4:
+  version "1.16.4"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.16.4.tgz#73e37e73e018ad2db9c76742e2647e21790c9717"
 
 pretty-ms@^4.0.0:
   version "4.0.0"
@@ -3925,7 +3922,6 @@ to-regex@^3.0.1, to-regex@^3.0.2:
 topo@3.x.x:
   version "3.0.3"
   resolved "https://registry.npmjs.org/topo/-/topo-3.0.3.tgz#d5a67fb2e69307ebeeb08402ec2a2a6f5f7ad95c"
-  integrity sha512-IgpPtvD4kjrJ7CRA3ov2FhWQADwv+Tdqbsf1ZnPUSAtCJ9e1Z44MmoSGDXGk4IppoZA7jd/QRkNddlLJWlUZsQ==
   dependencies:
     hoek "6.x.x"
 
