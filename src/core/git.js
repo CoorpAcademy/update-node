@@ -34,7 +34,8 @@ const headBranch = () => {
 };
 const headClean = () => {
   const res = shelljs.exec('git status', {silent: true});
-  return /nothing to commit, working tree clean/.test(res.stdout);
+  // only untrackered
+  return /nothing to commit/.test(res.stdout);
 };
 
 const getRepoSlug = () => {

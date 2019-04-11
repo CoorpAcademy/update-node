@@ -6,11 +6,12 @@ const VALIDATE = 'validate';
 const UPGRADE = 'bump-dependencies';
 const BUMP = 'auto-bump';
 const SETUP = 'setup';
-const NOOP = undefined;
+const DIRTY = 'warn-dirty';
+const NOOP = 'noop';
 
 const selectCommand = async () => {
   const [branch, message, clean] = await Promise.all([headBranch(), headMessage(), headClean()]);
-  if (!clean) return NOOP;
+  if (!clean) return DIRTY;
   if (branch !== 'master') return UPGRADE;
   // §todo: make it configurable
   if (semver.valid(message)) return UPGRADE;
@@ -20,7 +21,9 @@ const selectCommand = async () => {
 module.exports = {
   UPGRADE,
   BUMP,
+  DIRTY,
   VALIDATE,
   SETUP,
+  NOOP,
   selectCommand
 };

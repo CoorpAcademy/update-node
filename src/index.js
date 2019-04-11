@@ -7,7 +7,7 @@ const _ = require('lodash/fp');
 const bumpDependencies = require('./bump-dependencies');
 const bumpVersion = require('./bump-version');
 const {setup, validate} = require('./scaffold-config');
-const {UPGRADE, BUMP, VALIDATE, SETUP, selectCommand} = require('./commands');
+const {UPGRADE, BUMP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
@@ -68,6 +68,15 @@ const COMMANDS = {
   [BUMP]: ['config', bumpVersion, ['local', 'token']],
   [VALIDATE]: ['argv', validate, []],
   [SETUP]: ['argv', setup, []],
+  [DIRTY]: [
+    'argv',
+    argv =>
+      Promise.reject(
+        makeError('State is currently dirty, auto cant run', {
+          exitCode: 6
+        })
+      )
+  ],
   default: [
     'argv',
     argv =>
