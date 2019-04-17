@@ -70,7 +70,7 @@ module.exports = async config => {
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git pull gh ${branch} && git checkout ${branch} && git reset --hard master`,
-      `(git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
+      `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
     process.stdout.write(c.bold.green(`Successfuly sync branch ${branch}\n`));
@@ -80,7 +80,7 @@ module.exports = async config => {
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git pull gh ${branch} && git checkout ${branch} && git merge master`,
-      `(git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
+      `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
     process.stdout.write(c.bold.green(`Successfuly merged branch ${branch}\n`));
