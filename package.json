@@ -1,6 +1,6 @@
 {
   "name": "@coorpacademy/update-node",
-  "version": "3.2.0",
+  "version": "3.3.0-alpha.1",
   "description": "Update your node dependencies while you sleep",
   "main": "index.js",
   "engines": {
