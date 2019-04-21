@@ -4,7 +4,7 @@
   "description": "Update your node dependencies while you sleep",
   "main": "index.js",
   "engines": {
-    "node": "^8.15.1",
+    "node": "^8.16.0",
     "npm": "^6.4.1"
   },
   "files": [
