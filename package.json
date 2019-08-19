@@ -34,7 +34,6 @@
     "lodash": "4.17.15",
     "minimatch": "^3.0.4",
     "pad-stream": "^2.0.0",
-    "pump": "^3.0.0",
     "pumpify": "^2.0.0",
     "request": "2.88.0",
     "semver": "^6.3.0",
