@@ -3,7 +3,7 @@ const fs = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
-const yaml = require('js-yaml');
+const YAML = require('yaml');
 
 const readFile = Promise.promisify(fs.readFile);
 const writeFile = Promise.promisify(fs.writeFile);
@@ -13,12 +13,10 @@ const updateTravis = (node, travis) => {
 
   if (!travis || !node) return Promise.resolve();
 
-  const travisYamlP = readFile(travis, 'utf8').then(yaml.safeLoad);
-
-  const newTravisYamlP = travisYamlP.then(_.set('node_js.0', node));
-
-  return newTravisYamlP
-    .then(yaml.safeDump)
+  return readFile(travis, 'utf8')
+    .then(content => YAML.parseDocument(content, {merge: true}))
+    .tap(yaml => yaml.setIn(['node_js', 0], node))
+    .then(yaml => yaml.toString())
     .then(newTravisYaml => writeFile(travis, newTravisYaml, 'utf8'))
     .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(travis))}\n`));
 };

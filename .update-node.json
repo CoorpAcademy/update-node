@@ -24,7 +24,7 @@
       "branch": "update-core",
       "dependencies": [
         "bluebird",
-        "js-yaml",
+        "yaml",
         "lodash",
         "minimist",
         "request",
