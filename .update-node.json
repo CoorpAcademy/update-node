@@ -15,7 +15,7 @@
     "nvmrc": true,
     "dockerfile": false,
     "travis": true,
-    "package": true
+    "package": false
   },
   "dependencies": [
     {
