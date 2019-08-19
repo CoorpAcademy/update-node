@@ -28,16 +28,16 @@
   "dependencies": {
     "bluebird": "3.5.5",
     "chalk": "^2.4.2",
-    "find-up": "^3.0.0",
+    "find-up": "^4.1.0",
     "joi": "^14.3.1",
     "js-yaml": "3.13.1",
     "lodash": "4.17.15",
     "minimatch": "^3.0.4",
     "pad-stream": "^2.0.0",
     "pump": "^3.0.0",
-    "pumpify": "^1.5.1",
+    "pumpify": "^2.0.0",
     "request": "2.88.0",
-    "semver": "^5.4.1",
+    "semver": "^6.3.0",
     "shelljs": "0.8.3",
     "shortstop": "^1.0.3",
     "shortstop-handlers": "^1.0.1",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "8.3.1",
-    "ava": "^2.2.0",
+    "ava": "^2.3.0",
     "eslint": "5.16.0"
   }
 }
