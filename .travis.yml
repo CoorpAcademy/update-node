@@ -1,8 +1,9 @@
 language: node_js
 node_js:
   - 8.16.0
-cache: yarn
-install: yarn
+# This is here to show comment is preserved
+cache: &yarn yarn
+install: *yarn
 script: yarn test
 deploy:
   - provider: script

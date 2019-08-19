@@ -15,7 +15,7 @@
     "nvmrc": true,
     "dockerfile": false,
     "travis": true,
-    "package": true
+    "package": false
   },
   "dependencies": [
     {
@@ -24,7 +24,7 @@
       "branch": "update-core",
       "dependencies": [
         "bluebird",
-        "js-yaml",
+        "yaml",
         "lodash",
         "minimist",
         "request",
