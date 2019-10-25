@@ -24,7 +24,7 @@
     "update": "node src"
   },
   "author": "Coorpacademy Tech Team",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bluebird": "3.7.1",
     "chalk": "^2.4.2",
