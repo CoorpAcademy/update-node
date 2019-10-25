@@ -27,7 +27,6 @@ const executeScript = commands =>
         if (err) return reject(err);
         resolve();
       });
-      // eslint-disable-next-line no-unused-vars
       const columns = process.env.COLUMNS ? parseInt(process.env.COLUMNS, 10) - 3 : 100;
 
       const outStream = pumpify(padStream(3), wrapingStream(columns));

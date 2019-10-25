@@ -422,10 +422,10 @@
   dependencies:
     arrify "^1.0.1"
 
-"@coorpacademy/eslint-plugin-coorpacademy@9.0.0":
-  version "9.0.0"
-  resolved "https://registry.yarnpkg.com/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-9.0.0.tgz#8a6e7ae8e60e36df38e862263d0928c8b687c07b"
-  integrity sha512-PxadqMf6WTaVKjk7+E6tjyz+KO5sKpXNwSI8zBY8pMoY6RxnTU0Ae0/qDTD5a3oLOmMtMbIITvG/Vm20m6iyeA==
+"@coorpacademy/eslint-plugin-coorpacademy@9.0.1":
+  version "9.0.1"
+  resolved "https://registry.npmjs.org/@coorpacademy/eslint-plugin-coorpacademy/-/eslint-plugin-coorpacademy-9.0.1.tgz#79bac5837e146355520da1d54312e8bb54d42744"
+  integrity sha512-1qE0YatetWvB/QyPtJo24SVRuq9kTbPzxWuWmb/l2Vxvb8NcAgzIN2E0qNhuKN4S9rLPXdGId2Y+cjMdQux3IA==
   dependencies:
     babel-eslint "^8.2.2"
     eslint-ast-utils "^1.1.0"

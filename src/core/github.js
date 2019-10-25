@@ -53,8 +53,9 @@ const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
     .tap(() => process.stdout.write('  - 📬  Create/Update pull request\n'));
 };
 
-const assignReviewers = ({reviewers = [], team_reviewers = []} = {}, pullRequest, githubToken) => {
+const assignReviewers = (reviewerConfig, pullRequest, githubToken) => {
   if (!githubToken || !pullRequest) return Promise.resolve();
+  const {reviewers = [], team_reviewers = []} = reviewerConfig || {};
   if (_.isEmpty(reviewers) && _.isEmpty(team_reviewers)) return Promise.resolve();
 
   const {url} = pullRequest;
@@ -114,19 +115,15 @@ const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => 
     .tap(() => process.stdout.write('  - 🏷  Added label\n'));
 };
 
-const syncGithub = async (
-  repoSlug,
-  base,
-  branch,
-  message,
-  {body = '', title = message, team_reviewers = [], reviewers = [], label = ''} = {},
-  githubToken
-) => {
+const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, githubToken) => {
   if (!branch) return {};
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
     return {commit: null, branch};
   }
+  const {body = '', title = message, team_reviewers = [], reviewers = [], label = ''} =
+    pullRequestContent || {};
+
   const commit = headCommit();
   try {
     await pushFiles(branch, githubToken, repoSlug);

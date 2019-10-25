@@ -45,7 +45,7 @@
     "yargs": "^13.2.2"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "9.0.0",
+    "@coorpacademy/eslint-plugin-coorpacademy": "9.0.1",
     "ava": "^2.4.0",
     "eslint": "6.5.1"
   }
