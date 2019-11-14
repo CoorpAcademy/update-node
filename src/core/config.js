@@ -2,8 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Promise = require('bluebird');
 const _ = require('lodash/fp');
-const shortstop = require('shortstop');
-const handlers = require('shortstop-handlers');
+const protocall = require('protocall');
 const findUp = require('find-up');
 const Joi = require('joi');
 
@@ -45,9 +44,7 @@ const configSchema = Joi.object().keys({
     .required()
 });
 
-const resolver = shortstop.create();
-resolver.use('env', handlers.env());
-resolver.use('base64', handlers.base64());
+const resolver = protocall.getDefaultResolver();
 const readConfig = pathe => JSON.parse(fs.readFileSync(pathe, 'utf-8'));
 
 const resolveConfig = async (config, configPath, argv) => {
