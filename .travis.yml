@@ -5,7 +5,9 @@ node_js:
 anchor: &npm npm
 cache: *npm
 install: npm ci
-script: npm test
+script:
+  - npm test
+  - ./scripts/integration-test.sh
 deploy:
   - provider: script
     skip_cleanup: true
