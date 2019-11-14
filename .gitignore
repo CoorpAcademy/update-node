@@ -3,3 +3,6 @@ tmp
 private
 coverage
 .nyc_output
+
+test/integration
+# this one is to ignore integrations test modifications

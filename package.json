@@ -26,7 +26,9 @@
     "README.md"
   ],
   "scripts": {
-    "test": "npm run lint && npm run test:unit",
+    "test": "npm run lint && npm run test:all",
+    "test:all": "npm run test:unit && npm run test:integration",
+    "test:integration": "scripts/integration-test.sh",
     "test:unit": "ava",
     "lint": "eslint src/ *.json --ext .js,.json",
     "lint:fix": "npm run lint -- --fix",
