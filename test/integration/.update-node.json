@@ -8,7 +8,7 @@
   "label": "Upgrades :outbox_tray:",
   "auto-bump": {
     "release-type-command": "echo major",
-    "publish-command": "echo Publish 🚀"
+    "publish-command": "npm version -m \"Publish %s 🚀\""
   },
   "node": {
     "branch": "upgrade-node",

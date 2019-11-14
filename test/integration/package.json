@@ -6,7 +6,8 @@
     "main": "index.js",
     "scripts": {
         "test": "echo 'Yolo no test'",
-        "update": "update-node"
+        "real-update": "update-node",
+        "update": "../../bin/update-node.js"
     },
     "repository": {
         "type": "git",

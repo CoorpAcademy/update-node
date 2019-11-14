@@ -1,0 +1,13 @@
+{
+  "reporter": [
+    "lcov",
+    "text-summary",
+    "text",
+    "html"
+  ],
+  "include": [
+      "src",
+      "bin"
+  ],
+  "all": true
+}

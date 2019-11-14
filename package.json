@@ -4,7 +4,7 @@
   "description": "Update your node dependencies while you sleep",
   "main": "src/index.js",
   "bin": {
-    "update-node": "./bin/update-node"
+    "update-node": "./bin/update-node.js"
   },
   "engines": {
     "node": ">=8.10.0",
@@ -26,13 +26,14 @@
     "README.md"
   ],
   "scripts": {
-    "test": "npm run lint && npm run test:all",
+    "test": "npm run lint && nyc npm run test:all",
     "test:all": "npm run test:unit && npm run test:integration",
     "test:integration": "scripts/integration-test.sh",
     "test:unit": "ava",
     "lint": "eslint src/ *.json --ext .js,.json",
     "lint:fix": "npm run lint -- --fix",
     "start": "node ./src/index.js",
+    "publish-coverage": "codecov",
     "update": "node src"
   },
   "dependencies": {
@@ -56,7 +57,9 @@
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "9.0.1",
     "ava": "^2.4.0",
+    "codecov": "^3.6.1",
     "eslint": "6.6.0",
+    "nyc": "^14.1.1",
     "yarn": "^1.19.1"
   }
 }

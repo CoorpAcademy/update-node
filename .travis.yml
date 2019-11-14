@@ -8,6 +8,8 @@ install: npm ci
 script:
   - npm test
   - ./scripts/integration-test.sh
+after_success:
+  - npm run publish-coverage
 deploy:
   - provider: script
     skip_cleanup: true
