@@ -7,6 +7,16 @@
     "node": ">=8.10.0",
     "npm": "^6.4.1"
   },
+  "author": "Coorpacademy Tech Team",
+  "license": "MIT",
+  "homepage": "https://github.com/Coorpacademy/update-node",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Coorpacademy/update-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Coorpacademy/update-node/issues/new"
+  },
   "files": [
     "src",
     "packages.json",
@@ -23,8 +33,6 @@
     "start": "node ./src/index.js",
     "update": "node src"
   },
-  "author": "Coorpacademy Tech Team",
-  "license": "MIT",
   "dependencies": {
     "bluebird": "3.7.1",
     "chalk": "^2.4.2",
