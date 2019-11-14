@@ -1,0 +1,39 @@
+{
+  "repoSlug": "Coorpacademy/update-node",
+  "baseBranch": "master",
+  "packageManager": "npm",
+  "reviewers": [
+    "AdrieanKhisbe"
+  ],
+  "label": "Upgrades :outbox_tray:",
+  "auto-bump": {
+    "release-type-command": "echo major",
+    "publish-command": "echo Publish 🚀"
+  },
+  "node": {
+    "branch": "upgrade-node",
+    "nvmrc": true,
+    "dockerfile": false,
+    "travis": true,
+    "package": true
+  },
+  "dependencies": [
+    {
+      "name": "meta",
+      "message": "Update update-node",
+      "branch": "update-update-node",
+      "devDependencies": [
+        "@coorpacademy/*"
+      ]
+    },
+    {
+      "name": "lodash-not-bluebird",
+      "message": "Update-Node: Lodash only, not bluebird",
+      "branch": "in-fact-we-so-far-only-test-localy",
+      "dependencies": [
+        "lodash",
+        "chalk"
+      ]
+    }
+  ]
+}
