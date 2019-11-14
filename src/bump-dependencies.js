@@ -124,7 +124,7 @@ module.exports = async config => {
   const _commitAndMakePullRequest = commitAndMakePullRequest(config);
   const clusters = config.dependencies;
 
-  const RANGE = config.node_range || '^8';
+  const RANGE = config.node_range || _.getOr('^8', 'packageContent.engines.node', config);
   const latestNode = await findLatest(RANGE);
 
   const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
