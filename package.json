@@ -2,7 +2,10 @@
   "name": "@coorpacademy/update-node",
   "version": "3.10.0",
   "description": "Update your node dependencies while you sleep",
-  "main": "index.js",
+  "main": "src/index.js",
+  "bin": {
+    "update-node": "./bin/update-node"
+  },
   "engines": {
     "node": ">=8.10.0",
     "npm": "^6.4.1"
@@ -22,9 +25,6 @@
     "packages.json",
     "README.md"
   ],
-  "bin": {
-    "update-node": "./src/index.js"
-  },
   "scripts": {
     "test": "npm run lint && npm run test:unit",
     "test:unit": "ava",

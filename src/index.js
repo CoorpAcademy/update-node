@@ -1,5 +1,3 @@
-#! /usr/bin/env node
-
 const Promise = require('bluebird');
 const c = require('chalk');
 const _ = require('lodash/fp');
@@ -89,7 +87,7 @@ const COMMANDS = {
   ]
 };
 
-const main = async argv => {
+const runUpdateNode = async argv => {
   if (!cmd && argv.auto) {
     cmd = await selectCommand();
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
@@ -116,12 +114,18 @@ const main = async argv => {
   }
 };
 
-if (!module.parent) {
+const main = () => {
   const argv = yargs.parse(process.argv.slice(2));
-  main(argv).catch(err => {
+  runUpdateNode(argv).catch(err => {
     process.stderr.write(`${c.bold.red(err.message)}\n`);
     if (err.details) process.stderr.write(`${err.details}\n`);
     process.stderr.write('\n');
     process.exit(err.exitCode || 2);
   });
+};
+
+module.exports = {main, runUpdateNode};
+
+if (!module.parent) {
+  main();
 }
