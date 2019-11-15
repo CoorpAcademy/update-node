@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
 const findUp = require('find-up');
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),
@@ -74,7 +74,7 @@ const resolveConfig = async (config, configPath, argv) => {
 };
 
 const validateConfig = config => {
-  const result = Joi.validate(config, configSchema);
+  const result = configSchema.validate(config);
   if (result.error) throw result.error;
 };
 
