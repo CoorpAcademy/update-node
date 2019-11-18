@@ -26,7 +26,7 @@ const configSchema = Joi.object().keys({
   reviewers: [Joi.string(), Joi.array().items(Joi.string())],
   teamReviewers: [Joi.string(), Joi.array().items(Joi.string())],
   label: Joi.string(),
-  node: nodeConfig,
+  node: [nodeConfig, Joi.boolean().valid(false)],
   'auto-bump': [
     Joi.bool(),
     Joi.object().keys({
@@ -57,10 +57,12 @@ const resolveConfig = async (config, configPath, argv) => {
   };
 
   base.package = path.join(path.dirname(configPath), base.package || 'package.json');
-  base.node.nvmrc = defaultWithPath(base.node.nvmrc, '.nvmrc');
-  base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
-  base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
-  base.node.package = defaultWithPath(base.node.package, 'package.json');
+  if (_.isPlainObject(base.node)) {
+    base.node.nvmrc = defaultWithPath(base.node.nvmrc, '.nvmrc');
+    base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
+    base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
+    base.node.package = defaultWithPath(base.node.package, 'package.json');
+  }
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
   base.token = argv.token;

@@ -126,9 +126,10 @@ module.exports = async config => {
 
   const RANGE = config.node_range || _.getOr('^8', 'packageContent.engines.node', config);
   const latestNode = await findLatest(RANGE);
-
-  const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
-  await _commitAndMakePullRequest(bumpCommitConfig);
+  if (config.node) {
+    const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
+    await _commitAndMakePullRequest(bumpCommitConfig);
+  }
   const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
     const branchDetails = await bumpDependencies(config.package, cluster);
     if (!branchDetails.branch) return {};
