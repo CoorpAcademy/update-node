@@ -12,5 +12,16 @@
   ],
   "plugins": [
     "@coorpacademy/coorpacademy"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/index.js",
+        "bin/update-node"
+      ],
+      "rules": {
+        "unicorn/no-process-exit": "off"
+      }
+    }
   ]
 }

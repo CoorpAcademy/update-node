@@ -32,7 +32,7 @@ const getReleaseType = async selectionCommand => {
   const releaseType = selectionCommand
     ? await new Promise((resolve, reject) => {
         const res = shelljs.exec(selectionCommand);
-        if (res.code === 0) return res.stdout;
+        if (res.code === 0) return resolve(_.trim(res.stdout));
         throw makeError('Failed to get release type', {
           details: `Exit code of selection command '${selectionCommand}' was ${res.code}`,
           exitCode: 5

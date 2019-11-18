@@ -1,11 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const Promise = require('bluebird');
 const _ = require('lodash/fp');
-const shortstop = require('shortstop');
-const handlers = require('shortstop-handlers');
+const protocall = require('protocall');
 const findUp = require('find-up');
-const Joi = require('joi');
+const Joi = require('@hapi/joi');
 
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),
@@ -45,18 +43,11 @@ const configSchema = Joi.object().keys({
     .required()
 });
 
-const resolver = shortstop.create();
-resolver.use('env', handlers.env());
-resolver.use('base64', handlers.base64());
+const resolver = protocall.getDefaultResolver();
 const readConfig = pathe => JSON.parse(fs.readFileSync(pathe, 'utf-8'));
 
 const resolveConfig = async (config, configPath, argv) => {
-  const base = await new Promise((resolve, reject) => {
-    resolver.resolve(config, (err, data) => {
-      if (err) return reject(err);
-      return resolve(data);
-    });
-  });
+  const base = await resolver.resolve(config);
 
   const defaultWithPath = (value, defaulte) => {
     const resolvedValue =
@@ -70,13 +61,14 @@ const resolveConfig = async (config, configPath, argv) => {
   base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
   base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
   base.node.package = defaultWithPath(base.node.package, 'package.json');
+  base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
   base.token = argv.token;
   return base;
 };
 
 const validateConfig = config => {
-  const result = Joi.validate(config, configSchema);
+  const result = configSchema.validate(config);
   if (result.error) throw result.error;
 };
 
