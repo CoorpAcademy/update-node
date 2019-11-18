@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
 const findUp = require('find-up');
@@ -48,12 +47,7 @@ const resolver = protocall.getDefaultResolver();
 const readConfig = pathe => JSON.parse(fs.readFileSync(pathe, 'utf-8'));
 
 const resolveConfig = async (config, configPath, argv) => {
-  const base = await new Promise((resolve, reject) => {
-    resolver.resolve(config, (err, data) => {
-      if (err) return reject(err);
-      return resolve(data);
-    });
-  });
+  const base = await resolver.resolve(config);
 
   const defaultWithPath = (value, defaulte) => {
     const resolvedValue =
