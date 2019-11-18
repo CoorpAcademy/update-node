@@ -20,8 +20,11 @@
         "bluebird",
         "yaml",
         "lodash",
-        "minimist",
+        "minimatch",
+        "yargs",
+        "protocall",
         "request",
+        "semver",
         "shelljs"
       ]
     },
@@ -31,7 +34,7 @@
       "devDependencies": [
         "ava",
         "istanbul",
-        "mocha",
+        "codecov",
         "nyc"
       ]
     },
