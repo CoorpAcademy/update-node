@@ -1,7 +1,7 @@
 {
   "repoSlug": "Coorpacademy/update-node",
   "baseBranch": "master",
-  "packageManager": "yarn",
+  "packageManager": "npm",
   "reviewers": [],
   "teamReviewers": [
     "env:TEAM_REVIEWERS"
@@ -10,13 +10,7 @@
   "auto-bump": {
     "publish": true
   },
-  "node": {
-    "branch": "upgrade-node",
-    "nvmrc": true,
-    "dockerfile": false,
-    "travis": true,
-    "package": false
-  },
+  "node": false,
   "dependencies": [
     {
       "name": "core",
