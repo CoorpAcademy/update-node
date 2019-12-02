@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@hapi/joi": "^16.1.7",
-    "bluebird": "3.7.1",
+    "bluebird": "3.7.2",
     "chalk": "^3.0.0",
     "find-up": "^4.1.0",
     "lodash": "4.17.15",
@@ -53,7 +53,7 @@
     "split2": "^3.1.1",
     "through2": "^3.0.1",
     "yaml": "^1.7.2",
-    "yargs": "^14.2.0"
+    "yargs": "^15.0.2"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "9.0.1",
