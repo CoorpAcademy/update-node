@@ -23,9 +23,9 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
   // patch the first item of list in cst node behind node_js
   const currentVersionRange = documentItems[nodejsIndex + 1].node.items[0].node.range;
   return (
-    yamlString.substring(0, currentVersionRange.start) +
+    yamlString.slice(0, Math.max(0, currentVersionRange.start)) +
     nodeVersion +
-    yamlString.substring(currentVersionRange.end, yamlString.length)
+    yamlString.slice(currentVersionRange.end, yamlString.length)
   );
 };
 
