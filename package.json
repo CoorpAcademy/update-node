@@ -47,13 +47,13 @@
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
-    "request": "2.88.0",
-    "semver": "^6.3.0",
+    "request": "2.88.2",
+    "semver": "^7.3.2",
     "shelljs": "0.8.3",
     "split2": "^3.1.1",
     "through2": "^3.0.1",
-    "yaml": "^1.7.2",
-    "yargs": "^15.0.2"
+    "yaml": "^1.9.2",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "9.0.1",
