@@ -68,9 +68,7 @@ module.exports = async config => {
   if (autoBumpConfig['sync-branch']) {
     const branch = autoBumpConfig['sync-branch'];
     await executeScript([
-      `git config remote.gh.url >/dev/null || git remote add gh https://${
-        config.token
-      }@github.com/${config.repoSlug}.git`,
+      `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git pull gh ${branch} && git checkout ${branch} && git reset --hard master`,
       `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
       'git remote remove gh'
@@ -80,9 +78,7 @@ module.exports = async config => {
   if (autoBumpConfig['merge-branch']) {
     const branch = autoBumpConfig['merge-branch'];
     await executeScript([
-      `git config remote.gh.url >/dev/null || git remote add gh https://${
-        config.token
-      }@github.com/${config.repoSlug}.git`,
+      `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git pull gh ${branch} && git checkout ${branch} && git merge master`,
       `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
       'git remote remove gh'

@@ -55,7 +55,7 @@ const __updateDependencies = (dev = false) => {
 
     const matchingDependencies = _.flatMap(
       dependency =>
-        dependency.match(/[*{},]/)
+        dependency.match(/[*,{}]/)
           ? _.keys(_.get(DEPENDENCY_KEY, pkgObj)).filter(dependencyName =>
               minimatch(dependencyName, dependency)
             )
