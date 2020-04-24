@@ -34,14 +34,7 @@ const findFulfilled = fun => arr =>
 const findLatest = range => {
   const versionsP = getNodeVersions();
 
-  const mapVersionsP = versionsP.then(
-    keyBy(
-      pipe(
-        get('version'),
-        trimCharsStart('v')
-      )
-    )
-  );
+  const mapVersionsP = versionsP.then(keyBy(pipe(get('version'), trimCharsStart('v'))));
 
   const latestAvailableVersionP = mapVersionsP
     .then(keys)

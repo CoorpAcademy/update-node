@@ -17,10 +17,7 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError} = require('./core/utils');
 
-const parseArgvToArray = _.pipe(
-  _.split(','),
-  _.compact
-);
+const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));

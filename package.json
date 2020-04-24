@@ -38,28 +38,28 @@
     "update": "node src"
   },
   "dependencies": {
-    "@hapi/joi": "^17.1.0",
+    "@hapi/joi": "^17.1.1",
     "bluebird": "3.7.2",
-    "chalk": "^3.0.0",
+    "chalk": "^4.0.0",
     "find-up": "^4.1.0",
     "lodash": "4.17.15",
     "minimatch": "^3.0.4",
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
-    "request": "2.88.0",
-    "semver": "^7.1.1",
+    "request": "2.88.2",
+    "semver": "^7.3.2",
     "shelljs": "0.8.3",
     "split2": "^3.1.1",
     "through2": "^3.0.1",
-    "yaml": "^1.7.2",
-    "yargs": "^15.1.0"
+    "yaml": "^1.9.2",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "9.2.1",
+    "@coorpacademy/eslint-plugin-coorpacademy": "9.3.1",
     "ava": "^2.4.0",
-    "codecov": "^3.6.2",
+    "codecov": "^3.6.5",
     "eslint": "6.8.0",
-    "nyc": "^15.0.0"
+    "nyc": "^15.0.1"
   }
 }

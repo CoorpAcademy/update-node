@@ -12,13 +12,7 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
   const yamlCst = YAML.parseCST(yamlString);
   const documentItems = _.get('[0].contents[0].items', yamlCst);
   if (!documentItems) throw new Error('Travis config file seems not be a valid yaml');
-  const nodejsIndex = _.findIndex(
-    _.pipe(
-      _.get('strValue'),
-      _.equals('node_js')
-    ),
-    documentItems
-  );
+  const nodejsIndex = _.findIndex(_.pipe(_.get('strValue'), _.equals('node_js')), documentItems);
   if (nodejsIndex === -1) throw new Error('Travis config has missing node_js key');
   // patch the first item of list in cst node behind node_js
   const currentVersionRange = documentItems[nodejsIndex + 1].node.items[0].node.range;
