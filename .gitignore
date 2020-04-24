@@ -1,5 +1,6 @@
 node_modules
 tmp
+.vscode
 private
 coverage
 .nyc_output
