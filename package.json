@@ -49,7 +49,7 @@
     "pumpify": "^2.0.1",
     "request": "2.88.2",
     "semver": "^7.3.2",
-    "shelljs": "0.8.3",
+    "shelljs": "0.8.4",
     "split2": "^3.1.1",
     "through2": "^3.0.1",
     "yaml": "^1.9.2",
