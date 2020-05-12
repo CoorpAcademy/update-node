@@ -7,8 +7,8 @@
     "update-node": "./bin/update-node.js"
   },
   "engines": {
-    "node": ">=8.10.0",
-    "npm": "^6.4.1"
+    "node": ">=10.3",
+    "npm": "^6.1"
   },
   "author": "Coorpacademy Tech Team",
   "license": "MIT",
