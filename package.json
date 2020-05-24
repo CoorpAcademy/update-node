@@ -52,7 +52,7 @@
     "shelljs": "0.8.4",
     "split2": "^3.1.1",
     "through2": "^3.0.1",
-    "yaml": "^1.9.2",
+    "yaml": "^1.10.0",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
