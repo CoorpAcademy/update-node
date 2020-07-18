@@ -42,7 +42,7 @@
     "bluebird": "3.7.2",
     "chalk": "^4.0.0",
     "find-up": "^4.1.0",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "minimatch": "^3.0.4",
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
