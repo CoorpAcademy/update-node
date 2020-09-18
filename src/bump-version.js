@@ -1,9 +1,8 @@
 #! /usr/bin/env node
 
+const childProcess = require('child_process');
 const c = require('chalk');
-const shelljs = require('shelljs');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
 const {headClean, headMessage, pushFiles} = require('./core/git');
 const {makeError} = require('./core/utils');
 const executeScript = require('./core/script');
@@ -28,16 +27,20 @@ const builtInSelectReleaseType = message => {
   return MINOR;
 };
 
+const getCustomSelection = cmd => {
+  try {
+    return childProcess.execSync(cmd, {encoding: 'utf-8'}).trim();
+  } catch (err) {
+    throw makeError('Failed to get release type', {
+      details: `Exit code of selection command '${cmd}' was ${err.status}`,
+      exitCode: 5
+    });
+  }
+};
+
 const getReleaseType = async selectionCommand => {
   const releaseType = selectionCommand
-    ? await new Promise((resolve, reject) => {
-        const res = shelljs.exec(selectionCommand);
-        if (res.code === 0) return resolve(_.trim(res.stdout));
-        throw makeError('Failed to get release type', {
-          details: `Exit code of selection command '${selectionCommand}' was ${res.code}`,
-          exitCode: 5
-        });
-      })
+    ? getCustomSelection(selectionCommand)
     : await builtInSelectReleaseType(await headMessage());
   if (!_.includes(releaseType, [MAJOR, MINOR, PATCH]))
     throw makeError(`Invalid release type ${releaseType}`);
