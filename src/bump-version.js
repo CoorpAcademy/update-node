@@ -63,10 +63,10 @@ module.exports = async config => {
   const bumpVersionCommand = autoBumpConfig['bump-command'] || 'npm version -m "v%s"';
   await executeScript([`${bumpVersionCommand} ${releaseType}`]);
   if (!config.local) await pushFiles('master', config.token, config.repoSlug, true);
-  process.stdout.write(c.bold.green(`Successfuly made a ${releaseType} release\n`));
+  process.stdout.write(c.bold.green(`Successfully made a ${releaseType} release\n`));
   if (autoBumpConfig.publish || autoBumpConfig['publish-command']) {
     await executeScript([autoBumpConfig['publish-command'] || 'npm publish']);
-    process.stdout.write(c.bold.green(`Successfuly publish the ${releaseType} release\n`));
+    process.stdout.write(c.bold.green(`Successfully publish the ${releaseType} release\n`));
   }
   if (autoBumpConfig['sync-branch']) {
     const branch = autoBumpConfig['sync-branch'];
@@ -76,7 +76,7 @@ module.exports = async config => {
       `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
-    process.stdout.write(c.bold.green(`Successfuly sync branch ${branch}\n`));
+    process.stdout.write(c.bold.green(`Successfully sync branch ${branch}\n`));
   }
   if (autoBumpConfig['merge-branch']) {
     const branch = autoBumpConfig['merge-branch'];
@@ -86,6 +86,6 @@ module.exports = async config => {
       `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
-    process.stdout.write(c.bold.green(`Successfuly merged branch ${branch}\n`));
+    process.stdout.write(c.bold.green(`Successfully merged branch ${branch}\n`));
   }
 };

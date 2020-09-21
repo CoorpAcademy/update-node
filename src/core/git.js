@@ -27,9 +27,10 @@ const headBranch = () =>
   childProcess.execFileSync('git', ['symbolic-ref', '--short', 'HEAD'], {encoding: 'utf-8'}).trim();
 
 const headClean = () => {
-  const res = childProcess.execFileSync('git', ['status'], {encoding: 'utf-8'});
-  // only untracked
-  return /nothing to commit/.test(res);
+  const res = childProcess
+    .execFileSync('git', ['status', '--porcelain'], {encoding: 'utf-8'})
+    .trim();
+  return res === '';
 };
 
 const getRepoSlug = () =>
