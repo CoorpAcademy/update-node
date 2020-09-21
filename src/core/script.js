@@ -1,6 +1,8 @@
+const childProcess = require('child_process');
 const Promise = require('bluebird');
 const padStream = require('pad-stream');
-const shelljs = require('shelljs');
+const {parseArgsStringToArgv} = require('string-argv');
+
 const c = require('chalk');
 const split = require('split2');
 const through = require('through2');
@@ -22,11 +24,9 @@ const wrapingStream = size =>
 const executeScript = commands =>
   Promise.mapSeries(commands, cmd => {
     if (!cmd) return;
+    const [program, ...args] = parseArgsStringToArgv(cmd);
     return new Promise((resolve, reject) => {
-      const child = shelljs.exec(cmd, {async: true, silent: true}, err => {
-        if (err) return reject(err);
-        resolve();
-      });
+      const child = childProcess.spawn(program, args);
       const columns = process.env.COLUMNS ? parseInt(process.env.COLUMNS, 10) - 3 : 100;
 
       const outStream = pumpify(padStream(3), wrapingStream(columns));
@@ -44,6 +44,10 @@ const executeScript = commands =>
       });
       child.stderr.on('close', () => {
         errStream.unpipe();
+      });
+      child.on('close', code => {
+        if (code !== 0) return reject(new Error(`exit code ${code}`));
+        resolve();
       });
     });
   });

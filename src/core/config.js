@@ -3,7 +3,7 @@ const path = require('path');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
 const findUp = require('find-up');
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),

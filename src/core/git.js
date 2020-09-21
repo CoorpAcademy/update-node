@@ -1,4 +1,4 @@
-const shelljs = require('shelljs');
+const childProcess = require('child_process');
 const executeScript = require('./script');
 
 const commitFiles = async (branch, message) => {
@@ -19,32 +19,25 @@ const commitFiles = async (branch, message) => {
   }
 };
 
-const headCommit = () => {
-  const res = shelljs.exec('git rev-parse --short HEAD', {silent: true});
-  return res.stdout.trim();
-};
+const headCommit = () =>
+  childProcess.execFileSync('git', ['rev-parse', '--short', 'HEAD'], {encoding: 'utf-8'}).trim();
+const headMessage = () =>
+  childProcess.execFileSync('git', ['log', '-1', '--pretty=%B'], {encoding: 'utf-8'}).trim();
+const headBranch = () =>
+  childProcess.execFileSync('git', ['symbolic-ref', '--short', 'HEAD'], {encoding: 'utf-8'}).trim();
 
-const headMessage = () => {
-  const res = shelljs.exec('git log -1 --pretty=%B', {silent: true});
-  return res.stdout.trim();
-};
-const headBranch = () => {
-  const res = shelljs.exec('git symbolic-ref --short HEAD', {silent: true});
-  return res.stdout.trim();
-};
 const headClean = () => {
-  const res = shelljs.exec('git status', {silent: true});
-  // only untrackered
-  return /nothing to commit/.test(res.stdout);
+  const res = childProcess.execFileSync('git', ['status'], {encoding: 'utf-8'});
+  // only untracked
+  return /nothing to commit/.test(res);
 };
 
-const getRepoSlug = () => {
-  const res = shelljs.exec('git remote get-url origin', {silent: true});
-  return res.stdout
+const getRepoSlug = () =>
+  childProcess
+    .execFileSync('git', ['remote', 'get-url', 'origin'], {encoding: 'utf-8'})
     .split(':')[1]
     .trim()
     .replace(/\.git$/, '');
-};
 
 const pushFiles = (branch, githubToken, repoSlug, tags = false) =>
   executeScript([
