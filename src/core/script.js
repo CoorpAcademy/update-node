@@ -8,7 +8,7 @@ const split = require('split2');
 const through = require('through2');
 const pumpify = require('pumpify');
 
-const wrapingStream = size =>
+const wrappingStream = size =>
   pumpify(
     split(),
     through(function(data, enc, cb) {
@@ -22,15 +22,15 @@ const wrapingStream = size =>
   );
 
 const executeScript = commands =>
-  Promise.mapSeries(commands, cmd => {
+  Promise.each(commands, cmd => {
     if (!cmd) return;
     const [program, ...args] = parseArgsStringToArgv(cmd);
     return new Promise((resolve, reject) => {
       const child = childProcess.spawn(program, args);
       const columns = process.env.COLUMNS ? parseInt(process.env.COLUMNS, 10) - 3 : 100;
 
-      const outStream = pumpify(padStream(3), wrapingStream(columns));
-      const errStream = pumpify(padStream(3), wrapingStream(columns));
+      const outStream = pumpify(padStream(3), wrappingStream(columns));
+      const errStream = pumpify(padStream(3), wrappingStream(columns));
       outStream.pipe(process.stdout);
       errStream.pipe(process.stderr);
       child.stdout.on('data', data => {
