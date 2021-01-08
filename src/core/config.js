@@ -38,9 +38,7 @@ const configSchema = Joi.object().keys({
       'sync-branch': Joi.string()
     })
   ],
-  dependencies: Joi.array()
-    .items(dependencyClusterConfig)
-    .required()
+  dependencies: Joi.array().items(dependencyClusterConfig).required()
 });
 
 const resolver = protocall.getDefaultResolver();

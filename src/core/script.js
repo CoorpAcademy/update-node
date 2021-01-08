@@ -10,7 +10,7 @@ const pumpify = require('pumpify');
 const wrappingStream = size =>
   pumpify(
     split(),
-    through(function(data, enc, cb) {
+    through(function (data, enc, cb) {
       if (!data) return cb(null, `${data}\n`);
       if (data.length < size) return cb(null, `${data}\n`);
       const lines = data.toString().match(new RegExp(`.{1,${size}}(?=\\s|\\b)?`, 'g'));
@@ -25,7 +25,7 @@ const executeScript = commands =>
     if (!cmd) return;
     return new Promise((resolve, reject) => {
       const child = childProcess.exec(cmd);
-      const columns = process.env.COLUMNS ? parseInt(process.env.COLUMNS, 10) - 3 : 100;
+      const columns = process.env.COLUMNS ? Number.parseInt(process.env.COLUMNS, 10) - 3 : 100;
 
       const outStream = pumpify(padStream(3), wrappingStream(columns));
       const errStream = pumpify(padStream(3), wrappingStream(columns));
