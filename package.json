@@ -48,11 +48,11 @@
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
     "request": "2.88.2",
-    "semver": "^7.3.2",
+    "semver": "^7.3.4",
     "split2": "^3.2.2",
     "through2": "^3.0.2",
     "yaml": "^1.10.0",
-    "yargs": "^15.4.1"
+    "yargs": "^16.2.0"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "9.3.1",
