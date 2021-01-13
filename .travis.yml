@@ -1,17 +1,33 @@
 language: node_js
-node_js:
-  - 10
-  - 12
-  - 14
-# This is here to show comment is preserved
-anchor: &npm npm
+node_js: 10
+anchor: &npm npm # This is here to show comment and preserved
 cache: *npm
 install: npm ci
-script: npm test
-after_success: npm run publish-coverage
-deploy:
-  - provider: script
-    skip_cleanup: true
-    script: ./scripts/self-update.sh
-    'on':
-      branch: master
+stages:
+  - lint
+  - test
+  - name: auto-bump
+    if: branch = master AND type != pull_request
+
+jobs:
+  include:
+    - stage: lint
+      name: lint
+      script: npm run lint
+
+    - &test
+      stage: test
+      name: test-update-node10
+      node_js: '10'
+      script: npm run test:all
+      after_success: npm run publish-coverage
+    - <<: *test
+      name: test-update-node12
+      node_js: '12'
+    - <<: *test
+      name: test-update-node14
+      node_js: '14'
+
+    - stage: auto-bump
+      name: auto-bump
+      script: ./scripts/self-update.sh
