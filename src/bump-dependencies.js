@@ -63,8 +63,9 @@ const bumpDependencies = async (pkg, cluster) => {
   );
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
-    message: `${cluster.message ||
-      'Upgrade dependencies'}\n\nUpgraded dependencies:\n${allInstalledDependencies
+    message: `${
+      cluster.message || 'Upgrade dependencies'
+    }\n\nUpgraded dependencies:\n${allInstalledDependencies
       .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
       .join('\n')}\n`,
     pullRequest: {
