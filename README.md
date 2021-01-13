@@ -1,7 +1,7 @@
 # Update node :outbox_tray:
 
 [![Npm version](https://img.shields.io/npm/v/@coorpacademy/update-node.svg)](https://www.npmjs.com/package/@coorpacademy/update-node)
-[![Build Status](https://travis-ci.org/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.org/CoorpAcademy/update-node)
+[![Build Status](https://travis-ci.com/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.com/CoorpAcademy/update-node)
 [![codecov](https://codecov.io/gh/CoorpAcademy/update-node/branch/master/graph/badge.svg)](https://codecov.io/gh/CoorpAcademy/update-node)
 
 ## Options :gear:
