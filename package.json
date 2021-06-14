@@ -39,9 +39,9 @@
   },
   "dependencies": {
     "bluebird": "3.7.2",
-    "chalk": "^4.1.0",
+    "chalk": "^4.1.1",
     "find-up": "^5.0.0",
-    "joi": "^17.3.0",
+    "joi": "^17.4.0",
     "lodash": "4.17.21",
     "minimatch": "^3.0.4",
     "pad-stream": "^2.0.0",
@@ -57,8 +57,8 @@
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "10.2.0",
     "ava": "^3.15.0",
-    "codecov": "^3.8.1",
-    "eslint": "7.23.0",
+    "codecov": "^3.8.2",
+    "eslint": "7.28.0",
     "nyc": "^15.1.0"
   }
 }
