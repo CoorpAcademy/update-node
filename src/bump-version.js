@@ -10,6 +10,7 @@ const executeScript = require('./core/script');
 const MAJOR = 'major';
 const MINOR = 'minor';
 const PATCH = 'patch';
+const NOOP = null;
 
 const builtInSelectReleaseType = message => {
   const firstLine = message.split('\n')[0];
@@ -17,9 +18,11 @@ const builtInSelectReleaseType = message => {
   const tooShortMessage = firstLine.split(' ').length < 5; // 4 word + PR tag
   const hashtagMinor = /#minor\b/i.test(firstLine);
   const hashtagBug = /#bug\b/i.test(firstLine);
+  const hashtagNoop = /#no(op|no[_-]?realease)\b/i.test(message);
   const containsMinorKeyWords = /release|feature/i.test(firstLine);
   const isSquashOrMerge = /Merge pull request #\d+|\(#\D+\)/.test(firstLine);
 
+  if (hashtagNoop) return NOOP;
   if (hashtagBug || containsPatchKeyWords) return PATCH;
   if (hashtagMinor || containsMinorKeyWords) return MINOR;
   if (!isSquashOrMerge) return MINOR;
@@ -42,7 +45,7 @@ const getReleaseType = async selectionCommand => {
   const releaseType = selectionCommand
     ? getCustomSelection(selectionCommand)
     : await builtInSelectReleaseType(await headMessage());
-  if (!_.includes(releaseType, [MAJOR, MINOR, PATCH]))
+  if (!_.includes(releaseType, [MAJOR, MINOR, PATCH, NOOP]))
     throw makeError(`Invalid release type ${releaseType}`);
   return releaseType;
 };
@@ -59,7 +62,9 @@ module.exports = async config => {
   const releaseSelector = autoBumpConfig['release-type-command'];
   const releaseType = await getReleaseType(releaseSelector);
 
-  process.stdout.write(`About to make a ${c.bold.blue(releaseType)} release\n`);
+  if (!releaseType) return process.stdout.write(`Won't make a release\n`);
+
+  process.stdout.write(c.bold.yellow(`About to make a ${c.bold.blue(releaseType)} release\n`));
   const bumpVersionCommand = autoBumpConfig['bump-command'] || 'npm version -m "v%s"';
   await executeScript([`${bumpVersionCommand} ${releaseType}`]);
   if (!config.local) await pushFiles('master', config.token, config.repoSlug, true);
@@ -68,6 +73,7 @@ module.exports = async config => {
     await executeScript([autoBumpConfig['publish-command'] || 'npm publish']);
     process.stdout.write(c.bold.green(`Successfully publish the ${releaseType} release\n`));
   }
+
   if (autoBumpConfig['sync-branch']) {
     const branch = autoBumpConfig['sync-branch'];
     await executeScript([
