@@ -10,7 +10,7 @@
   "auto-bump": {
     "publish": true,
     "keywords": {
-      "noop": ["#noop"],
+      "noop": ["#noop", "Update *#*"],
       "major": "#major",
       "minor": true,
       "patch": ["#bug", "#tweak", "plugging", "#updates"]
