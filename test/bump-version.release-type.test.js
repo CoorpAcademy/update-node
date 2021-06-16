@@ -5,8 +5,8 @@ test('mergeCustomKeywords', t => {
   t.deepEqual(mergeCustomKeywordsWithDefault({patch: ['bigbug'], noop: ':see_no_evil:'}), {
     major: ['#major'],
     minor: ['#minor'],
-    noop: ['#noop', '#no+(_|-|)release', ':see_no_evil:'],
-    patch: ['#bug', '#fix', '#tweak', 'plugging', '#updates', 'bigbug']
+    noop: ['#noop', '#no{_,-,}release', ':see_no_evil:'],
+    patch: ['#bug', '#fix', '#tweak', '#updates', 'bigbug']
   });
 });
 

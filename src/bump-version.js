@@ -14,10 +14,10 @@ const PATCH = 'patch';
 const NOOP = 'noop';
 
 const DEFAULT_KEYWORDS = {
-  noop: ['#noop', '#no+(_|-|)release'],
+  noop: ['#noop', '#no{_,-,}release'],
   major: '#major',
   minor: ['#minor'],
-  patch: ['#bug', '#fix', '#tweak', 'plugging', '#updates']
+  patch: ['#bug', '#fix', '#tweak', '#updates']
 };
 const DEFAULT_KEYWORD_PRIORITY = [NOOP, MAJOR, PATCH, MINOR];
 
