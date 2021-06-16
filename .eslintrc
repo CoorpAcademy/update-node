@@ -13,6 +13,10 @@
   "plugins": [
     "@coorpacademy/coorpacademy"
   ],
+  "rules": {
+    "no-continue": "off",
+    "fp/no-loops": "off"
+  },
   "overrides": [
     {
       "files": [

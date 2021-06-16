@@ -3,7 +3,7 @@ const c = require('chalk');
 const _ = require('lodash/fp');
 
 const bumpDependencies = require('./bump-dependencies');
-const bumpVersion = require('./bump-version');
+const {main: bumpVersion} = require('./bump-version');
 const {setup, validate} = require('./scaffold-config');
 const {UPGRADE, BUMP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
 const {getConfig} = require('./core/config');

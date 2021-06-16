@@ -5,6 +5,8 @@ const protocall = require('protocall');
 const findUp = require('find-up');
 const Joi = require('joi');
 
+const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
+
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),
   nvmrc: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
@@ -19,6 +21,11 @@ const dependencyClusterConfig = Joi.object().keys({
   dependencies: Joi.array().items(Joi.string()),
   devDependencies: Joi.array().items(Joi.string())
 });
+const releaseSelectionSchema = Joi.object().pattern(Joi.string().validate(...RELEASE_TYPES), [
+  Joi.boolean().invalid(false),
+  Joi.string(),
+  Joi.array().items(Joi.string())
+]);
 const configSchema = Joi.object().keys({
   repoSlug: Joi.string().required(),
   baseBranch: Joi.string().required(),
@@ -29,14 +36,20 @@ const configSchema = Joi.object().keys({
   node: [nodeConfig, Joi.boolean().valid(false)],
   'auto-bump': [
     Joi.bool(),
-    Joi.object().keys({
-      'bump-command': Joi.string(),
-      'release-type-command': Joi.string(),
-      publish: Joi.bool(),
-      'publish-command': Joi.string(),
-      'merge-branch': Joi.string(),
-      'sync-branch': Joi.string()
-    })
+    Joi.object()
+      .keys({
+        'bump-command': Joi.string(),
+        'release-type-command': Joi.string(),
+        publish: Joi.bool(),
+        'publish-command': Joi.string(),
+        'merge-branch': Joi.string(),
+        'sync-branch': Joi.string(),
+        priority: Joi.array().items(Joi.string().validate(...RELEASE_TYPES)),
+        keywords: releaseSelectionSchema,
+        'custom-keywords': releaseSelectionSchema
+      })
+      .rename('priority', 'release-priority')
+      .oxor('keywords', 'custom-keywords')
   ],
   dependencies: Joi.array().items(dependencyClusterConfig).required()
 });

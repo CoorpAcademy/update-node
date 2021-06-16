@@ -8,7 +8,13 @@
   ],
   "label": "Upgrades :outbox_tray:",
   "auto-bump": {
-    "publish": true
+    "publish": true,
+    "keywords": {
+      "noop": ["#noop", "Update *#*"],
+      "major": "#major",
+      "minor": true,
+      "patch": ["#bug", "#tweak", "plugging", "#updates"]
+    }
   },
   "node": false,
   "dependencies": [

@@ -29,4 +29,14 @@ git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 npm run update -- auto-bump --local
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
-git checkout  -b origins init
+# Try the noop feature
+git commit --allow-empty -m "Commit nope results. #noop"
+current_commit="$(git rev-parse HEAD)"
+npm run update -- auto-bump --local
+if  [[ $current_commit != "$(git rev-parse HEAD)" ]]; then
+    echo "Seems like a commit was created while it wasn't supposed to"
+    exit 2
+fi
+git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
+
+git checkout -b origins init
