@@ -21,7 +21,7 @@ const dependencyClusterConfig = Joi.object().keys({
   dependencies: Joi.array().items(Joi.string()),
   devDependencies: Joi.array().items(Joi.string())
 });
-const releaseSelectionSchema = Joi.object().pattern(Joi.string().validate(...RELEASE_TYPES), [
+const releaseSelectionSchema = Joi.object().pattern(Joi.string().valid(...RELEASE_TYPES), [
   Joi.boolean().invalid(false),
   Joi.string(),
   Joi.array().items(Joi.string())
