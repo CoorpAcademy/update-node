@@ -57,7 +57,7 @@ The default mecanism to select which semver level is based on a keyword mechanis
 For the bump, default keywords are the following
 - `major`: `#major`
 - `minor`: `#noop` `#noRelease` (was an accepted `_` or `-` between _no_  and _release_)
-- `patch`: `#bug`, `#fix`, `#tweak`, `#updates`
+- `patch`: `#patch`, `#bug`, `#fix`, `#tweak`, `#updates`
 - `noop`: `#minor`
 
 Order of preference is `noop`, `major`, `parch`, `minor`. If none match, the latest is selected. By default `minor`
