@@ -6,7 +6,7 @@ test('mergeCustomKeywords', t => {
     major: ['#major'],
     minor: ['#minor'],
     noop: ['#noop', '#no{_,-,}release', ':see_no_evil:'],
-    patch: ['#bug', '#fix', '#tweak', '#updates', 'bigbug']
+    patch: ['#patch', '#bug', '#fix', '#tweak', '#updates', 'bigbug']
   });
 });
 
