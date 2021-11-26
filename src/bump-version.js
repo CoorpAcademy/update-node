@@ -106,7 +106,7 @@ const main = async config => {
     const branch = autoBumpConfig['sync-branch'];
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
-      `git pull --ff-only gh ${branch} && git checkout ${branch} && git reset --hard master`,
+      `git checkout -B ${branch} master`,
       `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
@@ -116,7 +116,7 @@ const main = async config => {
     const branch = autoBumpConfig['merge-branch'];
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
-      `git pull --ff-only gh ${branch} && git checkout ${branch} && git merge master`,
+      `git fetch gh && git checkout -B ${branch} gh/${branch} && git merge master`,
       `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
