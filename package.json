@@ -55,10 +55,10 @@
     "yargs": "^16.2.0"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "10.2.0",
+    "@coorpacademy/eslint-plugin-coorpacademy": "10.3.1",
     "ava": "^3.15.0",
     "codecov": "^3.8.3",
-    "eslint": "7.28.0",
+    "eslint": "8.8.0",
     "nyc": "^15.1.0"
   }
 }
