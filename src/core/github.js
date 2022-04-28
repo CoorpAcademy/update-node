@@ -21,8 +21,8 @@ const searchPullRequest = (repoSlug, head, base, githubToken) => {
     json: true
   })
     .then(([response, body]) => {
-      if (response.statusCode === 200) return Promise.resolve(body);
-      return Promise.reject(new Error(_.get('message', body)));
+      if (response.statusCode === 200) return body;
+      throw new Error(_.get('message', body));
     })
     .get(0);
 };
@@ -46,9 +46,9 @@ const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
     }
   })
     .then(([response, responseBody]) => {
-      if (response.statusCode === 201) return Promise.resolve(responseBody);
+      if (response.statusCode === 201) return responseBody;
       if (response.statusCode === 422) return searchPullRequest(repoSlug, head, base, githubToken);
-      return Promise.reject(new Error(_.get('message', responseBody)));
+      throw new Error(_.get('message', responseBody));
     })
     .tap(() => process.stdout.write('  - 📬  Create/Update pull request\n'));
 };
@@ -74,12 +74,12 @@ const assignReviewers = (reviewerConfig, pullRequest, githubToken) => {
     }
   })
     .then(([response, body]) => {
-      if (response.statusCode === 201) return Promise.resolve();
-      return Promise.reject(new Error(_.get('message', body)));
+      if (response.statusCode === 201) return;
+      throw new Error(_.get('message', body));
     })
     .tap(() =>
       process.stdout.write(
-        `  - 👥  Create assignations ${_.concat(reviewers, team_reviewers)
+        `  - 👥  Create assignations ${[...reviewers, ...team_reviewers]
           .map(r => `@${c.dim.bold(r)}`)
           .join(', ')}\n`
       )
@@ -90,9 +90,9 @@ const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => 
 
   const {issue_url} = pullRequest;
   const originalLabels = pullRequest.labels;
-  const labels = _.find(l => label === _.get('name', l), originalLabels)
+  const labels = _.some(l => label === _.get('name', l), originalLabels)
     ? originalLabels
-    : originalLabels.concat(label);
+    : [...originalLabels, ...label];
   return request({
     uri: issue_url,
     method: 'PATCH',
@@ -109,8 +109,8 @@ const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => 
     }
   })
     .then(([response, responseBody]) => {
-      if (response.statusCode === 200) return Promise.resolve();
-      return Promise.reject(new Error(_.get('message', responseBody)));
+      if (response.statusCode === 200) return;
+      throw new Error(_.get('message', responseBody));
     })
     .tap(() => process.stdout.write('  - 🏷  Added label\n'));
 };
@@ -121,8 +121,13 @@ const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, g
   if (!branchHasCommits) {
     return {commit: null, branch};
   }
-  const {body = '', title = message, team_reviewers = [], reviewers = [], label = ''} =
-    pullRequestContent || {};
+  const {
+    body = '',
+    title = message,
+    team_reviewers = [],
+    reviewers = [],
+    label = ''
+  } = pullRequestContent || {};
 
   const commit = headCommit();
   try {

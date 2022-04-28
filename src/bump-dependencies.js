@@ -46,7 +46,7 @@ const bumpDependencies = async (pkg, cluster) => {
   );
   const installedDependencies = await updateDependencies(pkg, cluster.dependencies);
   const installedDevDependencies = await updateDevDependencies(pkg, cluster.devDependencies);
-  const allInstalledDependencies = installedDependencies.concat(installedDevDependencies);
+  const allInstalledDependencies = [...installedDependencies, ...installedDevDependencies];
   if (_.isEmpty(allInstalledDependencies)) {
     process.stdout.write('+ No dependencies to update were found');
     return {};

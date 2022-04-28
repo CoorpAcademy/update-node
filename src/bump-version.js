@@ -29,7 +29,7 @@ const builtInSelectReleaseType = (config, message) => {
     if (!releaseTypeConfig) continue;
     if (releaseTypeConfig === true) return releaseType;
 
-    const patterns = _.flatten([releaseTypeConfig]);
+    const patterns = [releaseTypeConfig].flat();
     if (_.some(pattern => minimatch(_.toLower(message), _.toLower(`*${pattern}*`)), patterns))
       return releaseType;
   }
@@ -42,7 +42,7 @@ const mergeCustomKeywordsWithDefault = customKeywords => {
     _.toPairs,
     _.map(([releaseType, defaultKeywords]) => [
       releaseType,
-      _.concat(defaultKeywords, _.flatten([_.getOr([], releaseType, customKeywords)]))
+      [...[defaultKeywords].flat(), ...[_.getOr([], releaseType, customKeywords)].flat()]
     ]),
     _.fromPairs
   )(DEFAULT_KEYWORDS);

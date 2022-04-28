@@ -8,6 +8,7 @@ const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);
 
 const updateDockerfile = (node, dockerfile) => {
+  // eslint-disable-next-line unicorn/no-array-method-this-argument
   if (_.isArray(dockerfile)) return Promise.map(dockerfile, d => updateDockerfile(node, d));
 
   if (!dockerfile || !node) return Promise.resolve();
