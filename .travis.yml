@@ -1,5 +1,5 @@
 language: node_js
-node_js: 10
+node_js: 12
 anchor: &npm npm # This is here to show comment and preserved
 cache: *npm
 install: npm ci
@@ -17,13 +17,10 @@ jobs:
 
     - &test
       stage: test
-      name: test-update-node10
-      node_js: '10'
-      script: npm run test:all
-      after_success: npm run publish-coverage
-    - <<: *test
       name: test-update-node12
       node_js: '12'
+      script: npm run test:all
+      after_success: npm run publish-coverage
     - <<: *test
       name: test-update-node14
       node_js: '14'
