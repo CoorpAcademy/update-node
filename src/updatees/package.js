@@ -21,6 +21,7 @@ const readPackage = packagePath => {
 };
 
 const updatePackageEngines = (node, npm, pkg, exact = false) => {
+  // eslint-disable-next-line unicorn/no-array-method-this-argument
   if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackageEngines(node, npm, p, exact));
 
   if (!pkg) return Promise.resolve();
@@ -55,7 +56,7 @@ const __updateDependencies = (dev = false) => {
 
     const matchingDependencies = _.flatMap(
       dependency =>
-        dependency.match(/[*,{}]/)
+        /[*,{}]/.test(dependency)
           ? _.keys(_.get(DEPENDENCY_KEY, pkgObj)).filter(dependencyName =>
               minimatch(dependencyName, dependency)
             )
@@ -84,8 +85,7 @@ const __updateDependencies = (dev = false) => {
   };
 };
 
-const updateLock = async packager => {
-  const packageManager = packager || 'npm';
+const updateLock = async (packageManager = 'npm') => {
   if (!_.includes(packageManager, ['npm', 'yarn']))
     throw new Error(`Invalid Package Manager: ${packageManager}`);
   process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)} 🔐 :\n`);

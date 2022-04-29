@@ -28,7 +28,7 @@ const findFulfilled = fun => arr =>
 
     return fun(value)
       .return(value)
-      .catch(() => Promise.resolve(null));
+      .catch(() => null);
   }, null);
 
 const findLatest = range => {

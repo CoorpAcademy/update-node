@@ -24,6 +24,7 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
 };
 
 const updateTravis = (nodeVersion, travis) => {
+  // eslint-disable-next-line unicorn/no-array-method-this-argument
   if (_.isArray(travis)) return Promise.map(travis, t => updateTravis(nodeVersion, t));
 
   if (!travis || !nodeVersion) return Promise.resolve();

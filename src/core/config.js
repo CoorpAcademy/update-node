@@ -55,7 +55,7 @@ const configSchema = Joi.object().keys({
 });
 
 const resolver = protocall.getDefaultResolver();
-const readConfig = pathe => JSON.parse(fs.readFileSync(pathe, 'utf-8'));
+const readConfig = pathe => JSON.parse(fs.readFileSync(pathe));
 
 const resolveConfig = async (config, configPath, argv) => {
   const base = await resolver.resolve(config);

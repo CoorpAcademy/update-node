@@ -7,6 +7,7 @@ const Promise = require('bluebird');
 const writeFile = Promise.promisify(fs.writeFile);
 
 const updateNvmrc = (node, nvmrc) => {
+  // eslint-disable-next-line unicorn/no-array-method-this-argument
   if (_.isArray(nvmrc)) return Promise.map(nvmrc, u => updateNvmrc(node, u));
 
   if (!nvmrc || !node) return Promise.resolve();
