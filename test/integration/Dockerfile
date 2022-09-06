@@ -1,4 +1,4 @@
-FROM node:10.12.0-slim
+FROM node:16.10.0-slim
 
 ENTRYPOINT [ "sh" ]
 CMD [ "-c", "echo 'dummy dockerfile'" ]
