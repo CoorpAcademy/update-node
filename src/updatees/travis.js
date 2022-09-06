@@ -8,18 +8,19 @@ const YAML = require('yaml');
 const readFile = Promise.promisify(fs.readFile);
 const writeFile = Promise.promisify(fs.writeFile);
 
+const parser = new YAML.Parser();
+
 const patchVersionInTravisYaml = nodeVersion => yamlString => {
-  const yamlCst = YAML.parseCST(yamlString);
-  const documentItems = _.get('[0].contents[0].items', yamlCst);
+  const yamlCst = [...parser.parse(yamlString)];
+  const documentItems = _.get('[0].value.items', yamlCst);
   if (!documentItems) throw new Error('Travis config file seems not be a valid yaml');
-  const nodejsIndex = _.findIndex(_.pipe(_.get('strValue'), _.equals('node_js')), documentItems);
-  if (nodejsIndex === -1) throw new Error('Travis config has missing node_js key');
-  // patch the first item of list in cst node behind node_js
-  const currentVersionRange = documentItems[nodejsIndex + 1].node.items[0].node.range;
+  const nodejsItem = _.find(_.matches({key: {source: 'node_js'}}), documentItems);
+  if (nodejsItem === null) throw new Error('Travis config has missing node_js key');
+  const versionItem = nodejsItem.value.items[0].value;
   return (
-    yamlString.slice(0, Math.max(0, currentVersionRange.start)) +
+    yamlString.slice(0, Math.max(0, versionItem.offset)) +
     nodeVersion +
-    yamlString.slice(currentVersionRange.end, yamlString.length)
+    yamlString.slice(versionItem.end[0].offset, yamlString.length)
   );
 };
 
