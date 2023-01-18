@@ -1,6 +1,6 @@
 {
   "name": "@coorpacademy/update-node",
-  "version": "5.3.0",
+  "version": "5.3.1",
   "description": "Update your node dependencies while you sleep",
   "main": "src/index.js",
   "bin": {
