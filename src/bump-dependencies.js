@@ -132,8 +132,8 @@ module.exports = async config => {
     const branchDetails = await bumpDependencies(config.package, cluster);
     if (!branchDetails.branch) return {};
     await updateLock(config.packageManager);
-    const {branch, commit, pullRequest} = await _commitAndMakePullRequest(branchDetails);
-    return {branchDetails, pullRequest, branch, commit};
+    const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
+    return {branchDetails, pullRequest, branch, commit, error};
   }).catch(err => {
     process.stdout.write(`${err}\n`);
     process.stdout.write(`${err.stack}\n`);
