@@ -89,10 +89,7 @@ const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => 
   if (!githubToken || !pullRequest || !label) return Promise.resolve();
 
   const {issue_url} = pullRequest;
-  const originalLabels = pullRequest.labels;
-  const labels = _.some(l => label === _.get('name', l), originalLabels)
-    ? originalLabels
-    : [...originalLabels, ...label];
+  const labels = _.pipe(_.map('name'), _.union([label]))(pullRequest.labels);
   return request({
     uri: issue_url,
     method: 'PATCH',
