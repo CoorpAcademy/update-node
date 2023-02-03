@@ -42,16 +42,16 @@
     "find-up": "^5.0.0",
     "joi": "^17.4.2",
     "lodash": "4.17.21",
-    "minimatch": "^5.1.0",
+    "minimatch": "^6.1.6",
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
     "request": "2.88.2",
-    "semver": "^7.3.7",
+    "semver": "^7.3.8",
     "split2": "^3.2.2",
     "through2": "^4.0.2",
-    "yaml": "^2.1.1",
-    "yargs": "^17.5.1"
+    "yaml": "^2.2.1",
+    "yargs": "^17.6.2"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "11.0.0",
