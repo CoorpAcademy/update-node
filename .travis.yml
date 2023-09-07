@@ -1,6 +1,6 @@
 dist: jammy
 language: node_js
-node_js: 16
+node_js: 18
 anchor: &npm npm # This is here to show comment and preserved
 cache: *npm
 install: npm ci

@@ -21,7 +21,7 @@
   "author": "Mr X @Coorp",
   "license": "MIT",
   "engines": {
-    "node": "^16.10.0"
+    "node": "^18.0.0"
   },
   "bugs": {
     "url": "https://github.com/CoorpAcademy/update-node-test/issues"

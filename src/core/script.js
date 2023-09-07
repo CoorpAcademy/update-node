@@ -21,7 +21,8 @@ const wrappingStream = size =>
   );
 
 const executeScript = commands =>
-  console.log('> ', commands) ||
+  // eslint-disable-next-line no-console
+  console.log('>', commands) ||
   Promise.each(commands, cmd => {
     if (!cmd) return;
     return new Promise((resolve, reject) => {
