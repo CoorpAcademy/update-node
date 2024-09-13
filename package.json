@@ -7,7 +7,7 @@
     "update-node": "./bin/update-node.js"
   },
   "engines": {
-    "node": "^18.17.1"
+    "node": ">=18.12.1"
   },
   "author": "Coorpacademy Tech Team",
   "license": "MIT",
