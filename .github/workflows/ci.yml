@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+      - run: git config --global user.email "update-node@coorpacademy.com" && git config --global user.name "Update Node"
       - run: npm ci
       - run: npm test
       - run: npm run publish-coverage
