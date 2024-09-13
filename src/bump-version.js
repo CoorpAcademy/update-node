@@ -107,7 +107,7 @@ const main = async config => {
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git checkout -B ${branch} master`,
-      `git push gh ${branch}:refs/heads/${branch} --force || (git remote remove gh && exit 12)`,
+      `git push gh ${branch}:refs/heads/${branch} --force-with-lease || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
     process.stdout.write(c.bold.green(`Successfully sync branch ${branch}\n`));
