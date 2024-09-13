@@ -118,16 +118,26 @@ const commitAndMakePullRequest = config => async options => {
   return status;
 };
 
-module.exports = async config => {
+module.exports = async (
+  config,
+  {nodeVersionOverride, onlyNodeVersion = false, ignoreDependencies = false} = {}
+) => {
   const _commitAndMakePullRequest = commitAndMakePullRequest(config);
   const clusters = config.dependencies;
 
-  const RANGE = config.node_range || _.getOr('^8', 'packageContent.engines.node', config);
+  const RANGE =
+    nodeVersionOverride ||
+    config.node_range ||
+    _.getOr('^18', 'packageContent.engines.node', config);
   const latestNode = await findLatest(RANGE);
   if (config.node) {
     const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
     await _commitAndMakePullRequest(bumpCommitConfig);
   }
+  if (onlyNodeVersion || ignoreDependencies) {
+    return process.stdout.write(c.bold.green('\n\nUpdate-node bumped node with success 📤\n'));
+  }
+
   const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
     const branchDetails = await bumpDependencies(config.package, cluster);
     if (!branchDetails.branch) return {};

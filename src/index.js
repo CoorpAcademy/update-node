@@ -20,6 +20,14 @@ const yargs = require('yargs')
     command: UPGRADE,
     aliases: ['upgrade', 'bd'],
     describe: 'Upgrades defined dependencies and open Pull request for them',
+    builder: {
+      target: {type: 'string', alias: 'T', describe: 'Node version to target'},
+      ignoreDependencies: {
+        desc: 'Ignore depencies',
+        alias: 'only-node',
+        boolean: true
+      }
+    },
     handler: setCommand(UPGRADE)
   })
   .command({
@@ -62,7 +70,16 @@ const yargs = require('yargs')
   });
 
 const COMMANDS = {
-  [UPGRADE]: ['config', bumpDependencies, ['local', 'token']],
+  [UPGRADE]: [
+    'config',
+    bumpDependencies,
+    ['local', 'token'],
+    argv => {
+      if (argv.target) return {nodeVersionOverride: argv.target, onlyNodeVersion: true};
+      if (argv.ignoreDependencies) return {ignoreDependencies: true};
+      return {};
+    }
+  ],
   [BUMP]: ['config', bumpVersion, ['local', 'token']],
   [VALIDATE]: ['argv', validate, []],
   [SETUP]: ['argv', setup, []],
@@ -92,7 +109,8 @@ const runUpdateNode = async argv => {
     cmd = await selectCommand();
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
-  const [commandType, mainCommand, requiredOptions] = COMMANDS[cmd] || COMMANDS.default;
+  const [commandType, mainCommand, requiredOptions, inferedOptions = _.constant(undefined)] =
+    COMMANDS[cmd] || COMMANDS.default;
   if (!_.isEmpty(requiredOptions) && !_.some(opt => _.has(opt, argv), requiredOptions)) {
     const error = new Error(
       `Could not run command without one of following options: ${requiredOptions
@@ -104,14 +122,9 @@ const runUpdateNode = async argv => {
     throw error;
   }
   // FIXME perform schema validation
-  if (commandType === 'config') {
-    const config = await getConfig(argv);
-    await mainCommand(config);
-  } else if (commandType === 'argv') {
-    await mainCommand(argv);
-  } else {
-    await mainCommand();
-  }
+  const mainArg =
+    commandType === 'config' ? await getConfig(argv) : commandType === 'argv' ? argv : undefined;
+  await mainCommand(mainArg, inferedOptions(argv));
 };
 
 const main = () => {
