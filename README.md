@@ -23,6 +23,7 @@ Options:
   --version     Show version number                                    [boolean]
   --local, -l   Run in local mode with github publication              [boolean]
   --token, -t   Token to authentificate to github                       [string]
+  --folder, -f  Run in a specific folder                                [string]
   --config, -c  Override update-node configuration default path         [string]
   --auto, -A    Select automatically behavior to adopt based on current commit
                 and branch                                             [boolean]

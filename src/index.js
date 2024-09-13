@@ -58,6 +58,11 @@ const yargs = require('yargs')
     string: true,
     alias: 't'
   })
+  .option('folder', {
+    describe: 'Run in a specific folder',
+    string: true,
+    alias: 'f'
+  })
   .option('config', {
     describe: 'Override update-node configuration default path',
     string: true,
@@ -129,6 +134,10 @@ const runUpdateNode = async argv => {
 
 const main = () => {
   const argv = yargs.parse(process.argv.slice(2));
+  if (argv.folder) {
+    process.chdir(argv.folder);
+    process.stdout.write(`📂 Running Update-Node in ${c.bold.yellow(argv.folder)} folder\n`);
+  }
   runUpdateNode(argv).catch(err => {
     process.stderr.write(`${c.bold.red(err.message)}\n`);
     if (err.details) process.stderr.write(`${err.details}\n`);
