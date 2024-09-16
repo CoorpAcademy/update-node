@@ -1,5 +1,7 @@
 const path = require('path');
-const fs = require('fs');
+const {
+  promises: {readFile, writeFile}
+} = require('fs');
 const c = require('chalk');
 const {minimatch} = require('minimatch');
 const _ = require('lodash/fp');
@@ -12,9 +14,6 @@ const {
   latestVersionForPackage
 } = require('../core/versions');
 const {executeScript} = require('../core/script');
-
-const writeFile = Promise.promisify(fs.writeFile);
-const readFile = Promise.promisify(fs.readFile);
 
 const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);

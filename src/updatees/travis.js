@@ -1,12 +1,11 @@
 const path = require('path');
-const fs = require('fs');
+const {
+  promises: {readFile, writeFile}
+} = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const Promise = require('bluebird');
 const YAML = require('yaml');
-
-const readFile = Promise.promisify(fs.readFile);
-const writeFile = Promise.promisify(fs.writeFile);
 
 const parser = new YAML.Parser();
 
