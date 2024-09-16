@@ -1,5 +1,5 @@
-const childProcess = require('child_process');
-const executeScript = require('./script');
+const {sync: execSync} = require('execa');
+const {executeScript} = require('./script');
 
 const commitFiles = async (branch, message) => {
   try {
@@ -19,23 +19,16 @@ const commitFiles = async (branch, message) => {
   }
 };
 
-const headCommit = () =>
-  childProcess.execFileSync('git', ['rev-parse', '--short', 'HEAD'], {encoding: 'utf-8'}).trim();
-const headMessage = () =>
-  childProcess.execFileSync('git', ['log', '-1', '--pretty=%B'], {encoding: 'utf-8'}).trim();
-const headBranch = () =>
-  childProcess.execFileSync('git', ['symbolic-ref', '--short', 'HEAD'], {encoding: 'utf-8'}).trim();
+const headCommit = () => execSync('git', ['rev-parse', '--short', 'HEAD']).stdout;
+const headMessage = () => execSync('git', ['log', '-1', '--pretty=%B']).stdout;
+const headBranch = () => execSync('git', ['symbolic-ref', '--short', 'HEAD']).stdout;
 
 const headClean = () => {
-  const res = childProcess
-    .execFileSync('git', ['status', '--porcelain'], {encoding: 'utf-8'})
-    .trim();
-  return res === '';
+  return execSync('git', ['status', '--porcelain']).stdout === '';
 };
 
 const getRepoSlug = () =>
-  childProcess
-    .execFileSync('git', ['remote', 'get-url', 'origin'], {encoding: 'utf-8'})
+  execSync('git', ['remote', 'get-url', 'origin'])
     .split(':')[1]
     .trim()
     .replace(/\.git$/, '');

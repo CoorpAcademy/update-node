@@ -1,12 +1,12 @@
 #! /usr/bin/env node
 
-const childProcess = require('child_process');
+const {sync: execSync} = require('execa');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const minimatch = require('minimatch');
 const {headClean, headMessage, pushFiles} = require('./core/git');
 const {makeError} = require('./core/utils');
-const executeScript = require('./core/script');
+const {executeScript} = require('./core/script');
 
 const MAJOR = 'major';
 const MINOR = 'minor';
@@ -60,8 +60,7 @@ const getBuiltInSelection = async (config, messageOverride) => {
 
 const getCustomSelection = cmd => {
   try {
-    // TODO: use execa here too
-    return childProcess.execSync(cmd, {encoding: 'utf-8'}).trim();
+    return execSync(cmd);
   } catch (err) {
     throw makeError('Failed to get release type', {
       details: `Exit code of selection command '${cmd}' was ${err.status}`,

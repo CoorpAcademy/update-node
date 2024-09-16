@@ -11,7 +11,7 @@ const {
   MINOR_PREFIX,
   latestVersionForPackage
 } = require('../core/versions');
-const executeScript = require('../core/script');
+const {executeScript} = require('../core/script');
 
 const writeFile = Promise.promisify(fs.writeFile);
 const readFile = Promise.promisify(fs.readFile);

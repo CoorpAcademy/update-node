@@ -54,7 +54,7 @@ const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
 };
 
 const assignReviewers = (reviewerConfig, pullRequest, githubToken) => {
-  // FIXIME: ignore author
+  // TODO: remove author from the list of reviewers
   if (!githubToken || !pullRequest) return Promise.resolve();
   const {reviewers = [], team_reviewers = []} = reviewerConfig || {};
   if (_.isEmpty(reviewers) && _.isEmpty(team_reviewers)) return Promise.resolve();
@@ -135,7 +135,9 @@ const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, g
     await Promise.all([
       documentPullRequest({label, body, title}, pullRequest, githubToken), // TODO handle assignee!
       assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken).catch(err =>
-        process.stdout.write(`Issue occured while adding reviewers ${c.yellow.bold(err.message)} 📡\n`)
+        process.stdout.write(
+          `Issue occured while adding reviewers ${c.yellow.bold(err.message)} 📡\n`
+        )
       )
     ]);
     return {commit, branch, pullRequest};
