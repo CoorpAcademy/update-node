@@ -3,7 +3,7 @@
 const {sync: execSync} = require('execa');
 const c = require('chalk');
 const _ = require('lodash/fp');
-const minimatch = require('minimatch');
+const {minimatch} = require('minimatch');
 const {headClean, headMessage, pushFiles} = require('./core/git');
 const {makeError} = require('./core/utils');
 const {executeScript} = require('./core/script');
