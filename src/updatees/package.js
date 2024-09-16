@@ -80,7 +80,7 @@ const __updateDependencies = (dev = false) => {
       [pkgObj, []]
     );
 
-    await writeFile(pkg, `${JSON.stringify(newPkgObj, null, 2)}\n`, 'utf-8');
+    await writeFile(pkg, `${JSON.stringify(newPkgObj, null, 2)}\n`, 'utf8');
     return installedPackages;
   };
 };

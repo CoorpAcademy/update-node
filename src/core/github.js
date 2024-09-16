@@ -19,7 +19,6 @@ const searchPullRequest = async (repoSlug, head, base, githubToken) => {
   });
 
   if (response.statusCode === 200) {
-
     const matchingPullRequests = response.body;
     return matchingPullRequests[0];
   }
@@ -53,7 +52,6 @@ const createPullRequest = async (repoSlug, head, base, title, body, githubToken)
     return searchPullRequest(repoSlug, head, base, githubToken);
   // check if necessary with got retry
   throw new Error(_.get('message', response.body));
-
 };
 
 const assignReviewers = async (reviewerConfig, pullRequest, githubToken) => {
