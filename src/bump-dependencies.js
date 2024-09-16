@@ -12,7 +12,7 @@ const {
   updatePackageEngines
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
-const {commitFiles} = require('./core/git');
+const {commitFiles, currentUser} = require('./core/git');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError} = require('./core/utils');
@@ -96,7 +96,7 @@ const commitAndMakePullRequest = config => async options => {
       body: _.get('body', pullRequest),
       title: _.get('title', pullRequest),
       label: config.label,
-      reviewers: parseArgvToArray(config.reviewers),
+      reviewers: _.pull(await currentUser(), parseArgvToArray(config.reviewers)),
       team_reviewers: parseArgvToArray(config.teamReviewers)
     },
     config.token,

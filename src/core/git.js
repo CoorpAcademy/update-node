@@ -22,6 +22,7 @@ const commitFiles = async (branch, message) => {
 const headCommit = () => execSync('git', ['rev-parse', '--short', 'HEAD']).stdout;
 const headMessage = () => execSync('git', ['log', '-1', '--pretty=%B']).stdout;
 const headBranch = () => execSync('git', ['symbolic-ref', '--short', 'HEAD']).stdout;
+const currentUser = () => execSync('git', ['config', '--global', 'user.name']).stdout;
 
 const headClean = () => {
   return execSync('git', ['status', '--porcelain']).stdout === '';
@@ -54,5 +55,6 @@ module.exports = {
   headBranch,
   headMessage,
   headClean,
-  getRepoSlug
+  getRepoSlug,
+  currentUser
 };
