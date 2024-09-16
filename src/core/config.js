@@ -80,6 +80,7 @@ const resolveConfig = async (config, configPath, argv) => {
     base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
     base.node.package = defaultWithPath(base.node.package, 'package.json');
   }
+  base.forceFlag = argv.force ? '--force' : '--force-with-lease';
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
   base.token = await resolveGithubToken(argv);

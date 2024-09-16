@@ -118,7 +118,15 @@ const documentPullRequest = async ({label, body, title}, pullRequest, githubToke
   throw new Error(_.get('message', await response.body));
 };
 
-const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, githubToken) => {
+const syncGithub = async (
+  repoSlug,
+  base,
+  branch,
+  message,
+  pullRequestContent,
+  githubToken,
+  forceFlag
+) => {
   if (!branch) return {};
   const branchHasCommits = await commitFiles(branch, message);
   if (!branchHasCommits) {
@@ -134,7 +142,7 @@ const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, g
 
   const commit = headCommit();
   try {
-    await pushFiles(branch, githubToken, repoSlug);
+    await pushFiles(branch, githubToken, repoSlug, {forceFlag});
     process.stdout.write(`+ Pushed files on ${c.yellow.bold(branch)} 📡\n`);
     const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
     await Promise.all([

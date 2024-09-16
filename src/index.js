@@ -68,6 +68,11 @@ const yargs = require('yargs')
     string: true,
     alias: 'f'
   })
+  .option('force', {
+    describe: 'Git Push with force changes (--force-with-lease is used by default)',
+    boolean: true,
+    alias: 'F'
+  })
   .option('config', {
     describe: 'Override update-node configuration default path',
     string: true,

@@ -33,10 +33,15 @@ const getRepoSlug = () =>
     .trim()
     .replace(/\.git$/, '');
 
-const pushFiles = (branch, githubToken, repoSlug, tags = false) =>
+const pushFiles = (
+  branch,
+  githubToken,
+  repoSlug,
+  {tags = false, forceFlag = '--force-with-lease'}
+) =>
   executeScript([
     `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
-    `(git push gh ${branch}:refs/heads/${branch} --force-with-lease ${
+    `(git push gh ${branch}:refs/heads/${branch} ${forceFlag} ${
       tags ? '&& git push gh --tags)' : ')'
     }|| (git remote remove gh && exit 12)`,
     'git remote remove gh'

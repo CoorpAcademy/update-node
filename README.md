@@ -24,6 +24,8 @@ Options:
   --local, -l   Run in local mode with github publication              [boolean]
   --token, -t   Token to authentificate to github                       [string]
   --folder, -f  Run in a specific folder                                [string]
+  --force, -F   Git Push with force changes
+                (--force-with-lease is used by default)                [boolean]
   --config, -c  Override update-node configuration default path         [string]
   --auto, -A    Select automatically behavior to adopt based on current commit
                 and branch                                             [boolean]

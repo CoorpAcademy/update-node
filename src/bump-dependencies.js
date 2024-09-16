@@ -99,7 +99,8 @@ const commitAndMakePullRequest = config => async options => {
       reviewers: parseArgvToArray(config.reviewers),
       team_reviewers: parseArgvToArray(config.teamReviewers)
     },
-    config.token
+    config.token,
+    config.forceFlag
   );
   if (!status.commit)
     process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');

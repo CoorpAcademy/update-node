@@ -95,7 +95,11 @@ const main = async config => {
   process.stdout.write(c.bold.yellow(`About to make a ${c.bold.blue(releaseType)} release\n`));
   const bumpVersionCommand = autoBumpConfig['bump-command'] || 'npm version -m "v%s"';
   await executeScript([`${bumpVersionCommand} ${releaseType}`]);
-  if (!config.local) await pushFiles('master', config.token, config.repoSlug, true);
+  if (!config.local)
+    await pushFiles('master', config.token, config.repoSlug, {
+      tags: true,
+      forceFlag: config.forceFlag
+    });
   process.stdout.write(c.bold.green(`Successfully made a ${releaseType} release\n`));
   if (autoBumpConfig.publish || autoBumpConfig['publish-command']) {
     await executeScript([autoBumpConfig['publish-command'] || 'npm publish']);
@@ -107,7 +111,7 @@ const main = async config => {
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
       `git checkout -B ${branch} master`,
-      `git push gh ${branch}:refs/heads/${branch} --force-with-lease || (git remote remove gh && exit 12)`,
+      `git push gh ${branch}:refs/heads/${branch} ${config.forceFlag} || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);
     process.stdout.write(c.bold.green(`Successfully sync branch ${branch}\n`));
