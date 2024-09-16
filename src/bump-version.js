@@ -60,6 +60,7 @@ const getBuiltInSelection = async (config, messageOverride) => {
 
 const getCustomSelection = cmd => {
   try {
+    // TODO: use execa here too
     return childProcess.execSync(cmd, {encoding: 'utf-8'}).trim();
   } catch (err) {
     throw makeError('Failed to get release type', {

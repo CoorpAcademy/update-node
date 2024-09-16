@@ -58,6 +58,11 @@ const yargs = require('yargs')
     string: true,
     alias: 't'
   })
+  .option('autoToken', {
+    describe: 'Get authentificated github token from gh cli',
+    boolean: true,
+    alias: ['a', 'at', 'auto-token']
+  })
   .option('folder', {
     describe: 'Run in a specific folder',
     string: true,
@@ -74,18 +79,20 @@ const yargs = require('yargs')
     alias: 'A'
   });
 
+const AUTH_FLAGS = ['local', 'token', 'auto-token'];
+
 const COMMANDS = {
   [UPGRADE]: [
     'config',
     bumpDependencies,
-    ['local', 'token'],
+    AUTH_FLAGS,
     argv => {
       if (argv.target) return {nodeVersionOverride: argv.target, onlyNodeVersion: true};
       if (argv.ignoreDependencies) return {ignoreDependencies: true};
       return {};
     }
   ],
-  [BUMP]: ['config', bumpVersion, ['local', 'token']],
+  [BUMP]: ['config', bumpVersion, AUTH_FLAGS],
   [VALIDATE]: ['argv', validate, []],
   [SETUP]: ['argv', setup, []],
   [DIRTY]: [
