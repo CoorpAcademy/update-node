@@ -20,26 +20,26 @@ const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);
 };
 
-const updatePackageEngines = (node, npm, pkg, exact = false) => {
+const getSemverPrefix = _.pipe(s => s.match(/^(\D*)\d+/), _.at(1));
+
+const updatePackageEngines = async (node, npm, pkg, exact = false) => {
+  // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
   // eslint-disable-next-line unicorn/no-array-method-this-argument
   if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackageEngines(node, npm, p, exact));
 
-  if (!pkg) return Promise.resolve();
+  if (!pkg) return;
 
-  const packageP = readPackage(pkg);
+  const newPackage = _.pipe(
+    _.update('engines.node', existingVersion =>
+      node ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${node}` : existingVersion
+    ),
+    _.update('engines.npm', existingVersion =>
+      npm ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${npm}` : existingVersion
+    )
+  )(await readPackage(pkg));
 
-  const SAVE_PREFIX = exact ? EXACT_PREFIX : MINOR_PREFIX;
-  const newPackageP = packageP
-    .then(node ? _.set('engines.node', `${SAVE_PREFIX}${node}`) : _.identity)
-    .then(npm ? _.set('engines.npm', `${SAVE_PREFIX}${npm}`) : _.identity);
-  // FIXME: improve, preser >=
-
-  return newPackageP
-    .then(obj => {
-      const newPackage = JSON.stringify(obj, null, 2);
-      return writeFile(pkg, `${newPackage}\n`, 'utf8');
-    })
-    .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`));
+  process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`);
+  return writeFile(pkg, `${JSON.stringify(newPackage, null, 2)}\n`, 'utf8');
 };
 
 const preservePrefix = (oldVersion, newVersion) => {
