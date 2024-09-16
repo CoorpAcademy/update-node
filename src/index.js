@@ -65,12 +65,12 @@ const yargs = require('yargs')
   .option('folder', {
     describe: 'Run in a specific folder',
     string: true,
-    alias: 'f'
+    alias: 'F'
   })
   .option('force', {
     describe: 'Git Push with force changes (--force-with-lease is used by default)',
     boolean: true,
-    alias: 'F'
+    alias: 'f'
   })
   .option('config', {
     describe: 'Override update-node configuration default path',
