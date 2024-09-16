@@ -1,0 +1,9 @@
+language: node_js # dummy travis
+node_js:
+  - 12.22.12
+# This is here to show comment is preserved
+anchor: &npm npm
+cache: *npm
+install: npm ci
+script:
+  - npm test
