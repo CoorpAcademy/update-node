@@ -1,116 +1,121 @@
-const Request = require('request');
+const got = require('got');
 const Promise = require('bluebird');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const {commitFiles, pushFiles, headCommit} = require('./git');
 
-const request = Promise.promisify(Request, {multiArgs: true});
-
-const searchPullRequest = (repoSlug, head, base, githubToken) => {
-  return request({
-    uri: `https://api.github.com/repos/${repoSlug}/pulls`,
+const searchPullRequest = async (repoSlug, head, base, githubToken) => {
+  const response = await got(`https://api.github.com/repos/${repoSlug}/pulls`, {
     headers: {
       'User-Agent': 'Travis',
       Accept: 'application/vnd.github.v3+json',
       Authorization: `token ${githubToken}`
     },
-    qs: {
+    searchParams: {
       head: `${repoSlug.split('/')[0]}:${head}`,
       base
     },
-    json: true
-  })
-    .then(([response, body]) => {
-      if (response.statusCode === 200) return body;
-      throw new Error(_.get('message', body));
-    })
-    .get(0);
+    responseType: 'json'
+  });
+
+  if (response.statusCode === 200) {
+
+    const matchingPullRequests = response.body;
+    return matchingPullRequests[0];
+  }
+  throw new Error(_.get('message', response.body));
 };
 
-const createPullRequest = (repoSlug, head, base, title, body, githubToken) => {
-  return request({
-    uri: `https://api.github.com/repos/${repoSlug}/pulls`,
-    method: 'POST',
+const createPullRequest = async (repoSlug, head, base, title, body, githubToken) => {
+  const response = await got.post(`https://api.github.com/repos/${repoSlug}/pulls`, {
     headers: {
       'User-Agent': 'Travis',
       Accept: 'application/vnd.github.v3+json',
       Authorization: `token ${githubToken}`
     },
-    json: true,
-    body: {
+    responseType: 'json',
+    throwHttpErrors: false,
+    json: {
       title,
       head,
       base,
       maintainer_can_modify: true,
       body
     }
-  })
-    .then(([response, responseBody]) => {
-      if (response.statusCode === 201) return responseBody;
-      if (response.statusCode === 422) return searchPullRequest(repoSlug, head, base, githubToken);
-      throw new Error(_.get('message', responseBody));
-    })
-    .tap(() => process.stdout.write('  - 📬  Create/Update pull request\n'));
+  });
+
+  if (response.statusCode === 201) {
+    process.stdout.write('  - 📬  Create/Update pull request\n');
+    return response.body;
+  }
+  if (response.statusCode === 422)
+    // Pull request alredy exists, returning it
+    return searchPullRequest(repoSlug, head, base, githubToken);
+  // check if necessary with got retry
+  throw new Error(_.get('message', response.body));
+
 };
 
-const assignReviewers = (reviewerConfig, pullRequest, githubToken) => {
+const assignReviewers = async (reviewerConfig, pullRequest, githubToken) => {
   // TODO: remove author from the list of reviewers
-  if (!githubToken || !pullRequest) return Promise.resolve();
+  if (!githubToken || !pullRequest) return;
   const {reviewers = [], team_reviewers = []} = reviewerConfig || {};
-  if (_.isEmpty(reviewers) && _.isEmpty(team_reviewers)) return Promise.resolve();
+  if (_.isEmpty(reviewers) && _.isEmpty(team_reviewers)) return;
 
   const {url} = pullRequest;
-  return request({
-    uri: `${url}/requested_reviewers`,
-    method: 'POST',
-    headers: {
-      'User-Agent': 'Travis',
-      Accept: 'application/vnd.github.thor-preview+json',
-      Authorization: `token ${githubToken}`
-    },
-    json: true,
-    body: {
-      reviewers,
-      team_reviewers
-    }
-  })
-    .then(([response, body]) => {
-      if (response.statusCode === 201) return;
-      throw new Error(_.get('message', body));
-    })
-    .tap(() =>
-      process.stdout.write(
-        `  - 👥  Create assignations ${[...reviewers, ...team_reviewers]
-          .map(r => `@${c.dim.bold(r)}`)
-          .join(', ')}\n`
-      )
+  try {
+    const response = await got.post(`${url}/requested_reviewers`, {
+      headers: {
+        'User-Agent': 'Travis',
+        Accept: 'application/vnd.github.thor-preview+json',
+        Authorization: `token ${githubToken}`
+      },
+      responseType: 'json',
+      json: {
+        reviewers,
+        team_reviewers
+      }
+    });
+
+    if (response.statusCode === 201) return;
+    throw new Error(_.get('message', response.body));
+  } catch (err) {
+    process.stdout.write(
+      `Issue occurred while adding reviewers ${c.yellow.bold(err.message)} 📡\n`
     );
+  }
+
+  process.stdout.write(
+    `  - 👥  Create assignations ${[...reviewers, ...team_reviewers]
+      .map(r => `@${c.dim.bold(r)}`)
+      .join(', ')}\n`
+  );
 };
-const documentPullRequest = ({label, body, title}, pullRequest, githubToken) => {
-  if (!githubToken || !pullRequest || !label) return Promise.resolve();
+const documentPullRequest = async ({label, body, title}, pullRequest, githubToken) => {
+  if (!githubToken || !pullRequest || !label) return;
 
   const {issue_url} = pullRequest;
   const labels = _.pipe(_.map('name'), label ? _.union([label]) : _.identity)(pullRequest.labels);
-  return request({
-    uri: issue_url,
-    method: 'PATCH',
+
+  const response = await got.patch(issue_url, {
     headers: {
       'User-Agent': 'Travis',
       Accept: 'application/vnd.github.symmetra-preview+json',
       Authorization: `token ${githubToken}`
     },
-    json: true,
-    body: {
+    responseType: 'json',
+    json: {
       labels,
       body,
       title
     }
-  })
-    .then(([response, responseBody]) => {
-      if (response.statusCode === 200) return;
-      throw new Error(_.get('message', responseBody));
-    })
-    .tap(() => process.stdout.write('  - 🏷  Added label\n'));
+  });
+
+  if (response.statusCode === 200) {
+    process.stdout.write('  - 🏷  Added label\n');
+    return;
+  }
+  throw new Error(_.get('message', await response.body));
 };
 
 const syncGithub = async (repoSlug, base, branch, message, pullRequestContent, githubToken) => {
