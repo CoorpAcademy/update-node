@@ -1,7 +1,7 @@
 const {keyBy, pipe, get, filter, trimCharsStart, keys} = require('lodash/fp');
 const got = require('got');
-const Promise = require('bluebird');
 const {compare, satisfies} = require('semver');
+const pReduce = require('p-reduce');
 
 const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 
@@ -21,25 +21,30 @@ const isAvailableOnDocker = version =>
   });
 
 const findFulfilled = fun => arr =>
-  Promise.resolve(arr).reduce((acc, value) => {
-    if (acc) return acc;
-    return fun(value)
-      .then(() => value)
-      .catch(() => null);
-  }, null);
+  pReduce(
+    arr,
+    (acc, value) => {
+      if (acc) return acc;
+      return fun(value)
+        .then(() => value)
+        .catch(() => null);
+    },
+    null
+  );
 
-const findLatest = range => {
-  const versionsP = getNodeVersions();
+const findLatest = async range => {
+  const versions = await getNodeVersions();
 
-  const mapVersionsP = versionsP.then(keyBy(pipe(get('version'), trimCharsStart('v'))));
+  const mapVersions = keyBy(pipe(get('version'), trimCharsStart('v')), versions);
 
-  const latestAvailableVersionP = mapVersionsP
-    .then(keys)
-    .then(v => v.sort(compare).reverse())
-    .then(filter(v => satisfies(v, range)))
-    .then(findFulfilled(isAvailableOnDocker));
+  const latestAvailableVersion = await pipe(
+    keys,
+    v => v.sort(compare).reverse(),
+    filter(v => satisfies(v, range)),
+    findFulfilled(isAvailableOnDocker)
+  )(mapVersions);
 
-  return Promise.all([latestAvailableVersionP, mapVersionsP]).spread(get);
+  return get(latestAvailableVersion, mapVersions);
 };
 
 module.exports = {findLatest, getNodeVersions};

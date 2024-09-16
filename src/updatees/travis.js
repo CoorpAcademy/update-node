@@ -4,8 +4,8 @@ const {
 } = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
 const YAML = require('yaml');
+const pMap = require('p-map');
 
 const parser = new YAML.Parser();
 
@@ -23,16 +23,15 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
   );
 };
 
-const updateTravis = (nodeVersion, travis) => {
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(travis)) return Promise.map(travis, t => updateTravis(nodeVersion, t));
+const updateTravis = async (nodeVersion, travis) => {
+  if (_.isArray(travis)) return pMap(travis, t => updateTravis(nodeVersion, t));
 
-  if (!travis || !nodeVersion) return Promise.resolve();
+  if (!travis || !nodeVersion) return;
 
-  return readFile(travis, 'utf8')
+  await readFile(travis, 'utf8')
     .then(patchVersionInTravisYaml(nodeVersion))
-    .then(newTravisYaml => writeFile(travis, newTravisYaml, 'utf8'))
-    .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(travis))}\n`));
+    .then(newTravisYaml => writeFile(travis, newTravisYaml, 'utf8'));
+  process.stdout.write(`- Write ${c.bold.dim(path.basename(travis))}\n`);
 };
 
 module.exports = updateTravis;

@@ -4,10 +4,10 @@ const {
 } = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
+const pMap = require('p-map');
 
 const updateDockerfile = async (node, dockerfile) => {
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(dockerfile)) return Promise.map(dockerfile, d => updateDockerfile(node, d));
+  if (_.isArray(dockerfile)) return pMap(dockerfile, d => updateDockerfile(node, d));
 
   if (!dockerfile || !node) return;
 

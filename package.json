@@ -37,7 +37,6 @@
     "update": "node src"
   },
   "dependencies": {
-    "bluebird": "3.7.2",
     "chalk": "^4.1.2",
     "execa": "^4.1.0",
     "find-up": "^5.0.0",
@@ -45,6 +44,9 @@
     "joi": "^17.13.3",
     "lodash": "4.17.21",
     "minimatch": "^10.0.1",
+    "p-map": "^4.0.0",
+    "p-map-series": "^2.1.0",
+    "p-reduce": "^2.1.0",
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",

@@ -1,4 +1,3 @@
-const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const c = require('chalk');
 const {executeScript} = require('../core/script');

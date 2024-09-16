@@ -4,11 +4,10 @@ const {
 } = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pMap = require('p-map');
 
 const updateNvmrc = async (node, nvmrc) => {
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(nvmrc)) return Promise.map(nvmrc, u => updateNvmrc(node, u));
+  if (_.isArray(nvmrc)) return pMap(nvmrc, u => updateNvmrc(node, u));
 
   if (!nvmrc || !node) return;
 

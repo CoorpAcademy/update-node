@@ -5,8 +5,9 @@ const {
 const c = require('chalk');
 const {minimatch} = require('minimatch');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pReduce = require('p-reduce');
 const semver = require('semver');
+const pMap = require('p-map');
 const {
   EXACT_PREFIX,
   PATCH_PREFIX,
@@ -23,8 +24,7 @@ const getSemverPrefix = _.pipe(s => s.match(/^(\D*)\d+/), _.at(1));
 
 const updatePackageEngines = async (node, npm, pkg, exact = false) => {
   // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackageEngines(node, npm, p, exact));
+  if (_.isArray(pkg)) return pMap(pkg, p => updatePackageEngines(node, npm, p, exact));
 
   if (!pkg) return;
 
@@ -63,7 +63,7 @@ const __updateDependencies = (dev = false) => {
       dependencies
     );
 
-    const [newPkgObj, installedPackages] = await Promise.reduce(
+    const [newPkgObj, installedPackages] = await pReduce(
       matchingDependencies,
       async (pkgAcc, dependency) => {
         const currentVersion = _.get([DEPENDENCY_KEY, dependency], pkgObj);

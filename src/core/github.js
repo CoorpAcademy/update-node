@@ -1,5 +1,4 @@
 const got = require('got');
-const Promise = require('bluebird');
 const c = require('chalk');
 const _ = require('lodash/fp');
 const {commitFiles, pushFiles, headCommit} = require('./git');

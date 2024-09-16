@@ -2,7 +2,7 @@
 
 const c = require('chalk');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
@@ -139,13 +139,17 @@ module.exports = async (
     return process.stdout.write(c.bold.green('\n\nUpdate-node bumped node with success 📤\n'));
   }
 
-  const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
-    const branchDetails = await bumpDependencies(config.package, cluster);
-    if (!branchDetails.branch) return {};
-    await updateLock(config.packageManager);
-    const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
-    return {branchDetails, pullRequest, branch, commit, error};
-  }).catch(err => {
+  const clusterDetails = await pMap(
+    clusters,
+    async cluster => {
+      const branchDetails = await bumpDependencies(config.package, cluster);
+      if (!branchDetails.branch) return {};
+      await updateLock(config.packageManager);
+      const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
+      return {branchDetails, pullRequest, branch, commit, error};
+    },
+    {concurrency: 1}
+  ).catch(err => {
     process.stdout.write(`${err}\n`);
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);

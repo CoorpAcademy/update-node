@@ -1,4 +1,3 @@
-const Promise = require('bluebird');
 const c = require('chalk');
 const _ = require('lodash/fp');
 

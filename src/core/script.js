@@ -1,7 +1,7 @@
 const {Transform, Writable} = require('stream');
 const {command} = require('execa');
-const Promise = require('bluebird');
 const padStream = require('pad-stream');
+const pMapSeries = require('p-map-series');
 
 const c = require('chalk');
 const split = require('split2');
@@ -40,7 +40,7 @@ const padAndWrapStream = (padLength, columns, wrapper) =>
 
 const executeScript = commands =>
   process.stdout.write(`> $ ${c.dim(commands.join('\n    '))}\n`) &&
-  Promise.each(commands, async cmd => {
+  pMapSeries(commands, async cmd => {
     if (!cmd) return;
 
     const columns = process.env.COLUMNS ? Number.parseInt(process.env.COLUMNS, 10) - 6 : 100;
