@@ -25,6 +25,11 @@ const yargs = require('yargs')
         desc: 'Ignore depencies',
         alias: 'only-node',
         boolean: true
+      },
+      message: {
+        describe: 'Optional extra message to attach to the commit and pull request',
+        string: true,
+        alias: 'm'
       }
     },
     handler: setCommand(UPGRADE)

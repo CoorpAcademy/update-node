@@ -15,7 +15,7 @@ const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
-const {makeError} = require('./core/utils');
+const {makeError, formatEventualSuffix} = require('./core/utils');
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
@@ -29,18 +29,20 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile)
   ]);
 
+  const messageSuffix = formatEventualSuffix(config.argv.message);
+
   process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
   return {
     branch: `update-node-v${nodeVersion}`,
-    message: `Upgrade Node to v${nodeVersion}`,
+    message: `Upgrade Node to v${nodeVersion}${messageSuffix}`,
     pullRequest: {
       title: `Upgrade Node to v${nodeVersion}`,
-      body: `:rocket: Upgraded Node version to v${nodeVersion}`
+      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}`
     }
   };
 };
 
-const bumpDependencies = async (pkg, cluster) => {
+const bumpDependenciesCluster = async (pkg, cluster, config) => {
   process.stdout.write(
     c.bold.blue(`\n\n⬆️  About to bump depencies cluster ${c.bold.white(cluster.name)}:\n`)
   );
@@ -51,31 +53,28 @@ const bumpDependencies = async (pkg, cluster) => {
     process.stdout.write('+ No dependencies to update were found');
     return {};
   }
+  const messageSuffix = formatEventualSuffix(config.argv.message);
+  const dependenciesBumpDescription = allInstalledDependencies
+    .map(
+      ([dep, oldVersion, newVersion]) =>
+        `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+    )
+    .join('\n');
+
   process.stdout.write(
     `+ Successfully updated ${
       allInstalledDependencies.length
-    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${allInstalledDependencies
-      .map(
-        ([dep, oldVersion, newVersion]) =>
-          `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
-      )
-      .join('\n')}\n`
+    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${dependenciesBumpDescription}\n`
   );
+  const title = cluster.message || 'Upgrade dependencies';
+  const coreMessage = `Upgraded dependencies:\n${dependenciesBumpDescription}\n`;
+
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
-    message: `${
-      cluster.message || 'Upgrade dependencies'
-    }\n\nUpgraded dependencies:\n${allInstalledDependencies
-      .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
-      .join('\n')}\n`,
+    message: `${title}\n\n${coreMessage}${messageSuffix}`,
     pullRequest: {
-      title: cluster.message || 'Upgrade dependencies',
-      body: `### :outbox_tray: Upgraded dependencies:\n${allInstalledDependencies
-        .map(
-          ([dep, oldVersion, newVersion]) =>
-            `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
-        )
-        .join('\n')}\n`
+      title,
+      body: `### :outbox_tray: ${coreMessage}}${messageSuffix}`
     }
   };
 };
@@ -142,7 +141,7 @@ module.exports = async (
   const clusterDetails = await pMap(
     clusters,
     async cluster => {
-      const branchDetails = await bumpDependencies(config.package, cluster);
+      const branchDetails = await bumpDependenciesCluster(config.package, cluster, config);
       if (!branchDetails.branch) return {};
       await updateLock(config.packageManager);
       const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
