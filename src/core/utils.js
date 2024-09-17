@@ -9,4 +9,6 @@ const makeError = (message, options = {}) => {
 
 const formatEventualSuffix = text => (_.isEmpty(text) ? '' : `\n\n\n-----\n${text}`);
 
-module.exports = {makeError, formatEventualSuffix};
+const parseArgvToArray = _.pipe(_.split(','), _.compact);
+
+module.exports = {makeError, formatEventualSuffix, parseArgvToArray};

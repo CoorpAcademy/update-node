@@ -17,8 +17,6 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
-const parseArgvToArray = _.pipe(_.split(','), _.compact);
-
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
@@ -95,8 +93,8 @@ const commitAndMakePullRequest = config => async options => {
       body: _.get('body', pullRequest),
       title: _.get('title', pullRequest),
       label: config.label,
-      reviewers: _.pull(await currentUser(), parseArgvToArray(config.reviewers)),
-      team_reviewers: parseArgvToArray(config.teamReviewers)
+      reviewers: _.pull(await currentUser(), config.reviewers),
+      team_reviewers: config.teamReviewers
     },
     config.token,
     config.forceFlag

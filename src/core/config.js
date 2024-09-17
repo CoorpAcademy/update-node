@@ -5,6 +5,7 @@ const protocall = require('protocall');
 const findUp = require('find-up');
 const {command} = require('execa');
 const Joi = require('joi');
+const {parseArgvToArray} = require('./utils');
 
 const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
 
@@ -85,6 +86,18 @@ const resolveConfig = async (config, configPath, argv) => {
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
   base.token = await resolveGithubToken(argv);
+
+  // Combine reviewers config and extra args, removing leading @ for user, and potential specified orga for teams
+  base.reviewers = _.pipe(
+    parseArgvToArray,
+    _.map(_.trimCharsStart('@'))
+  )(`${argv.reviewers || ''},${_.join(',', base.reviewers)}`);
+
+  base.teamReviewers = _.pipe(
+    parseArgvToArray,
+    _.map(_.pipe(_.trimCharsStart('@'), _.split('/'), _.last))
+  )(`${argv.teamReviewers || ''},${_.join(',', base.teamReviewers)}`);
+
   return base;
 };
 

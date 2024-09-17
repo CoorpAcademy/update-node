@@ -30,6 +30,16 @@ const yargs = require('yargs')
         describe: 'Optional extra message to attach to the commit and pull request',
         string: true,
         alias: 'm'
+      },
+      reviewers: {
+        describe: 'Extra reviewers to add to the pull request',
+        string: true,
+        alias: 'r'
+      },
+      teamReviewers: {
+        describe: 'Extra team reviewers to add to the pull request',
+        string: true,
+        alias: 'R'
       }
     },
     handler: setCommand(UPGRADE)
