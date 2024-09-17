@@ -29,6 +29,7 @@ const yargs = require('yargs')
     },
     handler: setCommand(UPGRADE)
   })
+  .alias('h', 'help')
   .command({
     command: BUMP,
     aliases: ['version', 'ab'],
