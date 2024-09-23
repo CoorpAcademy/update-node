@@ -21,7 +21,6 @@ jobs:
       name: test-update-node18
       node_js: '18'
       script: npm run test:all
-      after_success: npm run publish-coverage
 
     - <<: *test
       name: test-update-node20

@@ -33,7 +33,6 @@
     "lint": "eslint src/ *.json --ext .js,.json",
     "lint:fix": "npm run lint -- --fix",
     "start": "node ./src/index.js",
-    "publish-coverage": "codecov",
     "update": "node src"
   },
   "dependencies": {
@@ -59,7 +58,6 @@
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "14.0.0",
     "ava": "^5.3.1",
-    "codecov": "^3.8.3",
     "eslint": "^8.57.0",
     "nyc": "^17.1.0"
   }
