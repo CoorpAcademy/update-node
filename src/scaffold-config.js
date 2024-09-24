@@ -40,7 +40,8 @@ const setup = argv => {
       nvmrc: true,
       dockerfile: false,
       travis: false,
-      package: false
+      package: false,
+      serverless: fs.existsSync('serverless.yml')
     },
     dependencies: [
       {

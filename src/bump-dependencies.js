@@ -5,6 +5,7 @@ const _ = require('lodash/fp');
 const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
+const updateServerless = require('./updatees/serverless');
 const {
   updateLock,
   updateDependencies,
@@ -21,6 +22,7 @@ const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
+    updateServerless(nodeVersion, config.node.serverless),
     updateTravis(nodeVersion, config.node.travis),
     updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
     updateNvmrc(nodeVersion, config.node.nvmrc),

@@ -14,7 +14,8 @@ const nodeConfig = Joi.object().keys({
   nvmrc: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   dockerfile: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   travis: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
-  package: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())]
+  package: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
+  serverless: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())]
 });
 const dependencyClusterConfig = Joi.object().keys({
   name: Joi.string().required(),
@@ -80,6 +81,7 @@ const resolveConfig = async (config, configPath, argv) => {
     base.node.dockerfile = defaultWithPath(base.node.dockerfile, 'Dockerfile');
     base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
     base.node.package = defaultWithPath(base.node.package, 'package.json');
+    base.node.serverless = defaultWithPath(base.node.serverless, 'serverless.yml');
   }
   base.argv = argv;
   base.forceFlag = argv.force ? '--force' : '--force-with-lease';
