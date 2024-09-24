@@ -6,7 +6,7 @@ const commitFiles = async (branch, message) => {
     await executeScript([
       branch &&
         `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
-      'git add .',
+      'git add --update .',
       `git commit -m "${message}"${
         branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''
       }`
