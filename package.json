@@ -7,7 +7,7 @@
     "update-node": "./bin/update-node.js"
   },
   "engines": {
-    "node": "^18.17.1"
+    "node": ">=18.12.1"
   },
   "author": "Coorpacademy Tech Team",
   "license": "MIT",
@@ -33,31 +33,32 @@
     "lint": "eslint src/ *.json --ext .js,.json",
     "lint:fix": "npm run lint -- --fix",
     "start": "node ./src/index.js",
-    "publish-coverage": "codecov",
     "update": "node src"
   },
   "dependencies": {
-    "bluebird": "3.7.2",
     "chalk": "^4.1.2",
+    "execa": "^4.1.0",
     "find-up": "^5.0.0",
-    "joi": "^17.4.2",
+    "got": "^11.8.6",
+    "joi": "^17.13.3",
     "lodash": "4.17.21",
-    "minimatch": "^6.1.6",
+    "minimatch": "^10.0.1",
+    "p-map": "^4.0.0",
+    "p-map-series": "^2.1.0",
+    "p-reduce": "^2.1.0",
     "pad-stream": "^2.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
-    "request": "2.88.2",
-    "semver": "^7.3.8",
+    "semver": "^7.6.3",
     "split2": "^3.2.2",
     "through2": "^4.0.2",
-    "yaml": "^2.2.1",
-    "yargs": "^17.6.2"
+    "yaml": "^2.5.1",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "11.0.0",
+    "@coorpacademy/eslint-plugin-coorpacademy": "14.0.0",
     "ava": "^5.3.1",
-    "codecov": "^3.8.3",
-    "eslint": "8.32.0",
-    "nyc": "^15.1.0"
+    "eslint": "^8.57.0",
+    "nyc": "^17.1.0"
   }
 }

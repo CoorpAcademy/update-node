@@ -1,3 +1,5 @@
+const _ = require('lodash/fp');
+
 const makeError = (message, options = {}) => {
   const error = new Error(message.message || message);
   error.exitCode = message.exitCode || options.exitCode;
@@ -5,4 +7,8 @@ const makeError = (message, options = {}) => {
   return error;
 };
 
-module.exports = {makeError};
+const formatEventualSuffix = text => (_.isEmpty(text) ? '' : `\n\n\n-----\n${text}`);
+
+const parseArgvToArray = _.pipe(_.split(','), _.compact);
+
+module.exports = {makeError, formatEventualSuffix, parseArgvToArray};

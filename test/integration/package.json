@@ -21,7 +21,8 @@
   "author": "Mr X @Coorp",
   "license": "MIT",
   "engines": {
-    "node": "^18.0.0"
+    "node": "^18.14.2",
+    "npm": "^9.5.0"
   },
   "bugs": {
     "url": "https://github.com/CoorpAcademy/update-node-test/issues"
@@ -33,7 +34,7 @@
     "lodash": "^4.17.12"
   },
   "devDependencies": {
-    "@coorpacademy/eslint-plugin-coorpacademy": "^10.1.0",
+    "@coorpacademy/eslint-plugin-coorpacademy": "^14.0.0",
     "eslint": "^8.23.0"
   }
 }

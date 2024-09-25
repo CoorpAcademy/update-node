@@ -2,7 +2,7 @@
 
 const c = require('chalk');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const {
@@ -12,12 +12,10 @@ const {
   updatePackageEngines
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
-const {commitFiles} = require('./core/git');
+const {commitFiles, currentUser} = require('./core/git');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
-const {makeError} = require('./core/utils');
-
-const parseArgvToArray = _.pipe(_.split(','), _.compact);
+const {makeError, formatEventualSuffix} = require('./core/utils');
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
@@ -29,18 +27,20 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile)
   ]);
 
+  const messageSuffix = formatEventualSuffix(config.argv.message);
+
   process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
   return {
     branch: `update-node-v${nodeVersion}`,
-    message: `Upgrade Node to v${nodeVersion}`,
+    message: `Upgrade Node to v${nodeVersion}${messageSuffix}`,
     pullRequest: {
       title: `Upgrade Node to v${nodeVersion}`,
-      body: `:rocket: Upgraded Node version to v${nodeVersion}`
+      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}`
     }
   };
 };
 
-const bumpDependencies = async (pkg, cluster) => {
+const bumpDependenciesCluster = async (pkg, cluster, config) => {
   process.stdout.write(
     c.bold.blue(`\n\n⬆️  About to bump depencies cluster ${c.bold.white(cluster.name)}:\n`)
   );
@@ -51,31 +51,28 @@ const bumpDependencies = async (pkg, cluster) => {
     process.stdout.write('+ No dependencies to update were found');
     return {};
   }
+  const messageSuffix = formatEventualSuffix(config.argv.message);
+  const dependenciesBumpDescription = allInstalledDependencies
+    .map(
+      ([dep, oldVersion, newVersion]) =>
+        `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
+    )
+    .join('\n');
+
   process.stdout.write(
     `+ Successfully updated ${
       allInstalledDependencies.length
-    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${allInstalledDependencies
-      .map(
-        ([dep, oldVersion, newVersion]) =>
-          `  - ${c.bold(dep)}: ${c.dim(oldVersion)} -> ${c.blue.bold(newVersion)}`
-      )
-      .join('\n')}\n`
+    } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${dependenciesBumpDescription}\n`
   );
+  const title = cluster.message || 'Upgrade dependencies';
+  const coreMessage = `Upgraded dependencies:\n${dependenciesBumpDescription}\n`;
+
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
-    message: `${
-      cluster.message || 'Upgrade dependencies'
-    }\n\nUpgraded dependencies:\n${allInstalledDependencies
-      .map(([dep, oldVersion, newVersion]) => `- ${dep} ${oldVersion} -> ${newVersion}`)
-      .join('\n')}\n`,
+    message: `${title}\n\n${coreMessage}${messageSuffix}`,
     pullRequest: {
-      title: cluster.message || 'Upgrade dependencies',
-      body: `### :outbox_tray: Upgraded dependencies:\n${allInstalledDependencies
-        .map(
-          ([dep, oldVersion, newVersion]) =>
-            `- [\`${dep}\`](https://www.npmjs.com/package/${dep}): ${oldVersion} -> ${newVersion}`
-        )
-        .join('\n')}\n`
+      title,
+      body: `### :outbox_tray: ${coreMessage}}${messageSuffix}`
     }
   };
 };
@@ -96,10 +93,11 @@ const commitAndMakePullRequest = config => async options => {
       body: _.get('body', pullRequest),
       title: _.get('title', pullRequest),
       label: config.label,
-      reviewers: parseArgvToArray(config.reviewers),
-      team_reviewers: parseArgvToArray(config.teamReviewers)
+      reviewers: _.pull(await currentUser(), config.reviewers),
+      team_reviewers: config.teamReviewers
     },
-    config.token
+    config.token,
+    config.forceFlag
   );
   if (!status.commit)
     process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');
@@ -118,23 +116,37 @@ const commitAndMakePullRequest = config => async options => {
   return status;
 };
 
-module.exports = async config => {
+module.exports = async (
+  config,
+  {nodeVersionOverride, onlyNodeVersion = false, ignoreDependencies = false} = {}
+) => {
   const _commitAndMakePullRequest = commitAndMakePullRequest(config);
   const clusters = config.dependencies;
 
-  const RANGE = config.node_range || _.getOr('^8', 'packageContent.engines.node', config);
+  const RANGE =
+    nodeVersionOverride ||
+    config.node_range ||
+    _.getOr('^18', 'packageContent.engines.node', config);
   const latestNode = await findLatest(RANGE);
   if (config.node) {
     const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
     await _commitAndMakePullRequest(bumpCommitConfig);
   }
-  const clusterDetails = await Promise.mapSeries(clusters, async cluster => {
-    const branchDetails = await bumpDependencies(config.package, cluster);
-    if (!branchDetails.branch) return {};
-    await updateLock(config.packageManager);
-    const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
-    return {branchDetails, pullRequest, branch, commit, error};
-  }).catch(err => {
+  if (onlyNodeVersion || ignoreDependencies) {
+    return process.stdout.write(c.bold.green('\n\nUpdate-node bumped node with success 📤\n'));
+  }
+
+  const clusterDetails = await pMap(
+    clusters,
+    async cluster => {
+      const branchDetails = await bumpDependenciesCluster(config.package, cluster, config);
+      if (!branchDetails.branch) return {};
+      await updateLock(config.packageManager);
+      const {branch, commit, pullRequest, error} = await _commitAndMakePullRequest(branchDetails);
+      return {branchDetails, pullRequest, branch, commit, error};
+    },
+    {concurrency: 1}
+  ).catch(err => {
     process.stdout.write(`${err}\n`);
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);

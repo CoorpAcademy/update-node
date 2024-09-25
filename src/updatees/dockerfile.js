@@ -1,27 +1,22 @@
 const path = require('path');
-const fs = require('fs');
+const {
+  promises: {readFile, writeFile}
+} = require('fs');
 const c = require('chalk');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pMap = require('p-map');
 
-const writeFile = Promise.promisify(fs.writeFile);
-const readFile = Promise.promisify(fs.readFile);
+const updateDockerfile = async (node, dockerfile) => {
+  if (_.isArray(dockerfile)) return pMap(dockerfile, d => updateDockerfile(node, d));
 
-const updateDockerfile = (node, dockerfile) => {
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(dockerfile)) return Promise.map(dockerfile, d => updateDockerfile(node, d));
+  if (!dockerfile || !node) return;
 
-  if (!dockerfile || !node) return Promise.resolve();
+  const dockerFile = await readFile(dockerfile, 'utf8');
 
-  const dockerFileP = readFile(dockerfile, 'utf8');
+  const newDockerFile = _.replace(/FROM node:\d+\.\d+\.\d+/, `FROM node:${node}`, dockerFile);
 
-  const newDockerFileP = dockerFileP.then(
-    _.replace(/FROM node:\d+\.\d+\.\d+/, `FROM node:${node}`)
-  );
-
-  return newDockerFileP
-    .then(newDockerFile => writeFile(dockerfile, newDockerFile, 'utf8'))
-    .tap(() => process.stdout.write(`- Write ${c.dim.bold(path.basename(dockerfile))}\n`));
+  await writeFile(dockerfile, newDockerFile, 'utf8');
+  process.stdout.write(`- Write ${c.dim.bold(path.basename(dockerfile))}\n`);
 };
 
 module.exports = updateDockerfile;

@@ -3,7 +3,9 @@ const path = require('path');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
 const findUp = require('find-up');
+const {command} = require('execa');
 const Joi = require('joi');
+const {parseArgvToArray} = require('./utils');
 
 const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
 
@@ -57,12 +59,17 @@ const configSchema = Joi.object().keys({
 const resolver = protocall.getDefaultResolver();
 const readConfig = pathe => JSON.parse(fs.readFileSync(pathe));
 
+const resolveGithubToken = async argv => {
+  if (!argv.autoToken) return argv.token;
+  const {stdout: ghToken} = await command('gh auth token');
+  return ghToken;
+};
+
 const resolveConfig = async (config, configPath, argv) => {
   const base = await resolver.resolve(config);
 
   const defaultWithPath = (value, defaulte) => {
     const resolvedValue =
-      // eslint-disable-next-line no-nested-ternary
       value === true ? [defaulte] : _.isArray(value) ? value : (value && value.split(',')) || [];
     return _.map(val => path.join(path.dirname(configPath), val), resolvedValue);
   };
@@ -74,9 +81,23 @@ const resolveConfig = async (config, configPath, argv) => {
     base.node.travis = defaultWithPath(base.node.travis, '.travis.yml');
     base.node.package = defaultWithPath(base.node.package, 'package.json');
   }
+  base.argv = argv;
+  base.forceFlag = argv.force ? '--force' : '--force-with-lease';
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
-  base.token = argv.token;
+  base.token = await resolveGithubToken(argv);
+
+  // Combine reviewers config and extra args, removing leading @ for user, and potential specified orga for teams
+  base.reviewers = _.pipe(
+    parseArgvToArray,
+    _.map(_.trimCharsStart('@'))
+  )(`${argv.reviewers || ''},${_.join(',', base.reviewers)}`);
+
+  base.teamReviewers = _.pipe(
+    parseArgvToArray,
+    _.map(_.pipe(_.trimCharsStart('@'), _.split('/'), _.last))
+  )(`${argv.teamReviewers || ''},${_.join(',', base.teamReviewers)}`);
+
   return base;
 };
 
@@ -96,4 +117,4 @@ const getConfig = async argv => {
   return extendedConfig;
 };
 
-module.exports = {resolveConfig, readConfig, getConfig, validateConfig};
+module.exports = {resolveConfig, readConfig, getConfig, validateConfig, resolveGithubToken};

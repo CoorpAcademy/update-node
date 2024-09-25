@@ -1,45 +1,44 @@
 const path = require('path');
-const fs = require('fs');
+const {
+  promises: {readFile, writeFile}
+} = require('fs');
 const c = require('chalk');
-const minimatch = require('minimatch');
+const {minimatch} = require('minimatch');
 const _ = require('lodash/fp');
-const Promise = require('bluebird');
+const pReduce = require('p-reduce');
 const semver = require('semver');
+const pMap = require('p-map');
 const {
   EXACT_PREFIX,
   PATCH_PREFIX,
   MINOR_PREFIX,
   latestVersionForPackage
 } = require('../core/versions');
-const executeScript = require('../core/script');
-
-const writeFile = Promise.promisify(fs.writeFile);
-const readFile = Promise.promisify(fs.readFile);
+const {executeScript} = require('../core/script');
 
 const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);
 };
 
-const updatePackageEngines = (node, npm, pkg, exact = false) => {
-  // eslint-disable-next-line unicorn/no-array-method-this-argument
-  if (_.isArray(pkg)) return Promise.map(pkg, p => updatePackageEngines(node, npm, p, exact));
+const getSemverPrefix = _.pipe(s => s.match(/^(\D*)\d+/), _.at(1));
 
-  if (!pkg) return Promise.resolve();
+const updatePackageEngines = async (node, npm, pkg, exact = false) => {
+  // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
+  if (_.isArray(pkg)) return pMap(pkg, p => updatePackageEngines(node, npm, p, exact));
 
-  const packageP = readPackage(pkg);
+  if (!pkg) return;
 
-  const SAVE_PREFIX = exact ? EXACT_PREFIX : MINOR_PREFIX;
-  const newPackageP = packageP
-    .then(node ? _.set('engines.node', `${SAVE_PREFIX}${node}`) : _.identity)
-    .then(npm ? _.set('engines.npm', `${SAVE_PREFIX}${npm}`) : _.identity);
-  // FIXME: improve, preser >=
+  const newPackage = _.pipe(
+    _.update('engines.node', existingVersion =>
+      node ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${node}` : existingVersion
+    ),
+    _.update('engines.npm', existingVersion =>
+      npm ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${npm}` : existingVersion
+    )
+  )(await readPackage(pkg));
 
-  return newPackageP
-    .then(obj => {
-      const newPackage = JSON.stringify(obj, null, 2);
-      return writeFile(pkg, `${newPackage}\n`, 'utf8');
-    })
-    .tap(() => process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`));
+  process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`);
+  return writeFile(pkg, `${JSON.stringify(newPackage, null, 2)}\n`, 'utf8');
 };
 
 const preservePrefix = (oldVersion, newVersion) => {
@@ -64,7 +63,7 @@ const __updateDependencies = (dev = false) => {
       dependencies
     );
 
-    const [newPkgObj, installedPackages] = await Promise.reduce(
+    const [newPkgObj, installedPackages] = await pReduce(
       matchingDependencies,
       async (pkgAcc, dependency) => {
         const currentVersion = _.get([DEPENDENCY_KEY, dependency], pkgObj);
@@ -80,7 +79,7 @@ const __updateDependencies = (dev = false) => {
       [pkgObj, []]
     );
 
-    await writeFile(pkg, `${JSON.stringify(newPkgObj, null, 2)}\n`, 'utf-8');
+    await writeFile(pkg, `${JSON.stringify(newPkgObj, null, 2)}\n`, 'utf8');
     return installedPackages;
   };
 };

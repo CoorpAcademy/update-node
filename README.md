@@ -1,7 +1,8 @@
 # Update node :outbox_tray:
 
 [![Npm version](https://img.shields.io/npm/v/@coorpacademy/update-node.svg)](https://www.npmjs.com/package/@coorpacademy/update-node)
-[![Build Status](https://travis-ci.com/CoorpAcademy/update-node.svg?branch=master)](https://travis-ci.com/CoorpAcademy/update-node)
+[![Build Status](https://app.travis-ci.com/CoorpAcademy/update-node.svg?token=KnYzxEMEXjZwczDR8x2L&branch=master)](https://travis-ci.com/CoorpAcademy/update-node)
+[![Github Actions Status](https://github.com/coorpacademy/update-node/actions/workflows/ci.yml/badge.svg)](https://github.com/CoorpAcademy/update-node/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/CoorpAcademy/update-node/branch/master/graph/badge.svg)](https://codecov.io/gh/CoorpAcademy/update-node)
 
 ## Options :gear:
@@ -23,6 +24,9 @@ Options:
   --version     Show version number                                    [boolean]
   --local, -l   Run in local mode with github publication              [boolean]
   --token, -t   Token to authentificate to github                       [string]
+  --folder, -f  Run in a specific folder                                [string]
+  --force, -F   Git Push with force changes
+                (--force-with-lease is used by default)                [boolean]
   --config, -c  Override update-node configuration default path         [string]
   --auto, -A    Select automatically behavior to adopt based on current commit
                 and branch                                             [boolean]

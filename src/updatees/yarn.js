@@ -1,7 +1,6 @@
-const Promise = require('bluebird');
 const _ = require('lodash/fp');
 const c = require('chalk');
-const executeScript = require('../core/script');
+const {executeScript} = require('../core/script');
 
 const __listDependencies = (isDev, pkg, requestedDependencies) => {
   const depsKey = isDev ? 'devDependencies' : 'dependencies';

@@ -1,7 +1,6 @@
-const childProcess = require('child_process');
+const exec = require('execa');
 const _ = require('lodash/fp');
 const semver = require('semver');
-const Promise = require('bluebird');
 
 const EXACT_PREFIX = '';
 
@@ -9,16 +8,9 @@ const MINOR_PREFIX = '^';
 const PATCH_PREFIX = '~';
 
 const versionsForPackage = async (pkg, includePrerelease = false) => {
-  const pkgVersions = await new Promise((resolve, reject) => {
-    childProcess.execFile('npm', ['view', pkg, 'versions', '--json'], (err, stdout, stderr) => {
-      if (err) return reject(err);
-      try {
-        resolve(JSON.parse(stdout));
-      } catch (parsingError) {
-        return reject(parsingError);
-      }
-    });
-  });
+  const pkgVersions = await exec('npm', ['view', pkg, 'versions', '--json']).then(({stdout, err}) =>
+    JSON.parse(stdout)
+  );
   return includePrerelease ? pkgVersions : _.filter(v => !semver.prerelease(v), pkgVersions);
 };
 

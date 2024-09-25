@@ -1,4 +1,3 @@
-const Promise = require('bluebird');
 const semver = require('semver');
 const {headMessage, headBranch, headClean} = require('./core/git');
 
