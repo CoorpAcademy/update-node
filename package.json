@@ -21,8 +21,8 @@
   "author": "Mr X @Coorp",
   "license": "MIT",
   "engines": {
-    "node": "^18.14.2",
-    "npm": "^9.5.0"
+    "node": "^18.20.4",
+    "npm": "^10.7.0"
   },
   "bugs": {
     "url": "https://github.com/CoorpAcademy/update-node-test/issues"
