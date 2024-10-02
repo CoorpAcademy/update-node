@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "^14.0.0",
+    "@coorpacademy/update-node": "^7.0.0",
     "eslint": "^8.23.0"
   }
 }
