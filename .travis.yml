@@ -1,6 +1,6 @@
 language: node_js # dummy travis
 node_js:
-  - 18.20.4
+  - 20.17.0
 # This is here to show comment is preserved
 anchor: &npm npm
 cache: *npm
