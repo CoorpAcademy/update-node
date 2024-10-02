@@ -5,6 +5,7 @@ const bumpDependencies = require('./bump-dependencies');
 const {main: bumpVersion} = require('./bump-version');
 const {setup, validate} = require('./scaffold-config');
 const {UPGRADE, BUMP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
+const {cleanAndSyncRepo} = require('./core/git');
 const {getConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
@@ -93,6 +94,23 @@ const yargs = require('yargs')
     string: true,
     alias: 'c'
   })
+  .option('clean', {
+    describe: 'Run on a clean state',
+    boolean: true,
+    alias: 'C'
+  })
+  .option('pre-clean-command', {
+    describe: 'Run before to clean state',
+    string: true,
+    alias: 'p',
+    array: true
+  })
+  .option('post-clean-command', {
+    describe: 'Run on a clean state',
+    string: true,
+    alias: 'P',
+    array: true
+  })
   .option('auto', {
     describe: 'Select automatically behavior to adopt based on current commit and branch',
     boolean: true,
@@ -156,6 +174,11 @@ const runUpdateNode = async argv => {
   // FIXME perform schema validation
   const mainArg =
     commandType === 'config' ? await getConfig(argv) : commandType === 'argv' ? argv : undefined;
+
+  if (argv.clean && _.get('baseBranch', mainArg)) {
+    await cleanAndSyncRepo(_.pick(['clean', 'preCleanCommand', 'postCleanCommand'], argv));
+  }
+
   await mainCommand(mainArg, inferedOptions(argv));
 };
 

@@ -28,6 +28,15 @@ const headClean = () => {
   return execSync('git', ['status', '--porcelain']).stdout === '';
 };
 
+const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCommand} = {}) =>
+  executeScript([
+    ...preCleanCommand,
+    'git stash',
+    `git checkout ${branch}`,
+    'git pull',
+    ...postCleanCommand
+  ]);
+
 const getRepoSlug = () =>
   execSync('git', ['remote', 'get-url', 'origin'])
     .split(':')[1]
@@ -56,5 +65,6 @@ module.exports = {
   headMessage,
   headClean,
   getRepoSlug,
-  currentUser
+  currentUser,
+  cleanAndSyncRepo
 };
