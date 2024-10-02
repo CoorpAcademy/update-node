@@ -1,0 +1,45 @@
+service: update-node serverless # with comments
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, env:NODE_ENV, "development"}
+  region: eu-west-1
+  timeout: 12
+    - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  environment:
+    NODE_ENV: ${self:provider.stage}
+
+package:
+  individually: true
+
+functions:
+  nodish-lambda:
+    name: nodish-lambda-${self:provider.stage}
+    description: Node Lambda
+    handler: lambda/maybe-some-node.handler
+    runtime: nodejs14.x
+    events:
+     - &le-event
+       stream:
+         type: kinesis
+         arn: arn:aws:kinesis:eu-west-1::stream/la-stream-${self:provider.stage}
+         batchSize: 12
+         startingPosition: LATEST
+         enabled: true
+
+  nodish-lambda-default-runtime:
+    name: nodish-default-lambda-${self:provider.stage}
+    description: Node Lambda
+    handler: lambda/maybe-some-node.handler
+    events: [*le-event]
+
+  progression-completion:
+    name: python-lambda-${self:provider.stage}
+    handler: lambda/maybe-some-python.handler
+    description: Python Lambda
+    runtime: python3.8
+    events: [*le-event]
