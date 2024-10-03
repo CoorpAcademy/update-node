@@ -8,6 +8,7 @@ const _ = require('lodash/fp');
 const pReduce = require('p-reduce');
 const semver = require('semver');
 const pMap = require('p-map');
+const execa = require('execa');
 const {
   EXACT_PREFIX,
   PATCH_PREFIX,
@@ -15,12 +16,13 @@ const {
   latestVersionForPackage
 } = require('../core/versions');
 const {executeScript} = require('../core/script');
+const {chompCurrentFolder} = require('../core/utils');
 
 const readPackage = packagePath => {
   return readFile(packagePath, 'utf8').then(JSON.parse);
 };
 
-const getSemverPrefix = _.pipe(s => s.match(/^(\D*)\d+/), _.at(1));
+const getSemverPrefix = _.pipe(s => s && s.match(/^(\D*)\d+/), _.at(1));
 
 const updatePackageEngines = async (node, npm, pkg, exact = false) => {
   // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
@@ -37,7 +39,7 @@ const updatePackageEngines = async (node, npm, pkg, exact = false) => {
     )
   )(await readPackage(pkg));
 
-  process.stdout.write(`- Write ${c.bold.dim(path.basename(pkg))}\n`);
+  process.stdout.write(`- Write ${c.bold.dim(chompCurrentFolder(pkg))}\n`);
   return writeFile(pkg, `${JSON.stringify(newPackage, null, 2)}\n`, 'utf8');
 };
 
@@ -95,11 +97,27 @@ const updateLock = async (packageManager = 'npm') => {
   ]);
 };
 
+const updateLearnaPackageEngines = async (nodeVersion, npmVersion, exact) => {
+  const lernaPackages = _.map(
+    ({location}) => `${chompCurrentFolder(location)}/package.json`,
+    JSON.parse(
+      await execa('npx', ['lerna', 'list', '--json', '--loglevel', 'error'], {
+        all: true,
+        shell: true
+      }).all
+    )
+  );
+  return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, exact);
+
+  // note: serverlesses are supposed to be declared to level
+};
+
 module.exports = {
   readPackage,
   updatePackageEngines,
   __updateDependencies,
   updateDependencies: __updateDependencies(),
   updateDevDependencies: __updateDependencies(true),
-  updateLock
+  updateLock,
+  updateLearnaPackageEngines
 };

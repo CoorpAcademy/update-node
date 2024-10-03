@@ -53,6 +53,7 @@ const setup = argv => {
       }
     ]
   };
+  if (fs.existsSync('lerna.json')) defaultConfig.node.lerna = true;
 
   fs.writeFileSync('.update-node.json', JSON.stringify(defaultConfig, null, 2), 'utf8');
 };

@@ -27,6 +27,10 @@ const yargs = require('yargs')
         alias: 'only-node',
         boolean: true
       },
+      lerna: {
+        desc: 'Consider as learna monorepo (only applies for node bump)',
+        boolean: true
+      },
       message: {
         describe: 'Optional extra message to attach to the commit and pull request',
         string: true,

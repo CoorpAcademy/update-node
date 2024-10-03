@@ -10,7 +10,8 @@ const {
   updateLock,
   updateDependencies,
   updateDevDependencies,
-  updatePackageEngines
+  updatePackageEngines,
+  updateLearnaPackageEngines
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
@@ -26,7 +27,8 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateTravis(nodeVersion, config.node.travis),
     updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
     updateNvmrc(nodeVersion, config.node.nvmrc),
-    updateDockerfile(nodeVersion, config.node.dockerfile)
+    updateDockerfile(nodeVersion, config.node.dockerfile),
+    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, !!config.exact)
   ]);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);

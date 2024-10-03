@@ -13,7 +13,7 @@ if [ -d .git ]; then
 fi
 
 echo "> Setting up integration folder"
-git init
+git init --initial-branch=master
 git add .
 git commit -m "Initial dummy commit"
 git tag init
@@ -40,16 +40,13 @@ fi
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
 # try a targeted bump with clean and extra command and token
-echo "\n\n\n" >> package.json
+echo "            " >> package.json
 npm run update -- upgrade --local --target 20 \
   -fam "Beta test update-node major bump :scientist:" -R @Coorpacademy/development-mooc \
   --clean -p "echo before > .precommand" -P "echo after > .postcommand"
+# note: cannot test so far with a real branch. should set up a local upstream
 
-current_branch=$(git branch --show-current)
-if  [[ $current_branch == "master" ]]; then
-    exit 2;
-fi
-if  [[ $current_commit == "$(git rev-parse HEAD)" ]]; then
+if ! git log --graph --decorate --pretty=oneline --abbrev-commit | grep -q "Upgrade Node to v20"; then
     echo "Seems like no commit was created while it wasn't supposed to"
     exit 2
 fi
@@ -63,5 +60,4 @@ if  [[ ! -f .postcommand ]]; then
 fi
 rm -f .precommand .postcommand
 
-git checkout -b origins init
-git branch -d $current_branch
+git checkout init

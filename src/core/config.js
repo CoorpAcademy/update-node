@@ -85,6 +85,7 @@ const resolveConfig = async (config, configPath, argv) => {
   }
   base.argv = argv;
   base.forceFlag = argv.force ? '--force' : '--force-with-lease';
+  base.lernaMonorepo = base.node.lerna || argv.lerna;
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
   base.token = await resolveGithubToken(argv);
