@@ -73,6 +73,11 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'l'
   })
+  .option('verbose', {
+    describe: 'More log outputs',
+    boolean: true,
+    alias: 'v'
+  })
   .option('token', {
     describe: 'Token to authentificate to github',
     string: true,
@@ -201,6 +206,9 @@ const main = () => {
     process.stderr.write(`${c.bold.red(err.message)}\n`);
     if (err.details) process.stderr.write(`${err.details}\n`);
     process.stderr.write('\n');
+    if (argv.verbose) {
+      process.stderr.write(`${err.stack}\n\n`);
+    }
     process.exit(err.exitCode || 2);
   });
 };

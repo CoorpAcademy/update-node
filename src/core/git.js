@@ -39,7 +39,7 @@ const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCom
 
 const getRepoSlug = () =>
   execSync('git', ['remote', 'get-url', 'origin'])
-    .split(':')[1]
+    .stdout.split(':')[1]
     .trim()
     .replace(/\.git$/, '');
 
