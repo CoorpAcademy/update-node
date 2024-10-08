@@ -180,8 +180,10 @@ const COMMANDS = {
 };
 
 const runUpdateNode = async argv => {
+  let config;
   if (!cmd && argv.auto) {
-    cmd = await selectCommand();
+    config = await getConfig(argv);
+    cmd = await selectCommand(config);
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
   const [commandType, mainCommand, requiredOptions, inferedOptions = _.constant(undefined)] =
@@ -198,7 +200,11 @@ const runUpdateNode = async argv => {
   }
   // FIXME perform schema validation
   const mainArg =
-    commandType === 'config' ? await getConfig(argv) : commandType === 'argv' ? argv : undefined;
+    commandType === 'config'
+      ? config || (await getConfig(argv)) // do not recompute config if already done
+      : commandType === 'argv'
+        ? argv
+        : undefined;
 
   if (argv.clean && _.get('baseBranch', mainArg)) {
     await cleanAndSyncRepo(_.pick(['clean', 'preCleanCommand', 'postCleanCommand'], argv));

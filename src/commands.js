@@ -8,10 +8,10 @@ const SETUP = 'setup';
 const DIRTY = 'warn-dirty';
 const NOOP = 'noop';
 
-const selectCommand = async () => {
+const selectCommand = async config => {
   const [branch, message, clean] = await Promise.all([headBranch(), headMessage(), headClean()]);
   if (!clean) return DIRTY;
-  if (branch !== 'master') return UPGRADE; // FIXME: use basebranch
+  if (branch !== config.baseBranch) return UPGRADE;
   // §todo: make it configurable
   if (semver.valid(message)) return UPGRADE;
   return BUMP;
