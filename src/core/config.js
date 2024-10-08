@@ -86,6 +86,10 @@ const generateDefaultConfig = () => {
       travis: fs.existsSync('.travis.yml'),
       package: true,
       serverless: fs.existsSync('serverless.yml')
+      /* optional default config
+        loose: true,
+        exact: false
+      */
     },
     dependencies: [
       {
@@ -118,6 +122,8 @@ const resolveConfig = async (config, configPath, argv) => {
     base.node.package = defaultWithPath(base.node.package, 'package.json');
     base.node.serverless = defaultWithPath(base.node.serverless, 'serverless.yml');
   }
+  base.exact = base.node.exact || argv.exact;
+  base.loose = base.node.loose !== false && argv.loose; // default logic
   base.argv = argv;
   base.forceFlag = argv.force ? '--force' : '--force-with-lease';
   base.lernaMonorepo = base.node.lerna || argv.lerna;

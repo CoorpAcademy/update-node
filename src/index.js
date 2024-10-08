@@ -98,6 +98,17 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'f'
   })
+  .option('exact', {
+    describe: 'Keep exact version',
+    boolean: true,
+    default: false
+  })
+  .option('loose', {
+    describe: `For loose version for nodes version. This will replace exisiting range constraint (^, ~ or none).
+       Use --no-loose to disable or place loose: false in config in the node section)`,
+    boolean: true,
+    default: true
+  })
   .option('config', {
     describe: 'Override update-node configuration default path',
     string: true,

@@ -23,18 +23,20 @@ const readPackage = packagePath => {
 
 const getSemverPrefix = _.pipe(s => s && s.match(/^(\D*)\d+/), _.at(1));
 
-const updatePackageEngines = async (node, npm, pkg, exact = false) => {
+const updatePackageEngines = async (node, npm, pkg, {exact = false, loose = true}) => {
   // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
-  if (_.isArray(pkg)) return pMap(pkg, p => updatePackageEngines(node, npm, p, exact));
+  if (_.isArray(pkg)) return pMap(pkg, p => updatePackageEngines(node, npm, p, {exact, loose}));
 
   if (!pkg) return;
 
+  const prefix = exact ? EXACT_PREFIX : loose ? '>=' : '';
+
   const newPackage = _.pipe(
     _.update('engines.node', existingVersion =>
-      node ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${node}` : existingVersion
+      node ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${node}` : existingVersion
     ),
     _.update('engines.npm', existingVersion =>
-      npm ? `${exact ? EXACT_PREFIX : getSemverPrefix(existingVersion)}${npm}` : existingVersion
+      npm ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${npm}` : existingVersion
     )
   )(await readPackage(pkg));
 
@@ -96,7 +98,7 @@ const updateLock = async (packageManager = 'npm') => {
   ]);
 };
 
-const updateLearnaPackageEngines = async (nodeVersion, npmVersion, exact) => {
+const updateLearnaPackageEngines = async (nodeVersion, npmVersion, {exact, loose}) => {
   const lernaPackages = _.map(
     ({location}) => `${chompCurrentFolder(location)}/package.json`,
     JSON.parse(
@@ -106,7 +108,7 @@ const updateLearnaPackageEngines = async (nodeVersion, npmVersion, exact) => {
       }).all
     )
   );
-  return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, exact);
+  return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, {exact, loose});
 
   // note: serverlesses are supposed to be declared to level
 };

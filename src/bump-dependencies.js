@@ -21,14 +21,15 @@ const {makeError, formatEventualSuffix} = require('./core/utils');
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
+  const {exact, loose} = config.node;
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
     updateServerless(nodeVersion, config.node.serverless),
     updateTravis(nodeVersion, config.node.travis),
-    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
+    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, {exact, loose}),
     updateNvmrc(nodeVersion, config.node.nvmrc),
     updateDockerfile(nodeVersion, config.node.dockerfile),
-    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, !!config.exact)
+    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
   ]);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
