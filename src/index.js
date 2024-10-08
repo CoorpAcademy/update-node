@@ -140,6 +140,11 @@ const yargs = require('yargs')
     describe: 'Select automatically behavior to adopt based on current commit and branch',
     boolean: true,
     alias: 'A'
+  })
+  .option('scope', {
+    describe: 'Apply to a scope of the repository (impact on title and branch name)',
+    string: true,
+    alias: 's'
   });
 
 const AUTH_FLAGS = ['local', 'token', 'auto-token'];

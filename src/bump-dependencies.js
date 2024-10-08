@@ -22,6 +22,7 @@ const {makeError, formatEventualSuffix} = require('./core/utils');
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const {exact, loose} = config.node;
+  const {scope} = config.argv;
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
     updateServerless(nodeVersion, config.node.serverless),
@@ -36,11 +37,11 @@ const bumpNodeVersion = async (latestNode, config) => {
 
   process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
   return {
-    branch: `update-node-v${nodeVersion}`,
-    message: `Upgrade Node to v${nodeVersion}${messageSuffix}`,
+    branch: _.compact(['update-node', config.argv.scope, `v${nodeVersion}`]).join('-'),
+    message: `Upgrade Node to v${nodeVersion}${messageSuffix} ${scope ? ` on scope ${scope}` : ''}`,
     pullRequest: {
-      title: `Upgrade Node to v${nodeVersion}`,
-      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}`
+      title: `${scope ? `[${scope}] ` : ''}Upgrade Node to v${nodeVersion}`,
+      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}${scope ? ` on scope ${scope}` : ''}`
     }
   };
 };

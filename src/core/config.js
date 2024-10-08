@@ -73,7 +73,7 @@ const generateDefaultConfig = () => {
   const packageManager = fs.existsSync('yarn.lock') ? 'yarn' : 'npm';
   let baseBranch = 'master';
   try {
-    baseBranch = commandSync('git symbolic-ref refs/remotes/origin/HEAD');
+    baseBranch = commandSync('git symbolic-ref refs/remotes/origin/HEAD').split('/').pop();
   } catch (e) {
     /* ignore */
   }
