@@ -1,11 +1,11 @@
 const {sync: execSync} = require('execa');
 const {executeScript} = require('./script');
 
-const commitFiles = async (branch, message) => {
+const commitFiles = async (branch, message, baseBranch = 'master') => {
   try {
     await executeScript([
       branch &&
-        `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
+        `git checkout -b ${branch} ${baseBranch} || (git branch -D ${branch} && git checkout -b ${branch} ${baseBranch})`,
       'git add --update .',
       `git commit -m "${message}"${
         branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''

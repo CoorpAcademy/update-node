@@ -11,7 +11,7 @@ const NOOP = 'noop';
 const selectCommand = async () => {
   const [branch, message, clean] = await Promise.all([headBranch(), headMessage(), headClean()]);
   if (!clean) return DIRTY;
-  if (branch !== 'master') return UPGRADE;
+  if (branch !== 'master') return UPGRADE; // FIXME: use basebranch
   // §todo: make it configurable
   if (semver.valid(message)) return UPGRADE;
   return BUMP;

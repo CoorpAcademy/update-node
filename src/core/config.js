@@ -3,7 +3,7 @@ const path = require('path');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
 const findUp = require('find-up');
-const {command} = require('execa');
+const {command, commandSync} = require('execa');
 const Joi = require('joi');
 const {parseArgvToArray} = require('./utils');
 const {getRepoSlug} = require('./git');
@@ -71,9 +71,16 @@ const generateDefaultConfig = () => {
   // TODO: control folder of origin
   const repoSlug = getRepoSlug();
   const packageManager = fs.existsSync('yarn.lock') ? 'yarn' : 'npm';
+  let baseBranch = 'master';
+  try {
+    baseBranch = commandSync('git symbolic-ref refs/remotes/origin/HEAD');
+  } catch (e) {
+    /* ignore */
+  }
+
   const defaultConfig = {
     repoSlug,
-    baseBranch: 'master',
+    baseBranch,
     packageManager,
     reviewers: [],
     teamReviewers: [],

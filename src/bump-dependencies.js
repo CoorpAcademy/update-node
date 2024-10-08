@@ -87,7 +87,7 @@ const commitAndMakePullRequest = config => async options => {
 
   if (!config.baseBranch) throw makeError('No base branch is defined');
   if (config.local) {
-    return commitFiles(null, message);
+    return commitFiles(null, message, config.baseBranch);
   }
   const status = await syncGithub(
     config.repoSlug,
@@ -102,7 +102,8 @@ const commitAndMakePullRequest = config => async options => {
       team_reviewers: config.teamReviewers
     },
     config.token,
-    config.forceFlag
+    config.forceFlag,
+    config.baseBranch
   );
   if (!status.commit)
     process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');
