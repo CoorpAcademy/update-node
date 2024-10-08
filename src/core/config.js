@@ -6,6 +6,7 @@ const findUp = require('find-up');
 const {command} = require('execa');
 const Joi = require('joi');
 const {parseArgvToArray} = require('./utils');
+const {getRepoSlug} = require('./git');
 
 const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
 
@@ -66,6 +67,40 @@ const resolveGithubToken = async argv => {
   return ghToken;
 };
 
+const generateDefaultConfig = () => {
+  // TODO: control folder of origin
+  const repoSlug = getRepoSlug();
+  const packageManager = fs.existsSync('yarn.lock') ? 'yarn' : 'npm';
+  const defaultConfig = {
+    repoSlug,
+    baseBranch: 'master',
+    packageManager,
+    reviewers: [],
+    teamReviewers: [],
+    label: 'Upgrades :outbox_tray:',
+    'auto-bump': false,
+    node: {
+      branch: 'upgrade-node',
+      nvmrc: fs.existsSync('.nvmrc'),
+      dockerfile: fs.existsSync('Dockerfile'),
+      travis: fs.existsSync('.travis.yml'),
+      package: true,
+      serverless: fs.existsSync('serverless.yml')
+    },
+    dependencies: [
+      {
+        name: 'core',
+        message: 'Update core dependencies',
+        branch: 'update-core',
+        dependencies: [],
+        devDependencies: []
+      }
+    ]
+  };
+  if (fs.existsSync('lerna.json')) defaultConfig.node.lerna = true;
+  return defaultConfig;
+};
+
 const resolveConfig = async (config, configPath, argv) => {
   const base = await resolver.resolve(config);
 
@@ -110,6 +145,7 @@ const validateConfig = config => {
 };
 
 const getConfig = async argv => {
+  if (argv.defaultConfig) return;
   const configPath = argv.config || findUp.sync('.update-node.json');
   if (!configPath) {
     throw new Error('No .update-node.json was found, neither a --config was given');
@@ -120,4 +156,11 @@ const getConfig = async argv => {
   return extendedConfig;
 };
 
-module.exports = {resolveConfig, readConfig, getConfig, validateConfig, resolveGithubToken};
+module.exports = {
+  resolveConfig,
+  readConfig,
+  getConfig,
+  validateConfig,
+  resolveGithubToken,
+  generateDefaultConfig
+};

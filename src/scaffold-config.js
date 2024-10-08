@@ -1,8 +1,7 @@
 const fs = require('fs');
 const c = require('chalk');
 const findUp = require('find-up');
-const {readConfig, validateConfig} = require('./core/config');
-const {getRepoSlug} = require('./core/git');
+const {readConfig, validateConfig, generateDefaultConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
 const validate = argv => {
@@ -25,35 +24,7 @@ const setup = argv => {
       exitCode: 3
     });
 
-  const repoSlug = getRepoSlug();
-  const packageManager = fs.existsSync('yarn.lock') ? 'yarn' : 'npm';
-  const defaultConfig = {
-    repoSlug,
-    baseBranch: 'master',
-    packageManager,
-    reviewers: [],
-    teamReviewers: [],
-    label: 'Upgrades :outbox_tray:',
-    'auto-bump': false,
-    node: {
-      branch: 'upgrade-node',
-      nvmrc: true,
-      dockerfile: false,
-      travis: false,
-      package: false,
-      serverless: fs.existsSync('serverless.yml')
-    },
-    dependencies: [
-      {
-        name: 'core',
-        message: 'Update core dependencies',
-        branch: 'update-core',
-        dependencies: [],
-        devDependencies: []
-      }
-    ]
-  };
-  if (fs.existsSync('lerna.json')) defaultConfig.node.lerna = true;
+  const defaultConfig = generateDefaultConfig();
 
   fs.writeFileSync('.update-node.json', JSON.stringify(defaultConfig, null, 2), 'utf8');
 };

@@ -1,4 +1,3 @@
-const path = require('path');
 const {
   promises: {readFile, writeFile}
 } = require('fs');
