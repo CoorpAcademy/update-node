@@ -145,14 +145,18 @@ const validateConfig = config => {
 };
 
 const getConfig = async argv => {
-  if (argv.defaultConfig) return;
   const configPath = argv.config || findUp.sync('.update-node.json');
-  if (!configPath) {
+  if (!configPath && !argv.defaultConfig) {
     throw new Error('No .update-node.json was found, neither a --config was given');
   }
-  const config = readConfig(configPath);
+  const config = configPath ? readConfig(configPath) : generateDefaultConfig();
+  // note: default is just a fallback, so if a config there is, this is to be used
   await validateConfig(config);
-  const extendedConfig = await resolveConfig(config, configPath, argv);
+  const extendedConfig = await resolveConfig(
+    config,
+    configPath || [process.cwd(), 'fictious-config'].join('/'), // fallback for on the fly config
+    argv
+  );
   return extendedConfig;
 };
 

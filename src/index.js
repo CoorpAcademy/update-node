@@ -98,6 +98,11 @@ const yargs = require('yargs')
     string: true,
     alias: 'c'
   })
+  .option('default-config', {
+    describe: 'Override update-node configuration default path',
+    boolean: true,
+    alias: ['d', 'default']
+  })
   .option('clean', {
     describe: 'Run on a clean state',
     boolean: true,
