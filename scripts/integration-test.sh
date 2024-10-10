@@ -39,8 +39,8 @@ if  [[ $current_commit != "$(git rev-parse HEAD)" ]]; then
 fi
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
-PRE_COMMAND_FILE="$(mktemp -t precommand)"
-POST_COMMAND_FILE="$(mktemp -t postcommand)"
+PRE_COMMAND_FILE="$(mktemp)"
+POST_COMMAND_FILE="$(mktemp)"
 # try a targeted bump with clean and extra command and token
 echo "            " >> package.json
 npm run update -- upgrade --local --target 20 \
