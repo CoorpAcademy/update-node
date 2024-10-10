@@ -5,6 +5,7 @@ const bumpDependencies = require('./bump-dependencies');
 const {main: bumpVersion} = require('./bump-version');
 const {setup, validate} = require('./scaffold-config');
 const {UPGRADE, BUMP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
+const {cleanAndSyncRepo} = require('./core/git');
 const {getConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
@@ -24,6 +25,10 @@ const yargs = require('yargs')
       ignoreDependencies: {
         desc: 'Ignore depencies',
         alias: 'only-node',
+        boolean: true
+      },
+      lerna: {
+        desc: 'Consider as learna monorepo (only applies for node bump)',
         boolean: true
       },
       message: {
@@ -68,6 +73,11 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'l'
   })
+  .option('verbose', {
+    describe: 'More log outputs',
+    boolean: true,
+    alias: 'v'
+  })
   .option('token', {
     describe: 'Token to authentificate to github',
     string: true,
@@ -88,15 +98,53 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'f'
   })
+  .option('exact', {
+    describe: 'Keep exact version',
+    boolean: true,
+    default: false
+  })
+  .option('loose', {
+    describe: `For loose version for nodes version. This will replace exisiting range constraint (^, ~ or none).
+       Use --no-loose to disable or place loose: false in config in the node section)`,
+    boolean: true,
+    default: true
+  })
   .option('config', {
     describe: 'Override update-node configuration default path',
     string: true,
     alias: 'c'
   })
+  .option('default-config', {
+    describe: 'Override update-node configuration default path',
+    boolean: true,
+    alias: ['d', 'default']
+  })
+  .option('clean', {
+    describe: 'Run on a clean state',
+    boolean: true,
+    alias: 'C'
+  })
+  .option('pre-clean-command', {
+    describe: 'Run before to clean state',
+    string: true,
+    alias: 'p',
+    array: true
+  })
+  .option('post-clean-command', {
+    describe: 'Run on a clean state',
+    string: true,
+    alias: 'P',
+    array: true
+  })
   .option('auto', {
     describe: 'Select automatically behavior to adopt based on current commit and branch',
     boolean: true,
     alias: 'A'
+  })
+  .option('scope', {
+    describe: 'Apply to a scope of the repository (impact on title and branch name)',
+    string: true,
+    alias: 's'
   });
 
 const AUTH_FLAGS = ['local', 'token', 'auto-token'];
@@ -137,8 +185,10 @@ const COMMANDS = {
 };
 
 const runUpdateNode = async argv => {
+  let config;
   if (!cmd && argv.auto) {
-    cmd = await selectCommand();
+    config = await getConfig(argv);
+    cmd = await selectCommand(config);
     if (cmd) process.stdout.write(c.bold.blue(`🎚  Decided to run the command ${cmd}\n`));
   }
   const [commandType, mainCommand, requiredOptions, inferedOptions = _.constant(undefined)] =
@@ -155,7 +205,16 @@ const runUpdateNode = async argv => {
   }
   // FIXME perform schema validation
   const mainArg =
-    commandType === 'config' ? await getConfig(argv) : commandType === 'argv' ? argv : undefined;
+    commandType === 'config'
+      ? config || (await getConfig(argv)) // do not recompute config if already done
+      : commandType === 'argv'
+        ? argv
+        : undefined;
+
+  if (argv.clean && _.get('baseBranch', mainArg)) {
+    await cleanAndSyncRepo(_.pick(['clean', 'preCleanCommand', 'postCleanCommand'], argv));
+  }
+
   await mainCommand(mainArg, inferedOptions(argv));
 };
 
@@ -169,6 +228,9 @@ const main = () => {
     process.stderr.write(`${c.bold.red(err.message)}\n`);
     if (err.details) process.stderr.write(`${err.details}\n`);
     process.stderr.write('\n');
+    if (argv.verbose) {
+      process.stderr.write(`${err.stack}\n\n`);
+    }
     process.exit(err.exitCode || 2);
   });
 };

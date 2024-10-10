@@ -122,10 +122,11 @@ const syncGithub = async (
   message,
   pullRequestContent,
   githubToken,
-  forceFlag
+  forceFlag,
+  baseBranch
 ) => {
   if (!branch) return {};
-  const branchHasCommits = await commitFiles(branch, message);
+  const branchHasCommits = await commitFiles(branch, message, baseBranch);
   if (!branchHasCommits) {
     return {commit: null, branch};
   }

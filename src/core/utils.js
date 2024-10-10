@@ -11,4 +11,6 @@ const formatEventualSuffix = text => (_.isEmpty(text) ? '' : `\n\n\n-----\n${tex
 
 const parseArgvToArray = _.pipe(_.split(','), _.compact);
 
-module.exports = {makeError, formatEventualSuffix, parseArgvToArray};
+const chompCurrentFolder = path => _.replace(`${process.cwd()}/`, '', path);
+
+module.exports = {makeError, formatEventualSuffix, parseArgvToArray, chompCurrentFolder};
