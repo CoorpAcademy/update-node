@@ -63,8 +63,12 @@ const readConfig = pathe => JSON.parse(fs.readFileSync(pathe));
 
 const resolveGithubToken = async argv => {
   if (!argv.autoToken) return argv.token;
-  const {stdout: ghToken} = await command('gh auth token');
-  return ghToken;
+  try {
+    const {stdout: ghToken} = await command('gh auth token');
+    return ghToken;
+  } catch (err) {
+    return null;
+  }
 };
 
 const generateDefaultConfig = () => {
@@ -136,7 +140,7 @@ const resolveConfig = async (config, configPath, argv) => {
   base.lernaMonorepo = base.node.lerna || argv.lerna;
   base.packageContent = JSON.parse(fs.readFileSync(base.package));
   base.local = argv.local;
-  base.token = await resolveGithubToken(argv);
+  base.token = argv.local ? null : await resolveGithubToken(argv);
 
   // Combine reviewers config and extra args, removing leading @ for user, and potential specified orga for teams
   base.reviewers = _.pipe(
