@@ -39,25 +39,27 @@ if  [[ $current_commit != "$(git rev-parse HEAD)" ]]; then
 fi
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
+PRE_COMMAND_FILE=".precommand"
+POST_COMMAND_FILE=".postcommand"
 # try a targeted bump with clean and extra command and token
 echo "            " >> package.json
 npm run update -- upgrade --local --target 20 \
   -fam "Beta test update-node major bump :scientist:" -R @Coorpacademy/development-mooc \
-  --clean -p "echo before > .precommand" -P "echo after > .postcommand"
+  --clean -p "echo before > $PRE_COMMAND_FILE" -P "echo after > $POST_COMMAND_FILE"
 # note: cannot test so far with a real branch. should set up a local upstream
 
 if ! git log --graph --decorate --pretty=oneline --abbrev-commit | grep -q "Upgrade Node to v20"; then
     echo "Seems like no commit was created while it wasn't supposed to"
     exit 2
 fi
-if  [[ ! -f .precommand ]]; then
+if  [[ ! -f .$PRE_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
-if  [[ ! -f .postcommand ]]; then
+if  [[ ! -f .$POST_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
-rm -f .precommand .postcommand
+rm -f $PRE_COMMAND_FILE $POST_COMMAND_FILE
 
 git checkout init
