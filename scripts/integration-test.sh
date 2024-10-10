@@ -39,8 +39,8 @@ if  [[ $current_commit != "$(git rev-parse HEAD)" ]]; then
 fi
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
-PRE_COMMAND_FILE=".precommand"
-POST_COMMAND_FILE=".postcommand"
+PRE_COMMAND_FILE="$(mktemp -t precommand)"
+POST_COMMAND_FILE="$(mktemp -t postcommand)"
 # try a targeted bump with clean and extra command and token
 echo "            " >> package.json
 npm run update -- upgrade --local --target 20 \
@@ -52,11 +52,11 @@ if ! git log --graph --decorate --pretty=oneline --abbrev-commit | grep -q "Upgr
     echo "Seems like no commit was created while it wasn't supposed to"
     exit 2
 fi
-if  [[ ! -f .$PRE_COMMAND_FILE ]]; then
+if  [[ ! -f $PRE_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
-if  [[ ! -f .$POST_COMMAND_FILE ]]; then
+if  [[ ! -f $POST_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
