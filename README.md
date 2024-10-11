@@ -20,16 +20,51 @@ Commands:
                                                                 [aliases: scaffold]
 
 Options:
-  --help        Show help                                              [boolean]
-  --version     Show version number                                    [boolean]
-  --local, -l   Run in local mode with github publication              [boolean]
-  --token, -t   Token to authentificate to github                       [string]
-  --folder, -f  Run in a specific folder                                [string]
-  --force, -F   Git Push with force changes
-                (--force-with-lease is used by default)                [boolean]
-  --config, -C  Override update-node configuration default path         [string]
-  --auto, -A    Select automatically behavior to adopt based on current commit
-                and branch                                             [boolean]
+      --version                        Show version number             [boolean]
+  -l, --local                          Run in local mode with github publication
+                                                                       [boolean]
+  -v, --verbose                        More log outputs                [boolean]
+  -t, --token                          Token to authentificate to github[string]
+  -a, --autoToken, --at, --auto-token  Get authentificated github token from gh
+                                       cli                             [boolean]
+  -A, --auto                           Select automatically behavior to adopt
+                                       based on current commit and branch
+                                                                       [boolean]
+  -F, --folder                         Run in a specific folder         [string]
+  -s, --scope                          Apply to a scope of the repository
+                                       (impact on title and branch name)[string]
+  -C, --config                         Override update-node configuration
+                                       default path                     [string]
+  -d, --default-config, --default      Override update-node configuration
+                                       default path                    [boolean]
+  -c, --clean                          Run on a clean state            [boolean]
+  -p, --pre-clean-command              Run before to clean state         [array]
+  -P, --post-clean-command             Run on a clean state              [array]
+  -f, --force                          Git Push with force changes
+                                       (--force-with-lease is used by default)
+                                                                       [boolean]
+  -h, --help                           Show help                       [boolean]
+
+Upgrade related options:
+  -T, --target                           Node version to target         [string]
+      --ignoreDependencies, --only-node  Ignore depencies              [boolean]
+      --lerna                            Consider as learna monorepo (only
+                                         applies for node bump)        [boolean]
+  -m, --message                          Optional extra message to attach to the
+                                         commit and pull request        [string]
+  -r, --reviewers                        Extra reviewers to add to the pull
+                                         request                        [string]
+  -R, --teamReviewers                    Extra team reviewers to add to the pull
+                                         request                        [string]
+      --exact                            Keep exact version in engine version
+                                                      [boolean] [default: false]
+      --loose                            For loose version for nodes version.
+                                         This will replace exisiting range
+                                         constraint (^, ~ or none).
+                                         Use --no-loose to disable or place
+                                         loose: false in config in the node
+                                         section)      [boolean] [default: true]
+
 Examples
     update-node --token=TKN
 

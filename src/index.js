@@ -45,6 +45,17 @@ const yargs = require('yargs')
         describe: 'Extra team reviewers to add to the pull request',
         string: true,
         alias: 'R'
+      },
+      exact: {
+        describe: 'Keep exact version in engine version',
+        boolean: true,
+        default: false
+      },
+      loose: {
+        describe: `For loose version for nodes version. This will replace exisiting range constraint (^, ~ or none).
+       Use --no-loose to disable or place loose: false in config in the node section)`,
+        boolean: true,
+        default: true
       }
     },
     handler: setCommand(UPGRADE)
@@ -88,26 +99,20 @@ const yargs = require('yargs')
     boolean: true,
     alias: ['a', 'at', 'auto-token']
   })
+  .option('auto', {
+    describe: 'Select automatically behavior to adopt based on current commit and branch',
+    boolean: true,
+    alias: 'A'
+  })
   .option('folder', {
     describe: 'Run in a specific folder',
     string: true,
     alias: 'F'
   })
-  .option('force', {
-    describe: 'Git Push with force changes (--force-with-lease is used by default)',
-    boolean: true,
-    alias: 'f'
-  })
-  .option('exact', {
-    describe: 'Keep exact version',
-    boolean: true,
-    default: false
-  })
-  .option('loose', {
-    describe: `For loose version for nodes version. This will replace exisiting range constraint (^, ~ or none).
-       Use --no-loose to disable or place loose: false in config in the node section)`,
-    boolean: true,
-    default: true
+  .option('scope', {
+    describe: 'Apply to a scope of the repository (impact on title and branch name)',
+    string: true,
+    alias: 's'
   })
   .option('config', {
     describe: 'Override update-node configuration default path',
@@ -136,15 +141,10 @@ const yargs = require('yargs')
     alias: 'P',
     array: true
   })
-  .option('auto', {
-    describe: 'Select automatically behavior to adopt based on current commit and branch',
+  .option('force', {
+    describe: 'Git Push with force changes (--force-with-lease is used by default)',
     boolean: true,
-    alias: 'A'
-  })
-  .option('scope', {
-    describe: 'Apply to a scope of the repository (impact on title and branch name)',
-    string: true,
-    alias: 's'
+    alias: 'f'
   });
 
 const AUTH_FLAGS = ['local', 'token', 'auto-token'];
