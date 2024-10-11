@@ -16,7 +16,8 @@ const nodeConfig = Joi.object().keys({
   dockerfile: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   travis: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   package: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
-  serverless: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())]
+  serverless: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
+  lerna: Joi.bool()
 });
 const dependencyClusterConfig = Joi.object().keys({
   name: Joi.string().required(),

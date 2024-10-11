@@ -99,14 +99,13 @@ const updateLock = async (packageManager = 'npm') => {
 };
 
 const updateLearnaPackageEngines = async (nodeVersion, npmVersion, {exact, loose}) => {
+  const listPackages = await execa('npx', ['lerna', 'list', '--json', '--loglevel', 'error'], {
+    all: true,
+    shell: true
+  });
   const lernaPackages = _.map(
     ({location}) => `${chompCurrentFolder(location)}/package.json`,
-    JSON.parse(
-      await execa('npx', ['lerna', 'list', '--json', '--loglevel', 'error'], {
-        all: true,
-        shell: true
-      }).all
-    )
+    listPackages.all
   );
   return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, {exact, loose});
 
