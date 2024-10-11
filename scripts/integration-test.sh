@@ -39,27 +39,28 @@ if  [[ $current_commit != "$(git rev-parse HEAD)" ]]; then
 fi
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 
-PRE_COMMAND_FILE="$(mktemp)"
-POST_COMMAND_FILE="$(mktemp)"
+PRE_CLEAN_COMMAND_FILE="$(mktemp)"
+POST_CLEAN_COMMAND_FILE="$(mktemp)"
 # try a targeted bump with clean and extra command and token
 echo "            " >> package.json
+git checkout -B whatever && git commit --allow-empty -m "🤷"
 npm run update -- upgrade --local --target 20 \
   -fam "Beta test update-node major bump :scientist:" -R @Coorpacademy/development-mooc \
-  --clean -p "echo before > $PRE_COMMAND_FILE" -P "echo after > $POST_COMMAND_FILE"
+  --clean -p "echo before > $PRE_CLEAN_COMMAND_FILE" -P "echo after > $POST_CLEAN_COMMAND_FILE"
 # note: cannot test so far with a real branch. should set up a local upstream
 
 if ! git log --graph --decorate --pretty=oneline --abbrev-commit | grep -q "Upgrade Node to v20"; then
     echo "Seems like no commit was created while it wasn't supposed to"
     exit 2
 fi
-if  [[ ! -f $PRE_COMMAND_FILE ]]; then
+if  [[ ! -f $PRE_CLEAN_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
-if  [[ ! -f $POST_COMMAND_FILE ]]; then
+if  [[ ! -f $POST_CLEAN_COMMAND_FILE ]]; then
     echo "Seems like pre command wasnt run"
     exit 2
 fi
-rm -f $PRE_COMMAND_FILE $POST_COMMAND_FILE
+rm -f $PRE_CLEAN_COMMAND_FILE $POST_CLEAN_COMMAND_FILE
 
 git checkout init

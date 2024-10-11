@@ -28,12 +28,12 @@ const headClean = () => {
   return execSync('git', ['status', '--porcelain']).stdout === '';
 };
 
-const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCommand} = {}) =>
+const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCommand = []} = {}) =>
   executeScript([
     ...preCleanCommand,
     'git stash',
     `git checkout ${branch}`,
-    `if git rev-parse --abbrev-ref --symbolic-full-name @${branch} ; then git pull; fi`, // pull only if upstream
+    `if git rev-parse --abbrev-ref --symbolic-full-name ${branch} ; then git pull; fi`, // pull only if upstream
     ...postCleanCommand
   ]);
 
