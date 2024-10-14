@@ -5,11 +5,13 @@ const _ = require('lodash/fp');
 const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
+const updateServerless = require('./updatees/serverless');
 const {
   updateLock,
   updateDependencies,
   updateDevDependencies,
-  updatePackageEngines
+  updatePackageEngines,
+  updateLearnaPackageEngines
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
@@ -19,23 +21,27 @@ const {makeError, formatEventualSuffix} = require('./core/utils');
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
+  const {exact, loose} = config.node;
+  const {scope} = config.argv;
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
+    updateServerless(nodeVersion, config.node.serverless),
     updateTravis(nodeVersion, config.node.travis),
-    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, !!config.exact),
+    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, {exact, loose}),
     updateNvmrc(nodeVersion, config.node.nvmrc),
-    updateDockerfile(nodeVersion, config.node.dockerfile)
+    updateDockerfile(nodeVersion, config.node.dockerfile),
+    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
   ]);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
 
   process.stdout.write(`+ Successfully bumped Node version to v${c.bold.blue(nodeVersion)}\n`);
   return {
-    branch: `update-node-v${nodeVersion}`,
-    message: `Upgrade Node to v${nodeVersion}${messageSuffix}`,
+    branch: _.compact(['update-node', config.argv.scope, `v${nodeVersion}`]).join('-'),
+    message: `Upgrade Node to v${nodeVersion}${messageSuffix} ${scope ? ` on scope ${scope}` : ''}`,
     pullRequest: {
-      title: `Upgrade Node to v${nodeVersion}`,
-      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}`
+      title: `${scope ? `[${scope}] ` : ''}Upgrade Node to v${nodeVersion}`,
+      body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}${scope ? ` on scope ${scope}` : ''}`
     }
   };
 };
@@ -82,7 +88,7 @@ const commitAndMakePullRequest = config => async options => {
 
   if (!config.baseBranch) throw makeError('No base branch is defined');
   if (config.local) {
-    return commitFiles(null, message);
+    return commitFiles(null, message, config.baseBranch);
   }
   const status = await syncGithub(
     config.repoSlug,
@@ -97,7 +103,8 @@ const commitAndMakePullRequest = config => async options => {
       team_reviewers: config.teamReviewers
     },
     config.token,
-    config.forceFlag
+    config.forceFlag,
+    config.baseBranch
   );
   if (!status.commit)
     process.stdout.write('+ Did not made a Pull request, nothing has changed 😴\n');

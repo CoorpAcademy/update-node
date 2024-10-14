@@ -1,12 +1,12 @@
 const {sync: execSync} = require('execa');
 const {executeScript} = require('./script');
 
-const commitFiles = async (branch, message) => {
+const commitFiles = async (branch, message, baseBranch = 'master') => {
   try {
     await executeScript([
       branch &&
-        `git checkout -b ${branch} || (git branch -D ${branch} && git checkout -b ${branch})`,
-      'git add .',
+        `git checkout -b ${branch} ${baseBranch} || (git branch -D ${branch} && git checkout -b ${branch} ${baseBranch})`,
+      'git add --update .',
       `git commit -m "${message}"${
         branch ? ' ;exit_status=$?; git checkout -; exit $exit_status' : ''
       }`
@@ -28,9 +28,18 @@ const headClean = () => {
   return execSync('git', ['status', '--porcelain']).stdout === '';
 };
 
+const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCommand = []} = {}) =>
+  executeScript([
+    ...preCleanCommand,
+    'git stash',
+    `git checkout ${branch}`,
+    `if git rev-parse --abbrev-ref @--symbolic-full-name ${branch} ; then git pull; fi`, // pull only if upstream
+    ...postCleanCommand
+  ]);
+
 const getRepoSlug = () =>
   execSync('git', ['remote', 'get-url', 'origin'])
-    .split(':')[1]
+    .stdout.split(':')[1]
     .trim()
     .replace(/\.git$/, '');
 
@@ -56,5 +65,6 @@ module.exports = {
   headMessage,
   headClean,
   getRepoSlug,
-  currentUser
+  currentUser,
+  cleanAndSyncRepo
 };
