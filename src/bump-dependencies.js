@@ -15,6 +15,7 @@ const {
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
+const {executeScript} = require('./core/script');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
@@ -22,7 +23,7 @@ const {makeError, formatEventualSuffix} = require('./core/utils');
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const {exact, loose} = config.node;
-  const {scope} = config.argv;
+  const {scope, preCommitBumpCommand, runNpmInstall} = config.argv;
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
     updateServerless(nodeVersion, config.node.serverless),
@@ -32,6 +33,10 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile),
     config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
   ]);
+  // Post commands to synchronise the package-lock.json
+  // eslint-disable-next-line no-template-curly-in-string
+  if (runNpmInstall) await executeScript(['. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && nvm use', 'npm i']);
+  if (!_.isEmpty(preCommitBumpCommand)) await executeScript(preCommitBumpCommand);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
 

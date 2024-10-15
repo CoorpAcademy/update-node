@@ -129,6 +129,18 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'c'
   })
+  .option('run-npm-install', {
+    describe: 'Command to run before to commit (disable with --no-run-npm-install)',
+    boolean: true,
+    alias: 'i',
+    default: true
+  })
+  .option('pre-commit-bump-command', {
+    describe: 'Command to run before to commit (changes will be commited)',
+    string: true,
+    alias: 'b',
+    array: true
+  })
   .option('pre-clean-command', {
     describe: 'Run before to clean state',
     string: true,
