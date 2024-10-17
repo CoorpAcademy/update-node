@@ -130,7 +130,8 @@ const yargs = require('yargs')
     alias: 'c'
   })
   .option('run-npm-install', {
-    describe: 'Command to run before to commit (disable with --no-run-npm-install)',
+    describe:
+      'Run npm install after patching package.json (default, disable with --no-run-npm-install)',
     boolean: true,
     alias: 'i',
     default: true
