@@ -4,6 +4,7 @@ set -e
 echo "> Linking update-node"
 npm link
 echo
+export NVM_DIR="$(realpath "$(dirname "$0")/../test/integration")"
 
 cd test/integration
 if [ -d .git ]; then
