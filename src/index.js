@@ -129,6 +129,18 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'c'
   })
+  .option('sync-lock', {
+    describe:
+      'Run npm install or yarn after patching package.json (default, disable with --no-sync-lock)',
+    boolean: true,
+    default: true
+  })
+  .option('pre-commit-bump-command', {
+    describe: 'Command to run before to commit (changes will be commited)',
+    string: true,
+    alias: 'b',
+    array: true
+  })
   .option('pre-clean-command', {
     describe: 'Run before to clean state',
     string: true,

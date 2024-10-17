@@ -93,7 +93,7 @@ const updateLock = async (packageManager = 'npm') => {
   process.stdout.write(`+ Updating dependencies lock with ${c.bold.yellow(packageManager)} 🔐 :\n`);
 
   await executeScript([
-    packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts ',
+    packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts',
     'echo "Updated Locks"'
   ]);
 };
