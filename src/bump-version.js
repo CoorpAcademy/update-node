@@ -98,7 +98,7 @@ const main = async config => {
   if (!config.local)
     await pushFiles('master', config.token, config.repoSlug, {
       tags: true,
-      forceFlag: config.forceFlag
+      forceFlag: '--force'
     });
   process.stdout.write(c.bold.green(`Successfully made a ${releaseType} release\n`));
   if (autoBumpConfig.publish || autoBumpConfig['publish-command']) {
