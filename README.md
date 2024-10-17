@@ -38,10 +38,9 @@ Options:
   -d, --default-config, --default      Override update-node configuration
                                        default path                    [boolean]
   -c, --clean                          Run on a clean state            [boolean]
-  -i, --run-npm-install                Run npm install after patching
+      --sync-lock                      Run npm install or yarn after patching
                                        package.json (default, disable with
-                                       --no-run-npm-install)
-                                                       [boolean] [default: true]
+                                       --no-sync-lock) [boolean] [default: true]
   -b, --pre-commit-bump-command        Command to run before to commit (changes
                                        will be commited)                 [array]
   -p, --pre-clean-command              Run before to clean state         [array]

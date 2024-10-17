@@ -129,11 +129,10 @@ const yargs = require('yargs')
     boolean: true,
     alias: 'c'
   })
-  .option('run-npm-install', {
+  .option('sync-lock', {
     describe:
-      'Run npm install after patching package.json (default, disable with --no-run-npm-install)',
+      'Run npm install or yarn after patching package.json (default, disable with --no-sync-lock)',
     boolean: true,
-    alias: 'i',
     default: true
   })
   .option('pre-commit-bump-command', {
