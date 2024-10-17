@@ -119,15 +119,12 @@ const main = async config => {
   if (autoBumpConfig['merge-branch']) {
     const branch = autoBumpConfig['merge-branch'];
     await executeScript([
-      `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`
+      `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
+      `git fetch gh && git checkout -B ${branch} gh/${branch} && git merge master`,
+      `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`,
+      'git remote remove gh'
     ]);
-    await executeScript([
-      `git fetch gh && git checkout -B ${branch} gh/${branch} && git merge master`
-    ]);
-    await executeScript([
-      `git push gh ${branch}:refs/heads/${branch} || (git remote remove gh && exit 12)`
-    ]);
-    await executeScript(['git remote remove gh']);
+
     process.stdout.write(c.bold.green(`Successfully merged branch ${branch}\n`));
   }
 };
