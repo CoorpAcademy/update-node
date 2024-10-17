@@ -20,6 +20,8 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
+const LOAD_NVM = '. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && nvm use'; // eslint-disable-line no-template-curly-in-string
+
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const {exact, loose} = config.node;
@@ -34,9 +36,8 @@ const bumpNodeVersion = async (latestNode, config) => {
     config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
   ]);
   // Post commands to synchronise the package-lock.json
-  // eslint-disable-next-line no-template-curly-in-string
-  if (runNpmInstall) await executeScript(['. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && nvm use', 'npm i']);
-  if (!_.isEmpty(preCommitBumpCommand)) await executeScript(preCommitBumpCommand);
+  if (runNpmInstall) await executeScript([LOAD_NVM, 'npm i']);
+  if (!_.isEmpty(preCommitBumpCommand)) await executeScript([LOAD_NVM, ...preCommitBumpCommand]);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
 
