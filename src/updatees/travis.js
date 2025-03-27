@@ -14,7 +14,7 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
   const documentItems = _.get('[0].value.items', yamlCst);
   if (!documentItems) throw new Error('Travis config file seems not be a valid yaml');
   const nodejsItem = _.find(_.matches({key: {source: 'node_js'}}), documentItems);
-  if (nodejsItem === null) throw new Error('Travis config has missing node_js key');
+  if (!nodejsItem) return yamlString; // Do not attempt a patch if no node_js version
   const versionItem = nodejsItem.value.items[0].value;
   return (
     yamlString.slice(0, Math.max(0, versionItem.offset)) +
