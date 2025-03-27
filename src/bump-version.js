@@ -110,7 +110,7 @@ const main = async config => {
     const branch = autoBumpConfig['sync-branch'];
     await executeScript([
       `git config remote.gh.url >/dev/null || git remote add gh https://${config.token}@github.com/${config.repoSlug}.git`,
-      `git checkout -B ${branch} master`,
+      `git fetch gh  && git checkout -B ${branch} master`,
       `git push gh ${branch}:refs/heads/${branch} ${config.forceFlag} || (git remote remove gh && exit 12)`,
       'git remote remove gh'
     ]);

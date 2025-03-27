@@ -8,7 +8,7 @@ stages:
   - lint
   - test
   - name: auto-bump
-    if: branch = master AND type != pull_request
+    if: branch = master AND type = push
 
 jobs:
   include:
@@ -32,4 +32,7 @@ jobs:
 
     - stage: auto-bump
       name: auto-bump
+      before_script:
+        - git config --global user.email "tech@coorpacademy.com"
+        - git config --global user.name "Coorpacademy Bot"
       script: ./scripts/self-update.sh

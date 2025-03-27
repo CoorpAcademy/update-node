@@ -1,6 +1,7 @@
 const {
   promises: {readFile, writeFile}
 } = require('fs');
+const path = require('path');
 const c = require('chalk');
 const {minimatch} = require('minimatch');
 const _ = require('lodash/fp');
@@ -104,7 +105,7 @@ const updateLearnaPackageEngines = async (nodeVersion, npmVersion, {exact, loose
     shell: true
   });
   const lernaPackages = _.map(
-    ({location}) => `${chompCurrentFolder(location)}/package.json`,
+    ({location}) => path.join(chompCurrentFolder(location), 'package.json'),
     listPackages.all
   );
   return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, {exact, loose});
