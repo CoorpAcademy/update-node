@@ -27,6 +27,7 @@ const patchVersionInServerlessYaml = nodeVersion => yamlString => {
   const nodeMajorVersion = nodeVersion.split('.')[0];
   const newRuntime = `nodejs${nodeMajorVersion}.x`;
   const yamlCst = [...parser.parse(yamlString)];
+
   const documentItems = _.get('[0].value.items', yamlCst);
   if (!documentItems) throw new Error('Serverless config file seems not be a valid yaml');
 
@@ -52,15 +53,15 @@ const patchVersionInServerlessYaml = nodeVersion => yamlString => {
   );
 };
 
-const updateServerless = async (nodeVersion, travis) => {
-  if (_.isArray(travis)) return pMap(travis, t => updateServerless(nodeVersion, t));
+const updateServerless = async (nodeVersion, serverless) => {
+  if (_.isArray(serverless)) return pMap(serverless, t => updateServerless(nodeVersion, t));
 
-  if (!travis || !nodeVersion) return;
+  if (!serverless || !nodeVersion) return;
 
-  await readFile(travis, 'utf8')
+  await readFile(serverless, 'utf8')
     .then(patchVersionInServerlessYaml(nodeVersion))
-    .then(newTravisYaml => writeFile(travis, newTravisYaml, 'utf8'));
-  process.stdout.write(`- Write ${c.bold.dim(path.basename(travis))}\n`);
+    .then(newTravisYaml => writeFile(serverless, newTravisYaml, 'utf8'));
+  process.stdout.write(`- Write ${c.bold.dim(path.basename(serverless))}\n`);
 };
 
 module.exports = updateServerless;
