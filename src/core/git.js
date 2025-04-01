@@ -33,7 +33,7 @@ const cleanAndSyncRepo = ({branch = 'master', preCleanCommand = [], postCleanCom
     ...preCleanCommand,
     'git stash',
     `git checkout ${branch}`,
-    `if git rev-parse --abbrev-ref @--symbolic-full-name ${branch} ; then git pull; fi`, // pull only if upstream
+    `if git rev-parse --abbrev-ref --symbolic-full-name ${branch} ; then git pull; fi`, // pull only if upstream
     ...postCleanCommand
   ]);
 
