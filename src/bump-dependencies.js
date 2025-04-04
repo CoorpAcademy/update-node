@@ -20,7 +20,7 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
-const LOAD_NVM = '. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && nvm use'; // eslint-disable-line no-template-curly-in-string
+const LOAD_NVM = '. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && (nvm use || nvm install)'; // eslint-disable-line no-template-curly-in-string
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
