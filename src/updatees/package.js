@@ -37,7 +37,9 @@ const updatePackageEngines = async (node, npm, pkg, {exact = false, loose = true
       node ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${node}` : existingVersion
     ),
     _.update('engines.npm', existingVersion =>
-      npm ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${npm}` : existingVersion
+      existingVersion && npm
+        ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${npm}`
+        : existingVersion
     )
   )(await readPackage(pkg));
 
