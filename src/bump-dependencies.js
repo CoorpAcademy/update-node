@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 const c = require('chalk');
-const {default: stripAnsi} = require('strip-ansi');
+const stripAnsi = require('strip-ansi');
 const _ = require('lodash/fp');
 const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
