@@ -88,7 +88,7 @@ const bumpDependenciesCluster = async (pkg, cluster, config) => {
     message: `${title}\n\n${coreMessage}${messageSuffix}`,
     pullRequest: {
       title,
-      body: `### :outbox_tray: ${coreMessage}}${messageSuffix}`
+      body: `### :outbox_tray: ${coreMessage}${messageSuffix}`
     }
   };
 };
