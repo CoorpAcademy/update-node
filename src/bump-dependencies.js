@@ -1,6 +1,7 @@
 #! /usr/bin/env node
 
 const c = require('chalk');
+const {default: stripAnsi} = require('strip-ansi');
 const _ = require('lodash/fp');
 const pMap = require('p-map');
 const updateNvmrc = require('./updatees/nvmrc');
@@ -81,7 +82,7 @@ const bumpDependenciesCluster = async (pkg, cluster, config) => {
     } dependencies of cluster ${c.bold.blue(cluster.name)}:\n${dependenciesBumpDescription}\n`
   );
   const title = cluster.message || 'Upgrade dependencies';
-  const coreMessage = `Upgraded dependencies:\n${dependenciesBumpDescription}\n`;
+  const coreMessage = `Upgraded dependencies:\n${stripAnsi(dependenciesBumpDescription)}\n`;
 
   return {
     branch: cluster.branch || `update-dependencies-${cluster.name}`,
