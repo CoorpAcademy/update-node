@@ -1,6 +1,6 @@
 dist: jammy
 language: node_js
-node_js: 20
+node_js: 22
 anchor: &npm npm # This is here to show comment and preserved
 cache: *npm
 install: npm ci
@@ -18,13 +18,9 @@ jobs:
 
     - &test
       stage: test
-      name: test-update-node18
-      node_js: '18'
-      script: npm run test:all
-
-    - <<: *test
       name: test-update-node20
       node_js: '20'
+      script: npm run test:all
 
     - <<: *test
       name: test-update-node22
