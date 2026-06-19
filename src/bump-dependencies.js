@@ -21,7 +21,12 @@ const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
-const LOAD_NVM = '. ${NVM_DIR:-$HOME/.nvm}/nvm.sh && (nvm use || nvm install)'; // eslint-disable-line no-template-curly-in-string
+// Activate the node version written in .nvmrc using whichever version manager is
+// available: nvm when present (dev machines, integration tests), otherwise `n`
+// (the manager shipped in the CodeBuild CI images). Never hard-fail when neither
+// exists so a missing manager cannot break the bump pipeline.
+const LOAD_NVM =
+  'if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then . "${NVM_DIR:-$HOME/.nvm}/nvm.sh" && (nvm use || nvm install); elif command -v n > /dev/null 2>&1; then n auto; fi'; // eslint-disable-line no-template-curly-in-string
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
