@@ -3,7 +3,7 @@ const {mkdtemp, writeFile, rm} = require('fs').promises;
 const os = require('os');
 const path = require('path');
 const {promisify} = require('util');
-const test = require('ava');
+const test = require('ava').default;
 
 const exec = promisify(execFile);
 const cli = require.resolve('../bin/update-node.js');

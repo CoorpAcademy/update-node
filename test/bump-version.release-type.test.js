@@ -1,4 +1,4 @@
-const test = require('ava');
+const test = require('ava').default;
 const {mergeCustomKeywordsWithDefault, getBuiltInSelection} = require('../src/bump-version');
 
 test('mergeCustomKeywords', t => {

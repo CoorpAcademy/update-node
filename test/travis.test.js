@@ -1,4 +1,4 @@
-const test = require('ava');
+const test = require('ava').default;
 const {patchVersionInTravisYaml} = require('../src/updatees/travis');
 
 test('should replace nodejs version', t => {

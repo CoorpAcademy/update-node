@@ -1,4 +1,4 @@
-const test = require('ava');
+const test = require('ava').default;
 const {patchVersionInServerlessYaml} = require('../src/updatees/serverless');
 
 test('should replace nodejs top level version', t => {

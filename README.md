@@ -9,6 +9,8 @@
 
 Requires Node.js 22.12.0 or newer.
 
+Running the tests with AVA requires Node 22.20+, Node 24.12+, or Node 26+. Use the development version in `.nvmrc`.
+
 ```bash
 $ update-node [command]
 

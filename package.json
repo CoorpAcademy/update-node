@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "15.0.0",
-    "ava": "^6.4.1",
+    "ava": "^8.1.0",
     "eslint": "^8.57.1",
     "eslint-import-resolver-typescript": "^4.4.5",
     "nyc": "^18.0.0"
