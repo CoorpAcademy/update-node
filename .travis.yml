@@ -18,13 +18,9 @@ jobs:
 
     - &test
       stage: test
-      name: test-update-node20
-      node_js: '20'
-      script: npm run test:all
-
-    - <<: *test
       name: test-update-node22
       node_js: '22'
+      script: npm run test:all
 
     - <<: *test
       name: test-update-node24

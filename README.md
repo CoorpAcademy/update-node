@@ -7,6 +7,8 @@
 
 ## Options :gear:
 
+Requires Node.js 22.12.0 or newer.
+
 ```bash
 $ update-node [command]
 
