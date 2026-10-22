@@ -1,4 +1,4 @@
-const exec = require('execa');
+const {execa: exec} = require('execa');
 const _ = require('lodash/fp');
 const semver = require('semver');
 

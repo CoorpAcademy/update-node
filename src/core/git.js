@@ -1,4 +1,4 @@
-const {sync: execSync} = require('execa');
+const {execaSync: execSync} = require('execa');
 const {executeScript} = require('./script');
 
 const commitFiles = async (branch, message, baseBranch = 'master') => {

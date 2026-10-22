@@ -2,9 +2,9 @@ const path = require('path');
 const {
   promises: {writeFile}
 } = require('fs');
-const c = require('chalk');
+const c = require('chalk').default;
 const _ = require('lodash/fp');
-const pMap = require('p-map');
+const pMap = require('p-map').default;
 
 const updateNvmrc = async (node, nvmrc) => {
   if (_.isArray(nvmrc)) return pMap(nvmrc, u => updateNvmrc(node, u));

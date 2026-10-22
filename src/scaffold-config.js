@@ -1,11 +1,11 @@
 const fs = require('fs');
-const c = require('chalk');
-const findUp = require('find-up');
+const c = require('chalk').default;
+const {findUpSync} = require('find-up');
 const {readConfig, validateConfig, generateDefaultConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
 const validate = argv => {
-  const configPath = argv.config || argv._[1] || findUp.sync('.update-node.json');
+  const configPath = argv.config || argv._[1] || findUpSync('.update-node.json');
   if (!configPath) throw makeError('Missing config to validate', {exitCode: 2});
   const config = readConfig(configPath);
   try {
@@ -17,7 +17,7 @@ const validate = argv => {
 };
 
 const setup = argv => {
-  const existingConfig = findUp.sync('.update-node.json');
+  const existingConfig = findUpSync('.update-node.json');
   if (existingConfig)
     throw makeError('.update-node.json already exist', {
       detail: `at following path ${existingConfig}`,

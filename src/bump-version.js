@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
-const {sync: execSync} = require('execa');
-const c = require('chalk');
+const {execaSync: execSync} = require('execa');
+const c = require('chalk').default;
 const _ = require('lodash/fp');
 const {minimatch} = require('minimatch');
 const {headClean, headMessage, pushFiles} = require('./core/git');

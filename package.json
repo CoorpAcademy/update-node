@@ -36,30 +36,31 @@
     "update": "node src"
   },
   "dependencies": {
-    "chalk": "^4.1.2",
-    "execa": "^5.1.1",
-    "find-up": "^5.0.0",
-    "got": "^11.8.6",
+    "chalk": "^6.0.1",
+    "execa": "^10.2.0",
+    "find-up": "^8.0.0",
+    "got": "^16.1.0",
     "joi": "^18.3.0",
     "lodash": "4.18.1",
     "minimatch": "^10.2.6",
-    "p-map": "^4.0.0",
-    "p-map-series": "^2.1.0",
-    "p-reduce": "^2.1.0",
-    "pad-stream": "^2.0.0",
+    "p-map": "^7.1.1",
+    "p-map-series": "^3.0.0",
+    "p-reduce": "^3.0.0",
+    "pad-stream": "^4.0.0",
     "protocall": "^2.0.0",
     "pumpify": "^2.0.1",
     "semver": "^7.8.5",
     "split2": "^4.2.0",
-    "strip-ansi": "^6.0.1",
-    "through2": "^4.0.2",
+    "strip-ansi": "^7.2.0",
+    "through2": "^5.0.12",
     "yaml": "^2.9.1",
-    "yargs": "^17.7.3"
+    "yargs": "^18.2.0"
   },
   "devDependencies": {
     "@coorpacademy/eslint-plugin-coorpacademy": "15.0.0",
     "ava": "^6.4.1",
     "eslint": "^8.57.1",
+    "eslint-import-resolver-typescript": "^4.4.5",
     "nyc": "^18.0.0"
   }
 }

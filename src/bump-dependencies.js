@@ -1,9 +1,9 @@
 #! /usr/bin/env node
 
-const c = require('chalk');
-const stripAnsi = require('strip-ansi');
+const c = require('chalk').default;
+const stripAnsi = require('strip-ansi').default;
 const _ = require('lodash/fp');
-const pMap = require('p-map');
+const pMap = require('p-map').default;
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const updateServerless = require('./updatees/serverless');

@@ -1,4 +1,4 @@
-const c = require('chalk');
+const c = require('chalk').default;
 const _ = require('lodash/fp');
 
 const bumpDependencies = require('./bump-dependencies');
@@ -15,7 +15,7 @@ const setCommand = _cmd => () => {
 };
 
 // eslint-disable-next-line import/order
-const yargs = require('yargs')
+const yargs = require('yargs')()
   .command({
     command: UPGRADE,
     aliases: ['upgrade', 'bd'],

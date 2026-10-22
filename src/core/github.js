@@ -1,5 +1,5 @@
-const got = require('got');
-const c = require('chalk');
+const got = require('got').default;
+const c = require('chalk').default;
 const _ = require('lodash/fp');
 const {commitFiles, pushFiles, headCommit} = require('./git');
 

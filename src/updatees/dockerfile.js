@@ -2,9 +2,9 @@ const path = require('path');
 const {
   promises: {readFile, writeFile}
 } = require('fs');
-const c = require('chalk');
+const c = require('chalk').default;
 const _ = require('lodash/fp');
-const pMap = require('p-map');
+const pMap = require('p-map').default;
 
 const updateDockerfile = async (node, dockerfile) => {
   if (_.isArray(dockerfile)) return pMap(dockerfile, d => updateDockerfile(node, d));

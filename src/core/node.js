@@ -1,7 +1,7 @@
 const {keyBy, pipe, get, filter, trimCharsStart, keys} = require('lodash/fp');
-const got = require('got');
+const got = require('got').default;
 const {compare, satisfies} = require('semver');
-const pReduce = require('p-reduce');
+const pReduce = require('p-reduce').default;
 
 const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 

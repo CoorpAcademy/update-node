@@ -1,11 +1,11 @@
 const {Transform, Writable} = require('stream');
-const {command} = require('execa');
-const padStream = require('pad-stream');
-const pMapSeries = require('p-map-series');
+const {execa} = require('execa');
+const padStream = require('pad-stream').default;
+const pMapSeries = require('p-map-series').default;
 
-const c = require('chalk');
+const c = require('chalk').default;
 const split = require('split2');
-const through = require('through2');
+const through = require('through2').default;
 const pumpify = require('pumpify');
 
 const wrappingStream = size =>
@@ -44,7 +44,7 @@ const executeScript = commands =>
     if (!cmd) return;
 
     const columns = process.env.COLUMNS ? Number.parseInt(process.env.COLUMNS, 10) - 6 : 100;
-    const subprocess = command(cmd, {shell: true});
+    const subprocess = execa(cmd, {shell: true});
     subprocess.stdout.pipe(padAndWrapStream(6, columns, c.dim));
     subprocess.stderr.pipe(padAndWrapStream(6, columns, c.red));
     const {exitCode} = await subprocess;

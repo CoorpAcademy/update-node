@@ -2,13 +2,13 @@ const {
   promises: {readFile, writeFile}
 } = require('fs');
 const path = require('path');
-const c = require('chalk');
+const c = require('chalk').default;
 const {minimatch} = require('minimatch');
 const _ = require('lodash/fp');
-const pReduce = require('p-reduce');
+const pReduce = require('p-reduce').default;
 const semver = require('semver');
-const pMap = require('p-map');
-const execa = require('execa');
+const pMap = require('p-map').default;
+const {execa} = require('execa');
 const {
   EXACT_PREFIX,
   PATCH_PREFIX,

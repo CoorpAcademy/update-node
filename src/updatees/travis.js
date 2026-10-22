@@ -2,10 +2,10 @@ const path = require('path');
 const {
   promises: {readFile, writeFile}
 } = require('fs');
-const c = require('chalk');
+const c = require('chalk').default;
 const _ = require('lodash/fp');
 const YAML = require('yaml');
-const pMap = require('p-map');
+const pMap = require('p-map').default;
 
 const parser = new YAML.Parser();
 

@@ -2,7 +2,7 @@ const {mkdtemp, mkdir, writeFile, readFile, rm} = require('fs').promises;
 const os = require('os');
 const path = require('path');
 const test = require('ava');
-const execa = require('execa');
+const {execa} = require('execa');
 
 const runnerPath = require.resolve('../src/core/node-version-manager');
 const bumpPath = require.resolve('../src/bump-dependencies');

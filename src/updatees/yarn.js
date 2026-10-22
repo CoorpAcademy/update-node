@@ -1,5 +1,5 @@
 const _ = require('lodash/fp');
-const c = require('chalk');
+const c = require('chalk').default;
 const {executeScript} = require('../core/script');
 
 const __listDependencies = (isDev, pkg, requestedDependencies) => {

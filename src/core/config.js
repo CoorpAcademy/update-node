@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('lodash/fp');
 const protocall = require('protocall');
-const findUp = require('find-up');
-const {command, commandSync} = require('execa');
+const {findUpSync} = require('find-up');
+const {execa, execaSync} = require('execa');
 const Joi = require('joi');
 const {parseArgvToArray} = require('./utils');
 const {getRepoSlug} = require('./git');
@@ -65,7 +65,7 @@ const readConfig = pathe => JSON.parse(fs.readFileSync(pathe));
 const resolveGithubToken = async argv => {
   if (!argv.autoToken) return argv.token;
   try {
-    const {stdout: ghToken} = await command('gh auth token');
+    const {stdout: ghToken} = await execa('gh', ['auth', 'token']);
     return ghToken;
   } catch (err) {
     return null;
@@ -78,7 +78,9 @@ const generateDefaultConfig = () => {
   const packageManager = fs.existsSync('yarn.lock') ? 'yarn' : 'npm';
   let baseBranch = 'master';
   try {
-    baseBranch = commandSync('git symbolic-ref refs/remotes/origin/HEAD').split('/').pop();
+    baseBranch = execaSync('git', ['symbolic-ref', 'refs/remotes/origin/HEAD'])
+      .stdout.split('/')
+      .pop();
   } catch (e) {
     /* ignore */
   }
@@ -163,7 +165,7 @@ const validateConfig = config => {
 };
 
 const getConfig = async argv => {
-  const configPath = argv.config || findUp.sync('.update-node.json');
+  const configPath = argv.config || findUpSync('.update-node.json');
   if (!configPath && !argv.defaultConfig) {
     throw new Error('No .update-node.json was found, neither a --config was given');
   }
