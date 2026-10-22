@@ -26,6 +26,10 @@ jobs:
       name: test-update-node22
       node_js: '22'
 
+    - <<: *test
+      name: test-update-node24
+      node_js: '24'
+
     - stage: auto-bump
       name: auto-bump
       before_script:
