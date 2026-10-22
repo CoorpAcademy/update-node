@@ -118,6 +118,8 @@ If ever you want a custom, external selection mecanism just put your command in 
 #### `node`
 This property helps to configure the files that are related to a node version, and that you wish to be updated when trying the bump the node version.
 
+When a Node upgrade synchronizes the lockfile or runs precommit bump commands, update-node requires a Node version manager. It prefers nvm (`nvm use`, then `nvm install` if needed), falling back to `n auto` when nvm is unavailable. These commands run with the activated Node version. If neither manager is available, the upgrade stops before changing version files with `No node version manager was found`. Upgrades with `--no-sync-lock` and no precommit commands do not require a manager.
+
 Here is the list of config properties:
 - `branch`: the branch prefix for the node updates to be perform
 - `nvrmc`: should a `.nvmrc` file be udpated (default _true_), can be an array of files

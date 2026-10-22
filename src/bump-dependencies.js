@@ -16,22 +16,21 @@ const {
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
-const {executeScript} = require('./core/script');
+const {getNodeVersionRunner} = require('./core/node-version-manager');
 const {syncGithub} = require('./core/github');
 const {findLatest} = require('./core/node');
 const {makeError, formatEventualSuffix} = require('./core/utils');
-
-// Activate the node version written in .nvmrc using whichever version manager is
-// available: nvm when present (dev machines, integration tests), otherwise `n`
-// (the manager shipped in the CodeBuild CI images). Never hard-fail when neither
-// exists so a missing manager cannot break the bump pipeline.
-const LOAD_NVM =
-  'if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then . "${NVM_DIR:-$HOME/.nvm}/nvm.sh" && (nvm use || nvm install); elif command -v n > /dev/null 2>&1; then n auto; fi'; // eslint-disable-line no-template-curly-in-string
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const {exact, loose} = config.node;
   const {scope, preCommitBumpCommand, syncLock} = config.argv;
+  const commands = _.compact([
+    syncLock &&
+      (config.packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts'),
+    ...(preCommitBumpCommand || [])
+  ]);
+  const runNodeCommands = _.isEmpty(commands) ? null : await getNodeVersionRunner();
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
   await Promise.all([
     updateServerless(nodeVersion, config.node.serverless),
@@ -41,13 +40,7 @@ const bumpNodeVersion = async (latestNode, config) => {
     updateDockerfile(nodeVersion, config.node.dockerfile),
     config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
   ]);
-  // Post commands to synchronise the package-lock.json
-  if (syncLock)
-    await executeScript([
-      LOAD_NVM,
-      config.packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts'
-    ]);
-  if (!_.isEmpty(preCommitBumpCommand)) await executeScript([LOAD_NVM, ...preCommitBumpCommand]);
+  if (runNodeCommands) await runNodeCommands(commands);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
 
