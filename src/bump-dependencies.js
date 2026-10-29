@@ -23,7 +23,8 @@ const {makeError, formatEventualSuffix} = require('./core/utils');
 
 const bumpNodeVersion = async (latestNode, config) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
-  const {exact, loose} = config.node;
+  const exact = config.exact ?? config.node.exact ?? false;
+  const loose = config.loose ?? config.node.loose ?? true;
   const {scope, preCommitBumpCommand, syncLock} = config.argv;
   const commands = _.compact([
     syncLock &&

@@ -30,16 +30,15 @@ const updatePackageEngines = async (node, npm, pkg, {exact = false, loose = true
 
   if (!pkg) return;
 
-  const prefix = exact ? EXACT_PREFIX : loose ? '>=' : '';
+  const formatVersion = (version, existing) =>
+    `${exact ? EXACT_PREFIX : loose ? '>=' : getSemverPrefix(existing) || ''}${version}`;
 
   const newPackage = _.pipe(
     _.update('engines.node', existingVersion =>
-      node ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${node}` : existingVersion
+      node ? formatVersion(node, existingVersion) : existingVersion
     ),
     _.update('engines.npm', existingVersion =>
-      existingVersion && npm
-        ? `${prefix ? prefix : getSemverPrefix(existingVersion)}${npm}`
-        : existingVersion
+      existingVersion && npm ? formatVersion(npm, existingVersion) : existingVersion
     )
   )(await readPackage(pkg));
 
