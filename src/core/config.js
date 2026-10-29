@@ -12,6 +12,7 @@ const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
 
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),
+  preserveSameMajor: Joi.bool(),
   nvmrc: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   dockerfile: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   travis: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],

@@ -124,8 +124,15 @@ This property helps to configure the files that are related to a node version, a
 
 When a Node upgrade synchronizes the lockfile or runs precommit bump commands, update-node requires a Node version manager. It prefers nvm (`nvm use`, then `nvm install` if needed), falling back to `n auto` when nvm is unavailable. These commands run with the activated Node version. If neither manager is available, the upgrade stops before changing version files with `No node version manager was found`. Upgrades with `--no-sync-lock` and no precommit commands do not require a manager.
 
+When the primary package declares an `engines.node` range starting with `>=`, automatic upgrades prepare a separate alternative for each released, supported even Node major that matches the effective range. Current releases are included before LTS; prereleases and EOL majors are excluded. The latest release with an available exact Docker tag is selected for each major. An explicit `--target` or another engine range operator retains the single-upgrade behavior.
+
+Each alternative starts from the same `baseBranch` commit. A new major raises the engine minimum to the selected full release and updates an existing npm engine to the bundled npm version. Within the same major, each package keeps its existing Node and npm engine ranges while configured version pins and lockfiles refresh. Set `node.preserveSameMajor` to `false` to raise engine minima within the same major as well. A candidate below any configured package's minimum is skipped. Lock synchronization and precommit commands explicitly activate the selected release, even when no `.nvmrc` is configured.
+
+Branches use the configured prefix, scope, major and minor, such as `update-node-api-v24.10`. Patch updates reuse the branch and PR. After successfully publishing a newer minor, update-node closes older PRs carrying its generated metadata for the same major, scope, prefix and base. Local mode prepares independent local branches and commits. The original checkout is restored after each candidate; a clean tracked working tree is required. Failures are reported, other candidates continue, and the command exits unsuccessfully if any candidate failed. Unchanged candidates create no commit or PR.
+
 Here is the list of config properties:
 - `branch`: the branch prefix for the node updates to be perform
+- `preserveSameMajor`: preserve existing Node and npm engine ranges when the selected release is in the same Node major. Defaults to `true` for automatic multi-version upgrades and `false` for single-version upgrades, including explicit `--target` requests. An explicit boolean overrides either default; pins and lockfiles still refresh.
 - `nvrmc`: should a `.nvmrc` file be udpated (default _true_), can be an array of files
 - `dockerfile`: should a Dockerfile be udpated (default _false_), can be an array of files
 - `travis`: should a `.travis.yml` be udpated (default _false_), can be an array of files

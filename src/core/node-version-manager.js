@@ -7,7 +7,8 @@ const {makeError} = require('./utils');
 const SOURCE_NVM =
   'if [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then . "${NVM_DIR:-$HOME/.nvm}/nvm.sh" --no-use || exit $?; fi'; // eslint-disable-line no-template-curly-in-string
 
-const getNodeVersionRunner = async () => {
+const getNodeVersionRunner = async version => {
+  if (version && !/^\d+\.\d+\.\d+$/.test(version)) throw makeError('Invalid Node version');
   const {stdout: manager} = await execa(
     `${SOURCE_NVM} > /dev/null\n` +
       'if command -v nvm > /dev/null 2>&1; then printf nvm; elif command -v n > /dev/null 2>&1; then printf n; fi',
@@ -15,7 +16,11 @@ const getNodeVersionRunner = async () => {
   );
   if (!manager) throw makeError('No node version manager was found');
 
-  const activate = manager === 'nvm' ? `${SOURCE_NVM}\n{ nvm use || nvm install; }` : 'n auto';
+  const target = version ? ` ${version}` : '';
+  const activate =
+    manager === 'nvm'
+      ? `${SOURCE_NVM}\n{ nvm use${target} || nvm install${target}; }`
+      : `n ${version || 'auto'}`;
 
   // Keep activation and dependent commands in one shell, stopping at the first
   // failure while preserving nvm's PATH changes for every subsequent command.

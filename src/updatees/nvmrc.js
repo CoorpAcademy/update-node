@@ -7,7 +7,7 @@ const _ = require('lodash/fp');
 const pMap = require('p-map').default;
 
 const updateNvmrc = async (node, nvmrc) => {
-  if (_.isArray(nvmrc)) return pMap(nvmrc, u => updateNvmrc(node, u));
+  if (_.isArray(nvmrc)) return pMap(nvmrc, u => updateNvmrc(node, u), {stopOnError: false});
 
   if (!nvmrc || !node) return;
 

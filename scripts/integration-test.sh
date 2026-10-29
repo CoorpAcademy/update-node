@@ -1,6 +1,9 @@
 #!/bin/bash
 
 set -e
+echo "> Checking stable-major Node upgrade alternatives"
+node "$(dirname "$0")/integration-node-upgrades.js"
+
 echo "> Linking update-node"
 npm link
 echo

@@ -4,6 +4,7 @@ const c = require('chalk').default;
 const stripAnsi = require('strip-ansi').default;
 const _ = require('lodash/fp');
 const pMap = require('p-map').default;
+const semver = require('semver');
 const updateNvmrc = require('./updatees/nvmrc');
 const updateTravis = require('./updatees/travis');
 const updateServerless = require('./updatees/serverless');
@@ -12,35 +13,51 @@ const {
   updateDependencies,
   updateDevDependencies,
   updatePackageEngines,
-  updateLearnaPackageEngines
+  updateLearnaPackageEngines,
+  listLernaPackageFiles,
+  readPackage
 } = require('./updatees/package');
 const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
 const {getNodeVersionRunner} = require('./core/node-version-manager');
-const {syncGithub} = require('./core/github');
-const {findLatest} = require('./core/node');
+const {syncGithub, publishGithub} = require('./core/github');
+const {findLatest, findSupportedVersions, isLowerBoundRange} = require('./core/node');
+const {nodeUpgradeBase, onNodeBranch} = require('./core/node-branches');
+const {
+  createNodeUpgradeTarget,
+  nodeUpgradeBranch,
+  nodeUpgradeMarker,
+  closeSupersededNodePullRequests
+} = require('./core/node-pull-requests');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
-const bumpNodeVersion = async (latestNode, config) => {
+const prepareNodeUpgrade = async (latestNode, config, {multipleVersions = false} = {}) => {
   process.stdout.write(c.bold.blue(`\n\n⬆️  About to bump node version:\n`));
   const exact = config.exact ?? config.node.exact ?? false;
   const loose = config.loose ?? config.node.loose ?? true;
+  const preserveSameMajor = config.node.preserveSameMajor ?? multipleVersions;
+  const engineOptions = {exact, loose, preserveSameMajor};
   const {scope, preCommitBumpCommand, syncLock} = config.argv;
   const commands = _.compact([
     syncLock &&
       (config.packageManager === 'npm' ? 'npm install' : 'yarn --ignore-engines --ignore-scripts'),
     ...(preCommitBumpCommand || [])
   ]);
-  const runNodeCommands = _.isEmpty(commands) ? null : await getNodeVersionRunner();
   const nodeVersion = _.trimCharsStart('v', latestNode.version);
-  await Promise.all([
+  const runNodeCommands = _.isEmpty(commands)
+    ? null
+    : await getNodeVersionRunner(multipleVersions ? nodeVersion : undefined);
+  // Let every write finish before a failed candidate restores the working tree.
+  const updates = await Promise.allSettled([
     updateServerless(nodeVersion, config.node.serverless),
     updateTravis(nodeVersion, config.node.travis),
-    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, {exact, loose}),
+    updatePackageEngines(nodeVersion, latestNode.npm, config.node.package, engineOptions),
     updateNvmrc(nodeVersion, config.node.nvmrc),
     updateDockerfile(nodeVersion, config.node.dockerfile),
-    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, {exact, loose})
+    config.lernaMonorepo && updateLearnaPackageEngines(nodeVersion, latestNode.npm, engineOptions)
   ]);
+  const failure = updates.find(result => result.status === 'rejected');
+  if (failure) throw failure.reason;
   if (runNodeCommands) await runNodeCommands(commands);
 
   const messageSuffix = formatEventualSuffix(config.argv.message);
@@ -54,6 +71,66 @@ const bumpNodeVersion = async (latestNode, config) => {
       body: `:rocket: Upgraded Node version to v${nodeVersion}${messageSuffix}${scope ? ` on scope ${scope}` : ''}`
     }
   };
+};
+
+const bumpNodeVersion = async (version, config, base) => {
+  const target = createNodeUpgradeTarget(
+    version.version,
+    config.argv.scope || '',
+    config.node.branch || 'update-node'
+  );
+  const branch = nodeUpgradeBranch(target);
+  try {
+    const details = await onNodeBranch(branch, base, async () => {
+      const packages = _.compact([
+        config.package,
+        ..._.castArray(config.node.package || []),
+        ...(config.lernaMonorepo ? await listLernaPackageFiles() : [])
+      ]);
+      const contents = await Promise.all([...new Set(packages)].map(readPackage));
+      const incompatible = contents.some(pkg => {
+        const engineRange = _.get('engines.node', pkg);
+        const minimum = engineRange && semver.minVersion(engineRange);
+        return minimum && semver.lt(version.version, minimum);
+      });
+      if (incompatible) {
+        process.stdout.write(`- Skipping ${branch}: a package requires a newer Node release.\n`);
+        return null;
+      }
+      const nodeUpgrade = await prepareNodeUpgrade(version, config, {multipleVersions: true});
+      return {
+        ...nodeUpgrade,
+        branch,
+        pullRequest: {
+          ...nodeUpgrade.pullRequest,
+          body: `${nodeUpgrade.pullRequest.body}\n\n${nodeUpgradeMarker(target)}`
+        }
+      };
+    });
+    if (!details.commit) {
+      process.stdout.write(`- No changes for ${branch}.\n`);
+      return null;
+    }
+    if (config.local) {
+      process.stdout.write(`+ Prepared local branch ${branch} at ${details.commit}.\n`);
+      return null;
+    }
+    const status = await publishGithub(config, {
+      ...details,
+      pullRequest: {
+        ...details.pullRequest,
+        label: config.label,
+        reviewers: _.pull(await currentUser(), config.reviewers),
+        team_reviewers: config.teamReviewers
+      }
+    });
+    await closeSupersededNodePullRequests(config, status.pullRequest, target);
+    process.stdout.write(`+ Prepared ${branch}: ${status.pullRequest.html_url}\n`);
+    return null;
+  } catch (error) {
+    process.stdout.write(`- Failed ${branch}: ${error.message}\n`);
+    return {branch, error};
+  }
 };
 
 const bumpDependenciesCluster = async (pkg, cluster, config) => {
@@ -144,12 +221,31 @@ module.exports = async (
     nodeVersionOverride ||
     config.node_range ||
     _.getOr('^18', 'packageContent.engines.node', config);
-  const latestNode = await findLatest(RANGE);
+  const nodeErrors = [];
   if (config.node) {
-    const bumpCommitConfig = await bumpNodeVersion(latestNode, config);
-    await _commitAndMakePullRequest(bumpCommitConfig);
+    if (nodeVersionOverride || !isLowerBoundRange(config.packageContent?.engines?.node || '')) {
+      const latestNode = await findLatest(RANGE);
+      if (!latestNode) throw makeError(`No available Node release matches ${RANGE}`);
+      const bumpCommitConfig = await prepareNodeUpgrade(latestNode, config);
+      await _commitAndMakePullRequest(bumpCommitConfig);
+    } else {
+      const versions = await findSupportedVersions(RANGE);
+      if (versions.length === 0) {
+        process.stdout.write('- No supported even Node releases match this range.\n');
+      } else {
+        const base = nodeUpgradeBase(config.baseBranch);
+        const results = await pMap(versions, version => bumpNodeVersion(version, config, base), {
+          concurrency: 1
+        });
+        nodeErrors.push(..._.compact(results));
+      }
+    }
   }
   if (onlyNodeVersion || ignoreDependencies) {
+    if (nodeErrors.length > 0)
+      throw makeError(
+        `Node upgrades failed: ${nodeErrors.map(result => result.branch).join(', ')}`
+      );
     return process.stdout.write(c.bold.green('\n\nUpdate-node bumped node with success 📤\n'));
   }
 
@@ -168,7 +264,6 @@ module.exports = async (
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
-  process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
   _.forEach(clusterDetail => {
     if (clusterDetail.branch)
       process.stdout.write(
@@ -177,5 +272,8 @@ module.exports = async (
         )}\n`
       );
   }, clusterDetails);
+  if (nodeErrors.length > 0)
+    throw makeError(`Node upgrades failed: ${nodeErrors.map(result => result.branch).join(', ')}`);
+  process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
   process.stdout.write('\n');
 };

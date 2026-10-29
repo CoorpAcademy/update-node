@@ -19,7 +19,7 @@ const commitFiles = async (branch, message, baseBranch = 'master') => {
   }
 };
 
-const headCommit = () => execSync('git', ['rev-parse', '--short', 'HEAD']).stdout;
+const headCommit = (ref = 'HEAD') => execSync('git', ['rev-parse', '--short', ref]).stdout;
 const headMessage = () => execSync('git', ['log', '-1', '--pretty=%B']).stdout;
 const headBranch = () => execSync('git', ['symbolic-ref', '--short', 'HEAD']).stdout;
 const currentUser = () => execSync('git', ['config', '--global', 'user.name']).stdout;

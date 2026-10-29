@@ -89,7 +89,7 @@ const assignReviewers = async (reviewerConfig, pullRequest, githubToken) => {
   );
 };
 const documentPullRequest = async ({label, body, title}, pullRequest, githubToken) => {
-  if (!githubToken || !pullRequest || !label) return;
+  if (!githubToken || !pullRequest) return;
 
   const {issue_url} = pullRequest;
   const labels = _.pipe(_.map('name'), label ? _.union([label]) : _.identity)(pullRequest.labels);
@@ -115,6 +115,22 @@ const documentPullRequest = async ({label, body, title}, pullRequest, githubToke
   throw new Error(_.get('message', await response.body));
 };
 
+const publishGithub = async (
+  {repoSlug, baseBranch, token, forceFlag},
+  {branch, commit, message, pullRequest: content = {}}
+) => {
+  const {body = '', title = message, team_reviewers = [], reviewers = [], label = ''} = content;
+  await pushFiles(branch, token, repoSlug, {forceFlag});
+  process.stdout.write(`+ Pushed files on ${c.yellow.bold(branch)} 📡\n`);
+  const pullRequest = await createPullRequest(repoSlug, branch, baseBranch, title, body, token);
+  if (!pullRequest) throw new Error(`Could not create or find PR for ${branch}`);
+  await Promise.all([
+    documentPullRequest({label, body, title}, pullRequest, token),
+    assignReviewers({team_reviewers, reviewers}, pullRequest, token)
+  ]);
+  return {commit, branch, pullRequest};
+};
+
 const syncGithub = async (
   repoSlug,
   base,
@@ -130,28 +146,12 @@ const syncGithub = async (
   if (!branchHasCommits) {
     return {commit: null, branch};
   }
-  const {
-    body = '',
-    title = message,
-    team_reviewers = [],
-    reviewers = [],
-    label = ''
-  } = pullRequestContent || {};
-
-  const commit = headCommit();
+  const commit = headCommit(branch);
   try {
-    await pushFiles(branch, githubToken, repoSlug, {forceFlag});
-    process.stdout.write(`+ Pushed files on ${c.yellow.bold(branch)} 📡\n`);
-    const pullRequest = await createPullRequest(repoSlug, branch, base, title, body, githubToken);
-    await Promise.all([
-      documentPullRequest({label, body, title}, pullRequest, githubToken), // TODO handle assignee!
-      assignReviewers({team_reviewers, reviewers}, pullRequest, githubToken).catch(err =>
-        process.stdout.write(
-          `Issue occured while adding reviewers ${c.yellow.bold(err.message)} 📡\n`
-        )
-      )
-    ]);
-    return {commit, branch, pullRequest};
+    return await publishGithub(
+      {repoSlug, baseBranch: base, token: githubToken, forceFlag},
+      {branch, commit, message, pullRequest: pullRequestContent}
+    );
   } catch (err) {
     return {commit, branch, error: err};
   }
@@ -159,6 +159,7 @@ const syncGithub = async (
 
 module.exports = {
   createPullRequest,
+  publishGithub,
   syncGithub,
   assignReviewers
 };

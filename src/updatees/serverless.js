@@ -54,7 +54,8 @@ const patchVersionInServerlessYaml = nodeVersion => yamlString => {
 };
 
 const updateServerless = async (nodeVersion, serverless) => {
-  if (_.isArray(serverless)) return pMap(serverless, t => updateServerless(nodeVersion, t));
+  if (_.isArray(serverless))
+    return pMap(serverless, t => updateServerless(nodeVersion, t), {stopOnError: false});
 
   if (!serverless || !nodeVersion) return;
 

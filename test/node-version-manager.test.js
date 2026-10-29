@@ -31,13 +31,13 @@ const fixture = async t => {
     nvm: script => writeFile(path.join(nvm, 'nvm.sh'), script),
     n: script => writeFile(path.join(bin, 'n'), `#!/bin/sh\n${script}`, {mode: 0o755}),
     read: file => readFile(path.join(cwd, file), 'utf8'),
-    run: (commands = ['node > first', 'node > second']) =>
+    run: (commands = ['node > first', 'node > second'], version = null) =>
       execa(
         process.execPath,
         [
           '-e',
           `const {getNodeVersionRunner} = require(${JSON.stringify(runnerPath)});
-          getNodeVersionRunner().then(run => run(${JSON.stringify(commands)})).catch(err => {
+          getNodeVersionRunner(${JSON.stringify(version)}).then(run => run(${JSON.stringify(commands)})).catch(err => {
             console.error(err.message);
             process.exitCode = err.exitCode || 2;
           });`
@@ -181,4 +181,24 @@ test('stops before later commands when a dependent command fails', async t => {
   const result = await f.run(['exit 45', 'printf unexpected > second']);
   t.is(result.exitCode, 45);
   await t.throwsAsync(f.read('second'), {code: 'ENOENT'});
+});
+
+test('explicit nvm targets override an older version pin', async t => {
+  const f = await fixture(t);
+  await f.nvm(`nvm() {
+    printf '%s' "$*" > "$TRACE"
+    export PATH="$SELECTED_BIN:$PATH"
+  }`);
+  const result = await f.run(['node > first'], '24.10.3');
+  t.is(result.exitCode, 0, result.stderr);
+  t.is(await f.read('trace'), 'use 24.10.3');
+  t.is(await f.read('first'), 'selected');
+});
+
+test('explicit n targets install the selected full release', async t => {
+  const f = await fixture(t);
+  await f.n('printf "%s" "$*" > "$TRACE"');
+  const result = await f.run([], '24.10.3');
+  t.is(result.exitCode, 0, result.stderr);
+  t.is(await f.read('trace'), '24.10.3');
 });

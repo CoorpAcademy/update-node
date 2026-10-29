@@ -24,7 +24,8 @@ const patchVersionInTravisYaml = nodeVersion => yamlString => {
 };
 
 const updateTravis = async (nodeVersion, travis) => {
-  if (_.isArray(travis)) return pMap(travis, t => updateTravis(nodeVersion, t));
+  if (_.isArray(travis))
+    return pMap(travis, t => updateTravis(nodeVersion, t), {stopOnError: false});
 
   if (!travis || !nodeVersion) return;
 

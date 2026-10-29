@@ -24,12 +24,17 @@ const readPackage = packagePath => {
 
 const getSemverPrefix = _.pipe(s => s && s.match(/^(\D*)\d+/), _.at(1));
 
-const updatePackageEngines = async (node, npm, pkg, {exact = false, loose = true}) => {
-  // TODO: maybe support forcing the choice of prefix (example, to restore loose range like >=)
-  if (_.isArray(pkg)) return pMap(pkg, p => updatePackageEngines(node, npm, p, {exact, loose}));
+const updatePackageEngines = async (node, npm, pkg, options = {}) => {
+  const {exact = false, loose = true, preserveSameMajor = false} = options;
+  if (_.isArray(pkg))
+    return pMap(pkg, p => updatePackageEngines(node, npm, p, options), {stopOnError: false});
 
   if (!pkg) return;
 
+  const original = await readPackage(pkg);
+  const existingNode = _.get('engines.node', original);
+  const minimum = existingNode && semver.minVersion(existingNode);
+  if (preserveSameMajor && minimum && semver.major(node) === minimum.major) return;
   const formatVersion = (version, existing) =>
     `${exact ? EXACT_PREFIX : loose ? '>=' : getSemverPrefix(existing) || ''}${version}`;
 
@@ -40,7 +45,9 @@ const updatePackageEngines = async (node, npm, pkg, {exact = false, loose = true
     _.update('engines.npm', existingVersion =>
       existingVersion && npm ? formatVersion(npm, existingVersion) : existingVersion
     )
-  )(await readPackage(pkg));
+  )(original);
+
+  if (_.isEqual(original, newPackage)) return;
 
   process.stdout.write(`- Write ${c.bold.dim(chompCurrentFolder(pkg))}\n`);
   return writeFile(pkg, `${JSON.stringify(newPackage, null, 2)}\n`, 'utf8');
@@ -100,16 +107,16 @@ const updateLock = async (packageManager = 'npm') => {
   ]);
 };
 
-const updateLearnaPackageEngines = async (nodeVersion, npmVersion, {exact, loose}) => {
-  const listPackages = await execa('npx', ['lerna', 'list', '--json', '--loglevel', 'error'], {
-    all: true,
-    shell: true
-  });
-  const lernaPackages = _.map(
+const listLernaPackageFiles = async () => {
+  const {stdout} = await execa('npx', ['lerna', 'list', '--json', '--loglevel', 'error']);
+  return _.map(
     ({location}) => path.join(chompCurrentFolder(location), 'package.json'),
-    listPackages.all
+    JSON.parse(stdout)
   );
-  return updatePackageEngines(nodeVersion, npmVersion, lernaPackages, {exact, loose});
+};
+
+const updateLearnaPackageEngines = async (nodeVersion, npmVersion, options) => {
+  return updatePackageEngines(nodeVersion, npmVersion, await listLernaPackageFiles(), options);
 
   // note: serverlesses are supposed to be declared to level
 };
@@ -121,5 +128,6 @@ module.exports = {
   updateDependencies: __updateDependencies(),
   updateDevDependencies: __updateDependencies(true),
   updateLock,
+  listLernaPackageFiles,
   updateLearnaPackageEngines
 };

@@ -1,9 +1,14 @@
 const {keyBy, pipe, get, filter, trimCharsStart, keys} = require('lodash/fp');
 const got = require('got').default;
-const {compare, satisfies} = require('semver');
+const {compare, satisfies, valid, prerelease, major, Range} = require('semver');
 const pReduce = require('p-reduce').default;
 
 const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
+const NODE_SCHEDULE = 'https://raw.githubusercontent.com/nodejs/Release/main/schedule.json';
+
+const getNodeSchedule = () => got(NODE_SCHEDULE).json();
+
+const isLowerBoundRange = range => /^\s*>=\s*\d/.test(range) && new Range(range).set.length === 1;
 
 const getNodeVersions = () =>
   got(NODE_VERSIONS, {responseType: 'json'}).then(response => {
@@ -47,4 +52,51 @@ const findLatest = async range => {
   return get(latestAvailableVersion, mapVersions);
 };
 
-module.exports = {findLatest, getNodeVersions};
+const findSupportedVersions = async (
+  range,
+  {
+    getVersions = getNodeVersions,
+    getSchedule = getNodeSchedule,
+    isAvailable = isAvailableOnDocker,
+    now = new Date(),
+    onSkip = nodeMajor =>
+      process.stdout.write(`- No available Docker release for Node ${nodeMajor}; skipping.\n`)
+  } = {}
+) => {
+  const [versions, schedule] = await Promise.all([getVersions(), getSchedule()]);
+  const supported = versions
+    .filter(release => {
+      if (!valid(release.version) || prerelease(release.version)) return false;
+      const nodeMajor = major(release.version);
+      const dates = schedule[`v${nodeMajor}`];
+      return (
+        nodeMajor % 2 === 0 &&
+        dates &&
+        new Date(dates.start) <= now &&
+        now < new Date(dates.end) &&
+        (!release.date || new Date(release.date) <= now) &&
+        satisfies(release.version, range)
+      );
+    })
+    .sort((left, right) => compare(right.version, left.version));
+  const majors = [...new Set(supported.map(release => major(release.version)))].sort(
+    (left, right) => left - right
+  );
+  return pReduce(
+    majors,
+    async (selected, nodeMajor) => {
+      const candidates = supported.filter(release => major(release.version) === nodeMajor);
+      const version = await findFulfilled(release => isAvailable(release.replace(/^v/, '')))(
+        candidates.map(release => release.version)
+      );
+      if (!version) {
+        onSkip(nodeMajor);
+        return selected;
+      }
+      return [...selected, candidates.find(release => release.version === version)];
+    },
+    []
+  );
+};
+
+module.exports = {findLatest, getNodeVersions, findSupportedVersions, isLowerBoundRange};
