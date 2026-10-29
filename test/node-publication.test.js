@@ -6,12 +6,18 @@ const git = require.resolve('../src/core/git');
 const got = require.resolve('got');
 const {createNodeUpgradeTarget, nodeUpgradeMarker} = require('../src/core/node-pull-requests');
 
-const publish = async existing => {
+const publish = async (existing, {sync = false, failPush = false} = {}) => {
   const result = await execa(process.execPath, [
     '-e',
     `
     const events = [];
-    require(${JSON.stringify(git)}).pushFiles = async (...args) => events.push(['push', ...args]);
+    const git = require(${JSON.stringify(git)});
+    git.pushFiles = async (...args) => {
+      events.push(['push', ...args]);
+      if (${failPush}) throw new Error('push failed');
+    };
+    git.commitFiles = async (...args) => { events.push(['commit', ...args]); return true; };
+    git.headCommit = branch => { events.push(['head', branch]); return 'candidate-commit'; };
     const pr = {
       number: 10, url: 'https://example.com/pulls/10', issue_url: 'https://example.com/issues/10',
       labels: [{name: 'keep-me'}], user: {login: 'bot'}
@@ -30,11 +36,16 @@ const publish = async existing => {
     };
     require(${JSON.stringify(got)});
     require.cache[${JSON.stringify(got)}].exports = {default: request};
-    require(${JSON.stringify(github)}).publishGithub(
+    const github = require(${JSON.stringify(github)});
+    const content = {title: 'Upgrade Node to v24.10.3', body: ${JSON.stringify(nodeUpgradeMarker(createNodeUpgradeTarget('24.10.3', 'api')))}};
+    const publication = ${sync} ? github.syncGithub(
+      'org/repo', 'master', 'update-node-api-v24.10', 'Upgrade Node', content, 'fake', '--force-with-lease', 'master'
+    ) : github.publishGithub(
       {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'},
       {branch: 'update-node-api-v24.10', commit: 'candidate-commit', message: 'Upgrade Node',
-        pullRequest: {title: 'Upgrade Node to v24.10.3', body: ${JSON.stringify(nodeUpgradeMarker(createNodeUpgradeTarget('24.10.3', 'api')))}}}
-    ).then(result => console.log('RESULT:' + JSON.stringify({events, result})))
+        pullRequest: content}
+    );
+    publication.then(result => console.log('RESULT:' + JSON.stringify({events, result: {...result, error: result.error?.message}})))
       .catch(error => {console.error(error); process.exitCode = 1;});
   `
   ]);
@@ -58,3 +69,20 @@ for (const existing of [false, true]) {
     );
   });
 }
+
+test('legacy publication reports the candidate branch commit after restoring the checkout', async t => {
+  const {events, result} = await publish(false, {sync: true});
+  t.deepEqual(events.slice(0, 2), [
+    ['commit', 'update-node-api-v24.10', 'Upgrade Node', 'master'],
+    ['head', 'update-node-api-v24.10']
+  ]);
+  t.is(result.commit, 'candidate-commit');
+  t.is(result.pullRequest.number, 10);
+  t.is(events.find(event => event[0] === 'push')[4].forceFlag, '--force-with-lease');
+});
+
+test('legacy publication retains the candidate commit when pushing fails', async t => {
+  const {events, result} = await publish(false, {sync: true, failPush: true});
+  t.deepEqual(result, {commit: 'candidate-commit', branch: 'update-node-api-v24.10', error: 'push failed'});
+  t.false(events.some(event => ['post', 'patch'].includes(event[0])));
+});

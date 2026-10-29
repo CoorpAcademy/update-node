@@ -1,4 +1,4 @@
-const {mkdtemp, writeFile, readFile, rm} = require('fs').promises;
+const {mkdtemp, writeFile, readFile, rm, mkdir, chmod} = require('fs').promises;
 const os = require('os');
 const path = require('path');
 const test = require('ava').default;
@@ -131,6 +131,7 @@ const workflow = (f, options = {}) =>
   };
   versions.findLatest = async range => {
     events.push(['legacy', range]);
+    if (options.noLatest) return undefined;
     return {version: 'v24.10.3', npm: '11.6.0'};
   };
   require(paths.manager).getNodeVersionRunner = async version => commands => {
@@ -149,6 +150,10 @@ const workflow = (f, options = {}) =>
   require(paths.prs).closeSupersededNodePullRequests = async (config, pr, target) => {
     events.push(['close', target.major]);
   };
+  if (options.fullUpgrade) {
+    require(${JSON.stringify(require.resolve('../src/core/versions'))}).latestVersionForPackage = async () => '2.0.0';
+    require(paths.packages).updateLock = async () => events.push(['dependency-lock']);
+  }
   if (options.failWrite) {
     require(paths.packages).updatePackageEngines = async () => { throw new Error('write failed'); };
     require.cache[paths.nvmrc] = {exports: async version => {
@@ -161,15 +166,17 @@ const workflow = (f, options = {}) =>
     package: 'package.json', packageContent: JSON.parse(fs.readFileSync('package.json')),
     local: !options.remote, baseBranch: 'master', packageManager: 'npm',
     node_range: options.range, exact: options.exact, loose: options.loose,
-    dependencies: [], reviewers: [], teamReviewers: [],
+    lernaMonorepo: options.lerna,
+    dependencies: options.fullUpgrade ? [{name: 'deps', dependencies: ['example-dep']}] : [],
+    reviewers: [], teamReviewers: [],
     argv: {scope: 'api', syncLock: options.syncLock !== false, preCommitBumpCommand: options.noCommands ? [] : ['verify']}
   };
-  require(paths.bump)(config, {onlyNodeVersion: true, nodeVersionOverride: options.target})
+  require(paths.bump)(config, {onlyNodeVersion: !options.fullUpgrade, nodeVersionOverride: options.target})
     .catch(error => { console.error(error.message); process.exitCode = 2; })
     .finally(() => console.log('EVENTS:' + JSON.stringify(events)));
 `
     ],
-    {cwd: f.cwd, reject: false}
+    {cwd: f.cwd, reject: false, env: {PATH: f.cwd + path.delimiter + process.env.PATH}}
   );
 const events = result => JSON.parse(result.stdout.split('EVENTS:')[1].trim());
 const pkgAt = (f, ref, file = 'package.json') => JSON.parse(f.git('show', `${ref}:${file}`));
@@ -326,3 +333,66 @@ test.serial(
     t.deepEqual(pkgAt(f, 'master').engines, {node: '>=24.10.3', npm: '>=11.6.0'});
   }
 );
+
+test.serial('no supported alternatives leave the checkout untouched', async t => {
+  const f = await fixture(t);
+  const result = await workflow(f, {versions: []});
+  t.is(result.exitCode, 0, result.stderr);
+  t.regex(result.stdout, /No supported even Node releases match this range/);
+  t.deepEqual(events(result), [['range', '>=22.12.0']]);
+  t.is(f.git('rev-parse', 'HEAD'), f.base);
+  t.is(f.git('branch', '--list', 'update-node-*'), '');
+  t.is(f.git('status', '--porcelain'), '');
+});
+
+test.serial('an explicit target without a matching release fails before editing files', async t => {
+  const f = await fixture(t);
+  const result = await workflow(f, {target: '999', noLatest: true});
+  t.is(result.exitCode, 2);
+  t.regex(result.stderr, /No available Node release matches 999/);
+  t.deepEqual(events(result), [['legacy', '999']]);
+  t.is(f.git('status', '--porcelain'), '');
+});
+
+test.serial('dependency upgrades finish before reporting an earlier Node candidate failure', async t => {
+  const f = await fixture(t);
+  const pkg = JSON.parse(await f.read('package.json'));
+  pkg.dependencies = {'example-dep': '^1.0.0'};
+  await f.write('package.json', JSON.stringify(pkg));
+  f.git('add', '.');
+  f.git('commit', '-m', 'dependency fixture');
+  const result = await workflow(f, {fullUpgrade: true, failVersion: '24.10.3'});
+  t.is(result.exitCode, 2);
+  t.regex(result.stderr, /Node upgrades failed: update-node-api-v24.10/);
+  t.deepEqual(pkgAt(f, 'master').dependencies, {'example-dep': '^2.0.0'});
+  t.deepEqual(pkgAt(f, 'update-node-api-v26.0').dependencies, {'example-dep': '^1.0.0'});
+  t.true(events(result).some(event => event[0] === 'dependency-lock'));
+  t.is(f.git('branch', '--show-current'), 'master');
+  t.is(f.git('status', '--porcelain'), '');
+});
+
+test.serial('lerna packages use their own minima and ignore discovery warnings on stderr', async t => {
+  const f = await fixture(t);
+  for (const name of ['a', 'b']) await mkdir(path.join(f.cwd, 'packages', name), {recursive: true});
+  await f.write('packages/a/package.json', JSON.stringify({engines: {node: '>=22.12.0', npm: '^10.0.0'}}));
+  const sameMajor = JSON.stringify({engines: {node: '>=24.1.0'}});
+  await f.write('packages/b/package.json', sameMajor);
+  await f.write('npx', `#!/usr/bin/env node
+require('node:assert/strict').deepEqual(process.argv.slice(2), ['lerna', 'list', '--json', '--loglevel', 'error']);
+console.error('Discovery warning on stderr');
+console.log(JSON.stringify(['a', 'b'].map(name => ({location: require('node:path').resolve('packages', name)}))));
+`);
+  await chmod(path.join(f.cwd, 'npx'), 0o755);
+  f.git('add', '.');
+  f.git('commit', '-m', 'lerna fixture');
+  const result = await workflow(f, {lerna: true});
+  t.is(result.exitCode, 0, result.stderr);
+  t.regex(result.stdout, /Skipping update-node-api-v22.20/);
+  t.deepEqual(pkgAt(f, 'update-node-api-v24.10', 'packages/a/package.json').engines, {
+    node: '>=24.10.3', npm: '>=11.6.0'
+  });
+  t.is(f.git('show', 'update-node-api-v24.10:packages/b/package.json'), sameMajor);
+  t.deepEqual(pkgAt(f, 'update-node-api-v26.0', 'packages/b/package.json').engines, {node: '>=26.0.0'});
+  t.is(f.git('branch', '--show-current'), 'master');
+  t.is(f.git('status', '--porcelain'), '');
+});

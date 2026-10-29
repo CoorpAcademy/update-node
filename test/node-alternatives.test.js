@@ -2,6 +2,7 @@ const {mkdtemp, writeFile, readFile, rm} = require('fs').promises;
 const os = require('os');
 const path = require('path');
 const test = require('ava').default;
+const {execa} = require('execa');
 const {findSupportedVersions, isLowerBoundRange} = require('../src/core/node');
 const {updatePackageEngines} = require('../src/updatees/package');
 const {
@@ -86,6 +87,19 @@ test('reports unavailable majors and continues to other majors', async t => {
     versions.map(v => v.version),
     ['v24.10.0']
   );
+});
+
+test('default reporting explains when Docker availability excludes a major', async t => {
+  const {stdout} = await execa(process.execPath, ['-e', `
+    const {findSupportedVersions} = require(${JSON.stringify(require.resolve('../src/core/node'))});
+    findSupportedVersions('>=22', {
+      getVersions: async () => [{version: 'v22.20.0'}],
+      getSchedule: async () => ({v22: {start: '2024-04-24', end: '2027-04-30'}}),
+      isAvailable: async () => { throw new Error('missing Docker tag'); },
+      now: new Date('2026-10-27')
+    }).then(versions => console.log(JSON.stringify(versions)));
+  `]);
+  t.is(stdout, '- No available Docker release for Node 22; skipping.\n[]');
 });
 
 test('only lower-bound ranges opt into alternatives', t => {
