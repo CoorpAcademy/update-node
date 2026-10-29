@@ -78,7 +78,8 @@ const main = async () => {
   // Discover live releases once; selection details have separate unit coverage.
   // All upgrade execution below goes through the public CLI without module mocks.
   const versions = await findSupportedVersions('>=22.0.0');
-  assert.ok(versions.length >= 2, 'Integration coverage needs at least two supported even Node majors');
+  assert.deepEqual(versions.map(release => semver.major(release.version)), [22, 24, 26],
+    'Integration coverage must prepare Node 22, 24 and 26');
   await checkAlternatives(versions);
   await checkAlternatives(versions, false);
 };

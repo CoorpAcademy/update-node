@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." > /dev/null && pwd)"
 echo "> Checking stable-major Node upgrade alternatives"
 node "$(dirname "$0")/integration-node-upgrades.js"
 
@@ -17,6 +18,13 @@ if [ -d .git ]; then
 fi
 
 echo "> Setting up integration folder"
+# Exercise automatic alternatives instead of the legacy caret-range upgrade.
+node <<'JS'
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+pkg.engines.node = '>=22.12.0';
+fs.writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`);
+JS
 git init --initial-branch=master
 git add .
 git commit -m "Initial dummy commit"
@@ -28,7 +36,9 @@ git add package.json package-lock.json
 git commit -m "Install update-node"
 
 echo "> Running update-node commands"
+node_upgrade_base="$(git rev-parse HEAD)"
 npm run update -- upgrade --local
+node "$PROJECT_ROOT/scripts/assert-integration-node-upgrades.js" "$node_upgrade_base"
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit
 npm run update -- auto-bump --local
 git --no-pager log --graph --decorate --pretty=oneline --abbrev-commit

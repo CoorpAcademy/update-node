@@ -28,3 +28,10 @@ script:
 
   t.is(actual, expected);
 });
+
+test('independent stable-major updates each start with fresh YAML offsets', t => {
+  const yaml = 'language: node_js\nnode_js:\n  - 22.12.0\n# Preserve this comment\n';
+  for (const version of ['22.23.4', '24.22.2', '26.13.0']) {
+    t.is(patchVersionInTravisYaml(version)(yaml), yaml.replace('22.12.0', version));
+  }
+});

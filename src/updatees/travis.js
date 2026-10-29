@@ -7,9 +7,8 @@ const _ = require('lodash/fp');
 const YAML = require('yaml');
 const pMap = require('p-map').default;
 
-const parser = new YAML.Parser();
-
 const patchVersionInTravisYaml = nodeVersion => yamlString => {
+  const parser = new YAML.Parser();
   const yamlCst = [...parser.parse(yamlString)];
   const documentItems = _.get('[0].value.items', yamlCst);
   if (!documentItems) throw new Error('Travis config file seems not be a valid yaml');
