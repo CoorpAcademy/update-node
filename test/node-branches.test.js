@@ -82,6 +82,35 @@ test.serial('a failed preparation is cleaned, and the next branch can succeed', 
   t.truthy(next.commit);
 });
 
+test.serial('a rejected commit restores the checkout and removes only candidate files', async t => {
+  const f = await fixture(t);
+  await f.write('personal.txt', 'Keep me');
+  const hook = path.join(f.cwd, '.git/hooks/pre-commit');
+  await writeFile(hook, '#!/bin/sh\nexit 1\n');
+  await chmod(hook, 0o755);
+  const error = await t.throwsAsync(onNodeBranch('rejected', f.base, async () => {
+    await f.write('.nvmrc', 'v24.10.3');
+    await f.write('package-lock.json', 'new lock');
+    f.git('add', '.');
+    return {message: 'Rejected upgrade'};
+  }, f.cwd));
+  t.is(error.exitCode, 1);
+  t.is(f.git('branch', '--show-current'), 'master');
+  t.is(f.git('rev-parse', 'HEAD'), f.base);
+  t.is(f.git('status', '--porcelain', '--untracked-files=no'), '');
+  t.is(await f.read('.nvmrc'), 'v22.12.0\n');
+  t.is(await f.read('personal.txt'), 'Keep me');
+  await t.throwsAsync(f.read('package-lock.json'), {code: 'ENOENT'});
+});
+
+test.serial('the current branch cannot be replaced as an upgrade candidate', async t => {
+  const f = await fixture(t);
+  await t.throwsAsync(onNodeBranch('master', f.base, () => t.fail('Must not prepare'), f.cwd), {
+    message: 'Cannot replace the current branch master'
+  });
+  t.is(f.git('rev-parse', 'HEAD'), f.base);
+});
+
 test.serial(
   'no changes create no commit, detached HEAD is restored, and dirty trees are rejected',
   async t => {

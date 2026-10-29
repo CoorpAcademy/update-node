@@ -165,11 +165,14 @@ test('only older generated PRs for the same author, repo, base, scope and major 
     {...oldPr(), number: 200},
     {...oldPr(), state: 'closed'},
     {...oldPr(), body: 'manual PR'},
+    {...oldPr(), body: null},
     {...oldPr(), body: '<!-- update-node: broken -->'},
     {...oldPr(), user: {login: 'human'}},
     {...oldPr(), base: {ref: 'other'}},
     {...oldPr(), head: {ref: 'update-node-api-v24.9', repo: {full_name: 'fork/repo'}}},
     {...oldPr(), head: {ref: 'manual', repo: {full_name: 'org/repo'}}},
+    {...oldPr(), head: {ref: 'update-node-api-v24.9', repo: null}},
+    {...oldPr(), body: nodeUpgradeMarker(createNodeUpgradeTarget('24.9.1', 'api', 'manual'))},
     ...['22.9.1', '24.10.1', '24.11.0'].map(v => ({
       ...oldPr(),
       body: nodeUpgradeMarker(createNodeUpgradeTarget(v, 'api'))
@@ -208,4 +211,17 @@ test('lists all open PR pages before closing any to avoid pagination skips', asy
   t.deepEqual(events.slice(0, 3), ['list 1', 'list 2', 'close 1']);
   t.is(events.at(-1), 'close 101');
   t.is(events.length, 4);
+});
+
+test('a replacement authored by someone else never lists or closes older PRs', async t => {
+  const requests = [];
+  const request = async url => {
+    requests.push(url);
+    return {body: {login: 'different-user'}};
+  };
+  request.patch = () => t.fail('Must not close another author\'s PR');
+  await closeSupersededNodePullRequests(
+    {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'}, replacement, target, request
+  );
+  t.deepEqual(requests, ['https://api.github.com/user']);
 });
