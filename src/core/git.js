@@ -50,7 +50,7 @@ const pushFiles = (
   {tags = false, forceFlag = '--force-with-lease'}
 ) =>
   executeScript([
-    `git config remote.gh.url >/dev/null || git remote add gh https://${githubToken}@github.com/${repoSlug}.git`,
+    `git config remote.gh.url >/dev/null || git remote add gh https://x-access-token:${githubToken}@github.com/${repoSlug}.git`,
     `(git push gh ${branch}:refs/heads/${branch} ${forceFlag} ${
       tags ? '&& git push gh --tags)' : ')'
     }|| (git remote remove gh && exit 12)`,
