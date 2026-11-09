@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('ava').default;
 const {execa, execaSync} = require('execa');
+const {validateConfig} = require('../src/core/config');
 const {createNodeUpgradeTarget, nodeUpgradeBranch, nodeUpgradeMarker} = require('../src/core/node-pull-requests');
 
 const modules = {
@@ -69,7 +70,10 @@ const autobump = async (t, options = {}) => {
     require(modules.git).pushFiles = async () => events.push(['push']);
     const config = {
       repoSlug: 'org/repo', baseBranch: 'master', token: 'fake', local: options.local,
-      'auto-bump': {keywords: options.noop ? {noop: true} : {minor: true}, publish: true}
+      'auto-bump': {
+        keywords: options.noop ? {noop: true} : {minor: true}, publish: true,
+        'auto-clean-up': options.autoCleanup
+      }
     };
     require(modules.bump).main(config)
       .then(() => console.log('RESULT:' + JSON.stringify({events, version: require('./package.json').version})))
@@ -116,3 +120,27 @@ test.serial('local autobump performs no GitHub cleanup', async t => {
   t.false(result.events.some(event => ['get', 'comment', 'close', 'push'].includes(event[0])));
   t.is(result.version, '1.1.0');
 });
+
+test('auto-clean-up accepts boolean configuration and rejects other values', t => {
+  const config = {
+    repoSlug: 'org/repo', baseBranch: 'master', node: false, dependencies: []
+  };
+  for (const enabled of [true, false])
+    t.notThrows(() => validateConfig({...config, 'auto-bump': {'auto-clean-up': enabled}}));
+  t.throws(() => validateConfig({...config, 'auto-bump': {'auto-clean-up': 'disabled'}}));
+});
+
+test.serial('explicitly enabled auto-clean-up cleans before the version bump', async t => {
+  const result = await autobump(t, {autoCleanup: true});
+  t.deepEqual(result.events.filter(event => event[0] !== 'get'), [
+    ['comment', 'Superseeded by #200'], ['close'], ['bump'], ['push'], ['publish']
+  ]);
+});
+
+for (const noop of [false, true]) {
+  test.serial(`disabled auto-clean-up skips all cleanup requests for a ${noop ? 'no-op' : 'normal'} release`, async t => {
+    const result = await autobump(t, {autoCleanup: false, noop});
+    t.deepEqual(result.events, noop ? [] : [['bump'], ['push'], ['publish']]);
+    t.is(result.version, noop ? '1.0.0' : '1.1.0');
+  });
+}

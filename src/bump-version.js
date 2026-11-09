@@ -89,7 +89,7 @@ const main = async config => {
       return;
     }
   } else if (_.isEmpty(autoBumpConfig)) throw makeError('No Config for autobump', {exitCode: 3});
-  await cleanupNodePullRequests(config);
+  if (_.getOr(true, 'auto-clean-up', autoBumpConfig)) await cleanupNodePullRequests(config);
   const releaseType = await getReleaseType(autoBumpConfig);
 
   if (releaseType === NOOP) return process.stdout.write(`Won't make a release\n`);

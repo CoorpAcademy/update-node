@@ -115,6 +115,10 @@ Three more complex items to configure the `node` bump logic,  dependencies bump 
 #### Auto-Bump
 You can configure the ability to make a new version with the top level `auto-bump` key.
 
+Set `auto-bump` to `false` to disable autobump, including its automatic PR cleanup, or use an object to configure it.
+
+`auto-bump.auto-clean-up` controls cleanup of superseded Node.js upgrade PRs during autobump and defaults to `true`. Set it to `false` to disable automatic cleanup. The standalone `cleanup-prs` command remains available regardless of this setting.
+
 If you want the new package version to be publiished, just the the `publish` subproperty to true. (Default command `npm publish`, repleaceable with `publish-command`)
 
 The default mecanism to select which semver level is based on a keyword mechanism. `major`, `minor`, `patch` that are provided to `npm version`. `noop` is also used to prevent a new version to be made.
@@ -157,11 +161,19 @@ Cleanup also recognizes older PRs without metadata when their generated title, b
 
 Here is the list of config properties:
 - `branch`: the branch prefix for the node updates to be perform
+- `exact`: write exact Node.js and npm engine versions, such as `24.22.2`, instead of ranges. Defaults to `false`; enabling `exact` takes precedence over `loose`.
+- `loose`: write `>=` engine ranges by default. Set to `false` to preserve existing range prefixes, such as `^` or `~`, when `exact` is disabled. Equivalent CLI flags are `--exact` and `--no-loose`.
 - `preserveSameMajor`: preserve existing Node and npm engine ranges when the selected release is in the same Node major. Defaults to `true` for automatic multi-version upgrades and `false` for single-version upgrades, including explicit `--target` requests. An explicit boolean overrides either default; pins and lockfiles still refresh.
-- `nvrmc`: should a `.nvmrc` file be udpated (default _true_), can be an array of files
-- `dockerfile`: should a Dockerfile be udpated (default _false_), can be an array of files
-- `travis`: should a `.travis.yml` be udpated (default _false_), can be an array of files
-- `package`: should package engine in `package.json` be updated (default _false_), can be an array of files
+- `nvmrc`: update `.nvmrc` files
+- `dockerfile`: update Node.js versions in Dockerfiles
+- `travis`: update Node.js versions in `.travis.yml` files
+- `package`: update package engines in `package.json` files
+- `serverless`: update Node.js runtimes in `serverless.yml` files
+- `lerna`: update package engines across Lerna workspaces; defaults to `false` unless enabled with `--lerna` or detected when generating a default configuration
+
+Each file option accepts `true` for its usual filename, a path, an array of paths, or `false` to skip it. Omitted file options are skipped; generated default configurations enable detected files and package engines. Set `node` to `false` to disable Node.js upgrades entirely.
+
+When `preserveSameMajor` applies, existing engine ranges are kept even if `exact` or `loose` would otherwise change their formatting.
 
 #### Dependencies Updates
 
@@ -177,7 +189,7 @@ The dependecies can either be a full match, or a glob using [minimatch]. For ins
 
 ### Example:
 
-Here is the config of the repo itself:
+Here is a configuration inspired from this repository, with Node.js upgrades and automatic PR cleanup explicitly enabled:
 ```json
 {
   "repoSlug": "Coorpacademy/update-node",
@@ -189,6 +201,7 @@ Here is the config of the repo itself:
   ],
   "label": "Upgrades :outbox_tray:",
   "auto-bump": {
+    "auto-clean-up": true,
     "publish": true,
     "keywords": {
       "noop": ["#noop", "Update *#*"],
@@ -197,7 +210,18 @@ Here is the config of the repo itself:
       "patch": ["#bug", "#tweak", "plugging", "#updates"]
     }
   },
-  "node": false,
+  "node": {
+    "branch": "upgrade-node",
+    "exact": false,
+    "loose": true,
+    "preserveSameMajor": true,
+    "nvmrc": true,
+    "dockerfile": false,
+    "travis": false,
+    "package": true,
+    "serverless": false,
+    "lerna": false
+  },
   "dependencies": [
     {
       "name": "core",

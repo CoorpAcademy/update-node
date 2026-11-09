@@ -13,6 +13,8 @@ const RELEASE_TYPES = ['major', 'minor', 'patch', 'noop'];
 
 const nodeConfig = Joi.object().keys({
   branch: Joi.string(),
+  exact: Joi.bool(),
+  loose: Joi.bool(),
   preserveSameMajor: Joi.bool(),
   nvmrc: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
   dockerfile: [Joi.bool(), Joi.string(), Joi.array().items(Joi.string())],
@@ -45,6 +47,7 @@ const configSchema = Joi.object().keys({
     Joi.bool(),
     Joi.object()
       .keys({
+        'auto-clean-up': Joi.bool(),
         'bump-command': Joi.string(),
         'release-type-command': Joi.string(),
         publish: Joi.bool(),

@@ -71,3 +71,37 @@ for (const {name, resolved, node, expected} of cases) {
     t.deepEqual(contents.engines, expected);
   });
 }
+
+for (const {name, node, expected} of [
+  {name: 'exact', node: {exact: true}, expected: {node: '24.10.3', npm: '11.6.0'}},
+  {name: 'no-loose', node: {loose: false}, expected: {node: '^24.10.3', npm: '~11.6.0'}},
+  {name: 'loose', node: {exact: false, loose: true}, expected: {node: '>=24.10.3', npm: '>=11.6.0'}}
+]) {
+  test(`a configuration file accepts ${name} and applies its engine formatting`, async t => {
+    const cwd = await mkdtemp(path.join(os.tmpdir(), 'node-engine-config-'));
+    t.teardown(() => rm(cwd, {recursive: true, force: true}));
+    await writeFile(path.join(cwd, 'package.json'), JSON.stringify({engines: {node: '^22.0.0', npm: '~10.0.0'}}));
+    const configPath = path.join(cwd, '.update-node.json');
+    await writeFile(configPath, JSON.stringify({
+      repoSlug: 'example/repo', baseBranch: 'master', dependencies: [], node: {package: true, ...node}
+    }));
+    await exec(process.execPath, ['-e', `
+      require(${JSON.stringify(versions)}).findLatest = async () => ({version: 'v24.10.3', npm: '11.6.0'});
+      require(${JSON.stringify(git)}).commitFiles = async () => {};
+      const {getConfig} = require(${JSON.stringify(require.resolve('../src/core/config'))});
+      getConfig({config: ${JSON.stringify(configPath)}, local: true, exact: false, loose: true, syncLock: false})
+        .then(config => require(${JSON.stringify(bump)})(config, {onlyNodeVersion: true}))
+        .catch(error => {console.error(error); process.exitCode = 1;});
+    `], {cwd});
+    t.deepEqual(JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8')).engines, expected);
+  });
+}
+
+test('engine formatting configuration rejects non-boolean values', t => {
+  const {validateConfig} = require('../src/core/config');
+  for (const key of ['exact', 'loose']) {
+    t.throws(() => validateConfig({
+      repoSlug: 'example/repo', baseBranch: 'master', dependencies: [], node: {[key]: 'invalid'}
+    }));
+  }
+});
