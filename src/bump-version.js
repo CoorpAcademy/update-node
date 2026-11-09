@@ -7,6 +7,7 @@ const {minimatch} = require('minimatch');
 const {headClean, headMessage, pushFiles} = require('./core/git');
 const {makeError} = require('./core/utils');
 const {executeScript} = require('./core/script');
+const {cleanupNodePullRequests} = require('./core/node-pull-requests');
 
 const MAJOR = 'major';
 const MINOR = 'minor';
@@ -88,6 +89,7 @@ const main = async config => {
       return;
     }
   } else if (_.isEmpty(autoBumpConfig)) throw makeError('No Config for autobump', {exitCode: 3});
+  await cleanupNodePullRequests(config);
   const releaseType = await getReleaseType(autoBumpConfig);
 
   if (releaseType === NOOP) return process.stdout.write(`Won't make a release\n`);

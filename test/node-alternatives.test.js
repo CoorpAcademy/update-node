@@ -142,7 +142,6 @@ test('exact and no-loose retain their intended version formatting', async t => {
 });
 
 const target = createNodeUpgradeTarget('24.10.3', 'api');
-const replacement = {number: 200, user: {login: 'bot'}};
 const oldPr = (id = 1) => ({
   number: id,
   state: 'open',
@@ -151,6 +150,13 @@ const oldPr = (id = 1) => ({
   head: {ref: 'update-node-api-v24.9', repo: {full_name: 'org/repo'}},
   base: {ref: 'master'}
 });
+const replacement = {
+  ...oldPr(200),
+  state: 'closed',
+  merged_at: '2026-11-09T12:00:00Z',
+  body: nodeUpgradeMarker(target),
+  head: {...oldPr().head, ref: nodeUpgradeBranch(target)}
+};
 const superseded = pr =>
   isSupersededNodePullRequest(pr, replacement, target, 'org/repo', 'master', 'bot');
 
@@ -159,8 +165,12 @@ test('branch names reuse patches and preserve scope, major and minor', t => {
   t.is(nodeUpgradeBranch(createNodeUpgradeTarget('24.10.9', 'api')), nodeUpgradeBranch(target));
 });
 
-test('only older generated PRs for the same author, repo, base, scope and major are superseded', t => {
+test('only lower-version generated PRs for the same author, repo, base and scope are superseded', t => {
   t.true(superseded(oldPr()));
+  t.true(superseded({
+    ...oldPr(), body: nodeUpgradeMarker(createNodeUpgradeTarget('22.9.1', 'api')),
+    head: {...oldPr().head, ref: 'update-node-api-v22.9'}
+  }));
   for (const modified of [
     {...oldPr(), number: 200},
     {...oldPr(), state: 'closed'},
@@ -173,7 +183,7 @@ test('only older generated PRs for the same author, repo, base, scope and major 
     {...oldPr(), head: {ref: 'manual', repo: {full_name: 'org/repo'}}},
     {...oldPr(), head: {ref: 'update-node-api-v24.9', repo: null}},
     {...oldPr(), body: nodeUpgradeMarker(createNodeUpgradeTarget('24.9.1', 'api', 'manual'))},
-    ...['22.9.1', '24.10.1', '24.11.0'].map(v => ({
+    ...['24.10.1', '24.11.0', '26.0.0'].map(v => ({
       ...oldPr(),
       body: nodeUpgradeMarker(createNodeUpgradeTarget(v, 'api'))
     })),
@@ -186,6 +196,7 @@ test('lists all open PR pages before closing any to avoid pagination skips', asy
   const events = [];
   const request = (url, options) => {
     if (url.endsWith('/user')) return Promise.resolve({body: {login: 'bot'}});
+    if (url.endsWith('/comments')) return Promise.resolve({body: []});
     const page = options.searchParams.page;
     events.push(`list ${page}`);
     return Promise.resolve({
@@ -198,6 +209,11 @@ test('lists all open PR pages before closing any to avoid pagination skips', asy
           : [oldPr(101)]
     });
   };
+  request.post = (url, options) => {
+    t.is(options.json.body, 'Superseeded by #200');
+    events.push(`comment ${url.split('/').at(-2)}`);
+    return Promise.resolve();
+  };
   request.patch = url => {
     events.push(`close ${url.split('/').pop()}`);
     return Promise.resolve();
@@ -205,12 +221,11 @@ test('lists all open PR pages before closing any to avoid pagination skips', asy
   await closeSupersededNodePullRequests(
     {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'},
     replacement,
-    target,
     request
   );
-  t.deepEqual(events.slice(0, 3), ['list 1', 'list 2', 'close 1']);
+  t.deepEqual(events.slice(0, 4), ['list 1', 'list 2', 'comment 1', 'close 1']);
   t.is(events.at(-1), 'close 101');
-  t.is(events.length, 4);
+  t.is(events.length, 6);
 });
 
 test('a replacement authored by someone else never lists or closes older PRs', async t => {
@@ -221,7 +236,7 @@ test('a replacement authored by someone else never lists or closes older PRs', a
   };
   request.patch = () => t.fail('Must not close another author\'s PR');
   await closeSupersededNodePullRequests(
-    {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'}, replacement, target, request
+    {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'}, replacement, request
   );
   t.deepEqual(requests, ['https://api.github.com/user']);
 });

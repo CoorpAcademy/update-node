@@ -179,6 +179,7 @@ const workflow = (f, options = {}) =>
   require(paths.prs).closeSupersededNodePullRequests = async (config, pr, target) => {
     events.push(['close', target.major]);
   };
+  require(paths.prs).cleanupNodePullRequests = async () => events.push(['cleanup']);
   if (options.fullUpgrade) {
     require(${JSON.stringify(require.resolve('../src/core/versions'))}).latestVersionForPackage = async () => '2.0.0';
     require(paths.packages).updateLock = async () => events.push(['dependency-lock']);
@@ -260,19 +261,17 @@ test.serial(
 );
 
 test.serial(
-  'publication failure never closes old PRs and does not prevent later publication',
+  'publishing alternatives never cleans up PRs and continues after a publication failure',
   async t => {
     const f = await fixture(t);
     const result = await workflow(f, {remote: true, failPublish: 'update-node-api-v24.10'});
     t.is(result.exitCode, 2);
     t.deepEqual(
-      events(result).filter(event => ['publish', 'close'].includes(event[0])),
+      events(result).filter(event => ['publish', 'close', 'cleanup'].includes(event[0])),
       [
         ['publish', 'update-node-api-v22.20'],
-        ['close', 22],
         ['publish', 'update-node-api-v24.10'],
-        ['publish', 'update-node-api-v26.0'],
-        ['close', 26]
+        ['publish', 'update-node-api-v26.0']
       ]
     );
   }

@@ -21,6 +21,11 @@ const commitFiles = async (branch, message, baseBranch = 'master') => {
 
 const headCommit = (ref = 'HEAD') => execSync('git', ['rev-parse', '--short', ref]).stdout;
 const headMessage = () => execSync('git', ['log', '-1', '--pretty=%B']).stdout;
+const commitDetails = (ref = 'HEAD') => {
+  const {stdout} = execSync('git', ['show', '--no-patch', '--format=%H%n%T%n%P%n%B', ref]);
+  const [sha, tree, parents, ...message] = stdout.split('\n');
+  return {sha, tree, parents: parents.split(' ').filter(Boolean), message: message.join('\n')};
+};
 const headBranch = () => execSync('git', ['symbolic-ref', '--short', 'HEAD']).stdout;
 const currentUser = () => execSync('git', ['config', '--global', 'user.name']).stdout;
 
@@ -63,6 +68,7 @@ module.exports = {
   headCommit,
   headBranch,
   headMessage,
+  commitDetails,
   headClean,
   getRepoSlug,
   currentUser,

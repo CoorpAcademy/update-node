@@ -26,8 +26,7 @@ const {nodeUpgradeBase, onNodeBranch} = require('./core/node-branches');
 const {
   createNodeUpgradeTarget,
   nodeUpgradeBranch,
-  nodeUpgradeMarker,
-  closeSupersededNodePullRequests
+  nodeUpgradeMarker
 } = require('./core/node-pull-requests');
 const {makeError, formatEventualSuffix} = require('./core/utils');
 
@@ -124,7 +123,6 @@ const bumpNodeVersion = async (version, config, base) => {
         team_reviewers: config.teamReviewers
       }
     });
-    await closeSupersededNodePullRequests(config, status.pullRequest, target);
     process.stdout.write(`+ Prepared ${branch}: ${status.pullRequest.html_url}\n`);
     return null;
   } catch (error) {
