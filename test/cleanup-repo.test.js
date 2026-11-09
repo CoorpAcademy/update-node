@@ -4,6 +4,7 @@ const os = require('os');
 const path = require('path');
 const {promisify} = require('util');
 const test = require('ava').default;
+const stripAnsi = require('strip-ansi').default;
 
 const exec = promisify(execFile);
 const cli = require.resolve('../bin/update-node.js');
@@ -97,7 +98,7 @@ for (const auth of ['--token', '--auto-token']) {
       {close: 'https://api.github.com/repos/other/remote/pulls/2'}
     ]);
     t.is(events.includes('auth'), auth === '--auto-token');
-    t.regex(stdout, /Cleanup complete: 2 PRs closed, 0 kept, 0 failed/);
+    t.regex(stripAnsi(stdout), /Cleanup complete: 2 PRs closed, 0 kept, 0 failed/);
     t.deepEqual(await readdir(cwd), before);
   });
 }
@@ -115,9 +116,9 @@ test('cleanup explains when no eligible PRs match instead of silently exiting', 
   const {stdout} = await exec(process.execPath, [
     '-r', preload, cli, 'cleanup-prs', '--repo', 'other/remote', '--token', 'fake'
   ], {cwd, env: {...process.env, CLEANUP_EMPTY: '1'}});
-  t.regex(stdout, /No eligible generated Node upgrade PRs/);
-  t.regex(stdout, /other\/remote/);
-  t.regex(stdout, /main/);
+  t.regex(stripAnsi(stdout), /No eligible generated Node upgrade PRs/);
+  t.regex(stripAnsi(stdout), /other\/remote/);
+  t.regex(stripAnsi(stdout), /main/);
 });
 
 test('cleanup reports eligible PRs kept when none have a newer replacement', async t => {
@@ -125,7 +126,7 @@ test('cleanup reports eligible PRs kept when none have a newer replacement', asy
   const {stdout} = await exec(process.execPath, [
     '-r', preload, cli, 'cleanup-prs', '--repo', 'other/remote', '--token', 'fake'
   ], {cwd, env: {...process.env, CLEANUP_CURRENT: '1'}});
-  t.regex(stdout, /Cleanup complete: 0 PRs closed, 1 kept, 0 failed/);
+  t.regex(stripAnsi(stdout), /Cleanup complete: 0 PRs closed, 1 kept, 0 failed/);
 });
 
 test('repo override cleans legacy patch branches in favor of their modern replacement', async t => {
@@ -134,7 +135,7 @@ test('repo override cleans legacy patch branches in favor of their modern replac
     '-r', preload, cli, 'cleanup-prs', '--repo', 'other/remote', '--token', 'fake'
   ], {cwd, env: {...process.env, CLEANUP_LEGACY: '1'}});
   t.is(stderr, '');
-  t.regex(stdout, /Cleanup complete: 1 PRs closed, 1 kept, 0 failed/);
+  t.regex(stripAnsi(stdout), /Cleanup complete: 1 PRs closed, 1 kept, 0 failed/);
   const events = JSON.parse(stdout.split('RESULT:')[1]);
   t.deepEqual(events.filter(event => event.close), [
     {close: 'https://api.github.com/repos/other/remote/pulls/1'}
