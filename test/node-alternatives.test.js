@@ -158,15 +158,16 @@ const replacement = {
   head: {...oldPr().head, ref: nodeUpgradeBranch(target)}
 };
 const superseded = pr =>
-  isSupersededNodePullRequest(pr, replacement, target, 'org/repo', 'master', 'bot');
+  isSupersededNodePullRequest(pr, replacement, target, 'org/repo', 'master');
 
 test('branch names reuse patches and preserve scope, major and minor', t => {
   t.is(nodeUpgradeBranch(target), 'update-node-api-v24.10');
   t.is(nodeUpgradeBranch(createNodeUpgradeTarget('24.10.9', 'api')), nodeUpgradeBranch(target));
 });
 
-test('only lower-version generated PRs for the same author, repo, base and scope are superseded', t => {
+test('only lower-version generated PRs for the same repo, base and scope are superseded', t => {
   t.true(superseded(oldPr()));
+  t.true(superseded({...oldPr(), user: {login: 'human'}}));
   t.true(superseded({
     ...oldPr(), body: nodeUpgradeMarker(createNodeUpgradeTarget('22.9.1', 'api')),
     head: {...oldPr().head, ref: 'update-node-api-v22.9'}
@@ -177,7 +178,6 @@ test('only lower-version generated PRs for the same author, repo, base and scope
     {...oldPr(), body: 'manual PR'},
     {...oldPr(), body: null},
     {...oldPr(), body: '<!-- update-node: broken -->'},
-    {...oldPr(), user: {login: 'human'}},
     {...oldPr(), base: {ref: 'other'}},
     {...oldPr(), head: {ref: 'update-node-api-v24.9', repo: {full_name: 'fork/repo'}}},
     {...oldPr(), head: {ref: 'manual', repo: {full_name: 'org/repo'}}},
@@ -228,15 +228,15 @@ test('lists all open PR pages before closing any to avoid pagination skips', asy
   t.is(events.length, 6);
 });
 
-test('a replacement authored by someone else never lists or closes older PRs', async t => {
+test('a replacement authored by someone else still lists generated older PRs', async t => {
   const requests = [];
+  const otherReplacement = {...replacement, user: {login: 'different-user'}};
   const request = async url => {
     requests.push(url);
-    return {body: {login: 'different-user'}};
+    return {body: []};
   };
-  request.patch = () => t.fail('Must not close another author\'s PR');
   await closeSupersededNodePullRequests(
-    {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'}, replacement, request
+    {repoSlug: 'org/repo', baseBranch: 'master', token: 'fake'}, otherReplacement, request
   );
-  t.deepEqual(requests, ['https://api.github.com/user']);
+  t.deepEqual(requests, ['https://api.github.com/repos/org/repo/pulls']);
 });

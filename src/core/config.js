@@ -5,6 +5,7 @@ const protocall = require('protocall');
 const {findUpSync} = require('find-up');
 const {execa, execaSync} = require('execa');
 const Joi = require('joi');
+const got = require('got').default;
 const {parseArgvToArray} = require('./utils');
 const {getRepoSlug} = require('./git');
 
@@ -181,10 +182,33 @@ const getConfig = async argv => {
   return extendedConfig;
 };
 
+const getCleanupConfig = async (argv, {request = got} = {}) => {
+  if (argv.repo === undefined) return getConfig(argv);
+  if (
+    typeof argv.repo !== 'string' ||
+    !/^[A-Za-z0-9-]+\/[A-Za-z0-9_.-]+$/.test(argv.repo) ||
+    ['.', '..'].includes(argv.repo.split('/')[1])
+  )
+    throw new Error('Repository must use owner/name format');
+  if (argv.local) return {repoSlug: argv.repo, local: true, token: null};
+  const token = await resolveGithubToken(argv);
+  if (!token) throw new Error('A GitHub token is required to resolve the repository');
+  const {body: repo} = await request(`https://api.github.com/repos/${argv.repo}`, {
+    headers: {Authorization: `token ${token}`, 'User-Agent': 'update-node'},
+    responseType: 'json',
+    timeout: {request: 10000},
+    retry: {limit: 0}
+  });
+  if (!repo.full_name || !repo.default_branch)
+    throw new Error('Could not resolve the repository default branch');
+  return {repoSlug: repo.full_name, baseBranch: repo.default_branch, token, local: false};
+};
+
 module.exports = {
   resolveConfig,
   readConfig,
   getConfig,
+  getCleanupConfig,
   validateConfig,
   resolveGithubToken,
   generateDefaultConfig

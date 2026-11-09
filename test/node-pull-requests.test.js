@@ -111,7 +111,7 @@ for (const mismatch of ['tree', 'merge-sha', 'source', 'multiple-parents']) {
   });
 }
 
-for (const mismatch of ['unmerged', 'historical', 'base', 'manual', 'marker', 'fork', 'branch', 'actor']) {
+for (const mismatch of ['unmerged', 'historical', 'base', 'manual', 'marker', 'fork', 'branch']) {
   test(`a ${mismatch} PR at HEAD does not close bump alternatives`, async t => {
     const f = fixture();
     if (mismatch === 'unmerged') f.replacement.merged_at = null;
@@ -121,7 +121,6 @@ for (const mismatch of ['unmerged', 'historical', 'base', 'manual', 'marker', 'f
     if (mismatch === 'marker') f.replacement.body = '<!-- update-node: {"major":24} -->';
     if (mismatch === 'fork') f.replacement.head.repo.full_name = 'fork/repo';
     if (mismatch === 'branch') f.replacement.head.ref = 'manual';
-    if (mismatch === 'actor') f.options.login = 'someone-else';
     await f.run();
     t.false(f.events.some(event => ['list', 'comment', 'close'].includes(event[0])));
   });
@@ -188,6 +187,89 @@ const mergedPr = (number, version, scope = 'api', prefix = 'update-node') => ({
   ...pr(number, version, scope, prefix), state: 'closed', merged_at: '2026-11-09T12:00:00Z'
 });
 
+const legacyPr = (number, version, scope = '', prefix = 'update-node') => ({
+  ...pr(number, version, scope, prefix),
+  title: `${scope ? `[${scope}] ` : ''}Upgrade Node to v${version}`,
+  body: `:rocket: Upgraded Node version to v${version}${scope ? ` on scope ${scope}` : ''}`,
+  head: {...pr(number, version).head, ref: [prefix, scope, `v${version}`].filter(Boolean).join('-')}
+});
+
+test('standalone cleanup replaces legacy #18690 with a modern PR for the same version', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    legacyPr(18690, '26.13.0'),
+    {...pr(18708, '26.13.0', '', 'upgrade-node'), title: 'Upgrade Node to v26.13.0'});
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'open']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [
+    ['comment', 18690, 'Superseeded by #18708']
+  ]);
+});
+
+test('legacy patch versions are ordered numerically within each major', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    legacyPr(1, '22.1.2'), legacyPr(2, '22.1.10'), legacyPr(3, '24.0.0'));
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'open', 'open']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [['comment', 1, 'Superseeded by #2']]);
+});
+
+test('a modern PR cannot replace a legacy PR for a higher patch version', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    legacyPr(1, '26.13.2'),
+    {...pr(2, '26.13.1', '', 'upgrade-node'), title: 'Upgrade Node to v26.13.1'});
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['open', 'closed']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [['comment', 2, 'Superseeded by #1']]);
+});
+
+test('legacy custom prefixes and scopes remain eligible within their own group', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    legacyPr(1, '22.1.0', 'api-service', 'custom'),
+    legacyPr(2, '22.2.0', 'api-service', 'custom'));
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'open']);
+});
+
+for (const mode of ['run', 'runAll']) {
+  test(`${mode} recognizes merged legacy patch PRs as replacements`, async t => {
+    const f = fixture();
+    Object.assign(f.replacement, legacyPr(200, '24.10.3', 'api'), {
+      state: 'closed', merged_at: '2026-11-09T12:00:00Z', merge_commit_sha: 'head-sha'
+    });
+    f.candidates.splice(0, f.candidates.length,
+      legacyPr(1, '22.23.0', 'api'), legacyPr(2, '24.10.2', 'api'), legacyPr(3, '26.0.0', 'api'));
+    await f[mode]();
+    t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'open']);
+  });
+}
+
+for (const mismatch of ['title', 'body', 'branch', 'fork', 'base', 'scope', 'prefix', 'marker']) {
+  test(`legacy recognition preserves the ${mismatch} safeguard`, async t => {
+    const f = fixture();
+    f.history.length = 0;
+    const older = legacyPr(1, '22.1.0');
+    if (mismatch === 'title') older.title = 'Manual upgrade';
+    if (mismatch === 'body') older.body = ':rocket: Upgraded Node version to v22.2.0';
+    if (mismatch === 'branch') older.head.ref = 'update-node-v22.2.0';
+    if (mismatch === 'fork') older.head.repo.full_name = 'fork/repo';
+    if (mismatch === 'base') older.base.ref = 'develop';
+    if (mismatch === 'scope') Object.assign(older, legacyPr(1, '22.1.0', 'api'));
+    if (mismatch === 'prefix') Object.assign(older, legacyPr(1, '22.1.0', '', 'custom'));
+    if (mismatch === 'marker') older.body += '\n<!-- update-node: invalid -->';
+    f.candidates.splice(0, f.candidates.length, older, legacyPr(2, '22.2.0'));
+    await f.runAll();
+    t.deepEqual(f.candidates.map(item => item.state), ['open', 'open']);
+  });
+}
+
 test('standalone cleanup closes even the newest open PR when a newer upgrade has merged', async t => {
   const f = fixture();
   f.history.push(mergedPr(201, '26.1.0'));
@@ -251,12 +333,11 @@ test('standalone cleanup scans every merged-history page before changing PR stat
   t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'open']);
 });
 
-for (const mismatch of ['unmerged', 'author', 'fork', 'base', 'marker']) {
+for (const mismatch of ['unmerged', 'fork', 'base', 'marker']) {
   test(`a ${mismatch} historical PR cannot become a standalone replacement`, async t => {
     const f = fixture();
     f.candidates.splice(0, f.candidates.length, pr(1, '22.1.0'));
     if (mismatch === 'unmerged') f.replacement.merged_at = null;
-    if (mismatch === 'author') f.replacement.user.login = 'human';
     if (mismatch === 'fork') f.replacement.head.repo.full_name = 'fork/repo';
     if (mismatch === 'base') f.replacement.base.ref = 'develop';
     if (mismatch === 'marker') f.replacement.body = 'Manual bump';
@@ -270,19 +351,30 @@ test('standalone cleanup does not read history when there are no eligible open P
   const f = fixture();
   f.candidates.forEach(item => { item.body = 'Manual PR'; });
   await f.runAll();
-  t.deepEqual(f.events, [['actor'], ['list', 1]]);
+  t.deepEqual(f.events, [['list', 1]]);
 });
 
-test('standalone cleanup leaves foreign authors, forks and manual branches untouched', async t => {
+test('standalone cleanup leaves forks and manual branches untouched', async t => {
   const f = fixture();
   f.history.length = 0;
   f.candidates[1] = pr(2, '22.4.0');
-  f.candidates[0].user.login = 'human';
   f.candidates.push({...pr(4, '22.0.0'), head: {...pr(4, '22.0.0').head, repo: {full_name: 'fork/repo'}}});
   f.candidates.push({...pr(5, '22.0.0'), head: {...pr(5, '22.0.0').head, ref: 'manual'}});
   await f.runAll();
-  t.false(f.events.some(event => ['comment', 'close'].includes(event[0])));
+  t.false(f.events.some(event => ['comment', 'close'].includes(event[0]) && [4, 5].includes(event[1])));
+  t.deepEqual(f.candidates.map(item => item.state), ['open', 'closed', 'open', 'open', 'open']);
 });
+
+for (const mode of ['run', 'runAll']) {
+  test(`${mode} cleans generated PRs regardless of authenticated or PR authors`, async t => {
+    const f = fixture({login: 'personal-account'});
+    f.replacement.user.login = 'release-bot';
+    f.candidates[0].user.login = 'old-bot';
+    f.candidates[1].user.login = 'another-bot';
+    await f[mode]();
+    t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'open']);
+  });
+}
 
 test('unavailable merged history does not cause speculative standalone closures', async t => {
   const f = fixture({failHistory: true});

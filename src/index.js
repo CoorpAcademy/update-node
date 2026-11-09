@@ -7,7 +7,7 @@ const {cleanupAllNodePullRequests} = require('./core/node-pull-requests');
 const {setup, validate} = require('./scaffold-config');
 const {UPGRADE, BUMP, CLEANUP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
 const {cleanAndSyncRepo} = require('./core/git');
-const {getConfig} = require('./core/config');
+const {getConfig, getCleanupConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
 
 let cmd;
@@ -71,6 +71,13 @@ const yargs = require('yargs')()
   .command({
     command: CLEANUP,
     describe: 'Clean up superseded generated Node upgrade pull requests',
+    builder: {
+      repo: {
+        type: 'string',
+        requiresArg: true,
+        describe: 'Target GitHub repository (owner/name), without requiring local configuration'
+      }
+    },
     handler: setCommand(CLEANUP)
   })
   .command({
@@ -179,7 +186,11 @@ const COMMANDS = {
     }
   ],
   [BUMP]: ['config', bumpVersion, AUTH_FLAGS],
-  [CLEANUP]: ['config', cleanupAllNodePullRequests, AUTH_FLAGS],
+  [CLEANUP]: [
+    'argv',
+    async argv => cleanupAllNodePullRequests(await getCleanupConfig(argv)),
+    AUTH_FLAGS
+  ],
   [VALIDATE]: ['argv', validate, []],
   [SETUP]: ['argv', setup, []],
   [DIRTY]: [
