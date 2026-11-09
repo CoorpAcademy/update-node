@@ -75,11 +75,28 @@ const requestOptions = token => ({
   retry: {limit: 0}
 });
 
-const closeSupersededNodePullRequests = async (
-  {repoSlug, baseBranch, token},
-  replacement,
-  request = got
-) => {
+const commentAndCloseNodePullRequest = async (config, number, replacementNumber, request) => {
+  const options = requestOptions(config.token);
+  const comment = `Superseeded by #${replacementNumber}`;
+  try {
+    const url = `https://api.github.com/repos/${config.repoSlug}/issues/${number}/comments`;
+    const comments = await listPages(url, options, request);
+    if (!comments.some(existing => existing.body === comment))
+      await request.post(url, {...options, json: {body: comment}});
+    await request.patch(`https://api.github.com/repos/${config.repoSlug}/pulls/${number}`, {
+      ...options,
+      json: {state: 'closed'}
+    });
+    process.stdout.write(`- Closed superseded Node upgrade PR #${number}.\n`);
+  } catch (error) {
+    process.stderr.write(
+      `Warning: Could not clean up Node upgrade PR #${number}: ${error.message}\n`
+    );
+  }
+};
+
+const closeSupersededNodePullRequests = async (config, replacement, request = got) => {
+  const {repoSlug, baseBranch, token} = config;
   const target = readNodeUpgradeTarget(replacement.body);
   if (
     !replacement.merged_at ||
@@ -97,24 +114,8 @@ const closeSupersededNodePullRequests = async (
   const superseded = prs.filter(pr =>
     isSupersededNodePullRequest(pr, replacement, target, repoSlug, baseBranch, user.login)
   );
-  const comment = `Superseeded by #${replacement.number}`;
-  for (const {number} of superseded) {
-    try {
-      const url = `https://api.github.com/repos/${repoSlug}/issues/${number}/comments`;
-      const comments = await listPages(url, options, request);
-      if (!comments.some(existing => existing.body === comment))
-        await request.post(url, {...options, json: {body: comment}});
-      await request.patch(`https://api.github.com/repos/${repoSlug}/pulls/${number}`, {
-        ...options,
-        json: {state: 'closed'}
-      });
-      process.stdout.write(`- Closed superseded Node upgrade PR #${number}.\n`);
-    } catch (error) {
-      process.stderr.write(
-        `Warning: Could not clean up Node upgrade PR #${number}: ${error.message}\n`
-      );
-    }
-  }
+  for (const {number} of superseded)
+    await commentAndCloseNodePullRequest(config, number, replacement.number, request);
 };
 
 const isMergedAt = (pr, sha, {repoSlug, baseBranch}) =>
@@ -157,11 +158,80 @@ const cleanupNodePullRequests = async (
   }
 };
 
+const cleanupAllNodePullRequests = async (config, {request = got} = {}) => {
+  if (config.local || !config.token) return;
+  const {repoSlug, baseBranch, token} = config;
+  const options = requestOptions(token);
+  try {
+    const {body: user} = await request('https://api.github.com/user', options);
+    const url = `https://api.github.com/repos/${repoSlug}/pulls`;
+    const open = await listPages(
+      url,
+      {...options, searchParams: {state: 'open', base: baseBranch}},
+      request
+    );
+    const candidates = open.filter(
+      pr =>
+        pr.user?.login === user.login &&
+        isGeneratedNodePullRequest(pr, readNodeUpgradeTarget(pr.body), repoSlug, baseBranch)
+    );
+    if (candidates.length === 0) return;
+    const closed = await listPages(
+      url,
+      {...options, searchParams: {state: 'closed', base: baseBranch}},
+      request
+    );
+    const merged = closed
+      .map(pr => ({pr, target: readNodeUpgradeTarget(pr.body)}))
+      .filter(
+        ({pr, target}) =>
+          pr.merged_at &&
+          pr.user?.login === user.login &&
+          isGeneratedNodePullRequest(pr, target, repoSlug, baseBranch)
+      )
+      .sort(
+        (a, b) =>
+          b.target.major - a.target.major ||
+          b.target.minor - a.target.minor ||
+          new Date(b.pr.merged_at) - new Date(a.pr.merged_at) ||
+          b.pr.number - a.pr.number
+      );
+    const newestOpen = candidates
+      .map(pr => ({pr, target: readNodeUpgradeTarget(pr.body)}))
+      .sort(
+        (a, b) =>
+          b.target.major - a.target.major ||
+          b.target.minor - a.target.minor ||
+          b.pr.number - a.pr.number
+      );
+    for (const candidate of candidates) {
+      const candidateTarget = readNodeUpgradeTarget(candidate.body);
+      const supersedes = ({pr, target}) =>
+        isSupersededNodePullRequest(candidate, pr, target, repoSlug, baseBranch, user.login);
+      const replacement =
+        merged.find(supersedes) ||
+        newestOpen.find(item => item.target.major === candidateTarget.major && supersedes(item));
+      if (replacement)
+        await commentAndCloseNodePullRequest(
+          config,
+          candidate.number,
+          replacement.pr.number,
+          request
+        );
+    }
+  } catch (error) {
+    process.stderr.write(
+      `Warning: Could not check superseded Node upgrade PRs: ${error.message}\n`
+    );
+  }
+};
+
 module.exports = {
   createNodeUpgradeTarget,
   nodeUpgradeBranch,
   nodeUpgradeMarker,
   isSupersededNodePullRequest,
   closeSupersededNodePullRequests,
-  cleanupNodePullRequests
+  cleanupNodePullRequests,
+  cleanupAllNodePullRequests
 };

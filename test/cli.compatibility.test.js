@@ -13,6 +13,7 @@ test('CLI help loads production dependencies and lists commands', async t => {
   const {stdout} = await exec(process.execPath, [cli, '--help']);
   t.regex(stdout, /bump-dependencies/);
   t.regex(stdout, /auto-bump/);
+  t.regex(stdout, /cleanup-prs/);
   t.regex(stdout, /validate/);
 });
 
@@ -70,6 +71,7 @@ for (const scenario of [
   {name: 'missing command', args: [], code: 4, message: /No command was selected/},
   {name: 'unknown command', args: ['unknown'], code: 4, message: /Command unknown does not exist/},
   {name: 'missing authentication mode', args: ['upgrade'], code: 22, message: /without one of following options/},
+  {name: 'missing cleanup authentication mode', args: ['cleanup-prs'], code: 22, message: /without one of following options/},
   {name: 'missing validation config', args: ['validate'], code: 2, message: /Missing config to validate/},
   {name: 'invalid validation schema', args: ['validate', '--verbose'], config: {}, code: 1, message: /Config has no valid schema/}
 ]) {
@@ -107,6 +109,67 @@ test.serial('the folder option resolves validation config inside the selected di
   const {stdout} = await exec(process.execPath, [cli, 'validate', '--folder', f.cwd]);
   t.regex(stdout, /Running Update-Node in/);
   t.regex(stdout, /Given configuration is valid/);
+});
+
+test.serial('local cleanup does not create a version commit or change files', async t => {
+  const f = await cliFixture(t);
+  await f.write('.update-node.json', JSON.stringify({
+    repoSlug: 'example/repo', baseBranch: 'master', node: false, dependencies: []
+  }));
+  await f.git('add', '.');
+  await f.git('commit', '-m', 'Cleanup fixture');
+  const before = (await f.git('rev-parse', 'HEAD')).stdout;
+  await exec(process.execPath, [cli, 'cleanup-prs', '--local'], {cwd: f.cwd});
+  t.is((await f.git('rev-parse', 'HEAD')).stdout, before);
+  t.is((await f.git('status', '--porcelain')).stdout, '');
+  t.is(JSON.parse(await readFile(path.join(f.cwd, 'package.json'), 'utf8')).version, '1.0.0');
+});
+
+test.serial('cleanup-prs cleans every major line without a release or a Node PR at HEAD', async t => {
+  const f = await cliFixture(t);
+  await f.write('.update-node.json', JSON.stringify({
+    repoSlug: 'example/repo', baseBranch: 'master', node: false, dependencies: []
+  }));
+  await f.write('preload.cjs', `
+    const assert = require('assert/strict');
+    const got = ${JSON.stringify(require.resolve('got'))};
+    const events = [];
+    const pr = (number, version) => ({
+      number, state: 'open', user: {login: 'bot'},
+      body: '<!-- update-node: ' + JSON.stringify({major: Number(version.split('.')[0]), minor: Number(version.split('.')[1]), prefix: 'update-node', scope: ''}) + ' -->',
+      head: {ref: 'update-node-v' + version, repo: {full_name: 'example/repo'}},
+      base: {ref: 'master'}
+    });
+    const prs = [[1, '22.1'], [2, '22.2'], [3, '22.3'], [4, '24.1'], [5, '24.2'], [6, '26.0']].map(([n, version]) => pr(n, version));
+    const request = async (url, options) => {
+      assert.equal(options.headers.Authorization, 'token fake');
+      if (url.endsWith('/user')) return {body: {login: 'bot'}};
+      if (url.endsWith('/comments')) return {body: []};
+      if (url.endsWith('/pulls')) return {body: options.searchParams.state === 'open' ? prs : []};
+      throw new Error('Standalone cleanup must not inspect HEAD');
+    };
+    request.post = async (url, options) => events.push(['comment', Number(url.split('/').at(-2)), options.json.body]);
+    request.patch = async url => events.push(['close', Number(url.split('/').at(-1))]);
+    require(got);
+    require.cache[got].exports = {default: request};
+    require(${JSON.stringify(scriptModule)}).executeScript = async () => { throw new Error('Cleanup must not run release commands'); };
+    process.on('exit', () => console.log('CLEANUP:' + JSON.stringify(events)));
+  `);
+  await f.git('add', '.');
+  await f.git('commit', '-m', 'Ordinary documentation change');
+  const before = (await f.git('rev-parse', 'HEAD')).stdout;
+  const {stdout, stderr} = await exec(process.execPath, [
+    '-r', path.join(f.cwd, 'preload.cjs'), cli, 'cleanup-prs', '--token', 'fake'
+  ], {cwd: f.cwd});
+  t.is(stderr, '');
+  t.deepEqual(JSON.parse(stdout.split('CLEANUP:')[1]), [
+    ['comment', 1, 'Superseeded by #3'], ['close', 1],
+    ['comment', 2, 'Superseeded by #3'], ['close', 2],
+    ['comment', 4, 'Superseeded by #5'], ['close', 4]
+  ]);
+  t.is((await f.git('rev-parse', 'HEAD')).stdout, before);
+  t.is((await f.git('status', '--porcelain')).stdout, '');
+  t.is(JSON.parse(await readFile(path.join(f.cwd, 'package.json'), 'utf8')).version, '1.0.0');
 });
 
 for (const scenario of [

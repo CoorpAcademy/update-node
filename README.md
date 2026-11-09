@@ -18,6 +18,7 @@ Commands:
   update-node bump-dependencies  Upgrades defined dependencies and open Pull
                                  request for them            [aliases: upgrade, bd]
   update-node auto-bump          Auto Bump package version   [aliases: version, ab]
+  update-node cleanup-prs        Clean up superseded generated Node upgrade PRs
   update-node validate           Validate a update-node configuration
                                                                    [aliases: check]
   update-node setup              Scaffold a update-node configuration
@@ -131,6 +132,8 @@ Each alternative starts from the same `baseBranch` commit. A new major raises th
 Branches use the configured prefix, scope, major and minor, such as `update-node-api-v24.10`. Patch updates reuse the branch and PR. Local mode prepares independent local branches and commits. The original checkout is restored after each candidate; a clean tracked working tree is required. Failures are reported, other candidates continue, and the command exits unsuccessfully if any candidate failed. Unchanged candidates create no commit or PR.
 
 During `auto-bump`, before creating the version commit, update-node checks the most recent merged PR at HEAD, including fast-forward summary commits. If it is a generated Node upgrade PR, it comments `Superseeded by #<merged-PR-number>` on matching Node upgrade PRs for lower majors or older minors within the same major, and closes them. Higher-version alternatives stay open. Cleanup requires matching generated metadata, repository, author, base, prefix and scope; it runs only after a merge, not when a replacement PR is created. Existing identical comments are reused on retries. Local mode skips GitHub cleanup, and lookup or cleanup failures emit warnings without blocking the release.
+
+Run `update-node cleanup-prs --auto-token` (or `--token <token>`) to perform cleanup independently of autobump and HEAD across all major lines. A matching newer merged upgrade takes precedence as the replacement, even for the newest open PR in its line. Otherwise, the newest open PR within each major supersedes older open PRs in that same major: with `22.1`, `22.2` and `22.3` open, cleanup closes the first two and references the `22.3` PR. Open higher-major alternatives do not supersede lower-major PRs. No version bump or publication is performed. `--local` skips GitHub access.
 
 Here is the list of config properties:
 - `branch`: the branch prefix for the node updates to be perform

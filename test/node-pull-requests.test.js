@@ -1,10 +1,11 @@
 const test = require('ava').default;
 const {
-  cleanupNodePullRequests, createNodeUpgradeTarget, nodeUpgradeBranch, nodeUpgradeMarker
+  cleanupNodePullRequests, cleanupAllNodePullRequests,
+  createNodeUpgradeTarget, nodeUpgradeBranch, nodeUpgradeMarker
 } = require('../src/core/node-pull-requests');
 
-const pr = (number, version) => {
-  const target = createNodeUpgradeTarget(version, 'api');
+const pr = (number, version, scope = 'api', prefix = 'update-node') => {
+  const target = createNodeUpgradeTarget(version, scope, prefix);
   return {
     number, state: 'open', user: {login: 'bot'}, body: nodeUpgradeMarker(target),
     head: {ref: nodeUpgradeBranch(target), repo: {full_name: 'org/repo', owner: {login: 'org'}}},
@@ -23,6 +24,7 @@ const fixture = (options = {}) => {
   const events = [];
   const comments = new Map();
   const associated = [replacement];
+  const history = [replacement];
   const readCommit = (ref = 'HEAD') => {
     events.push(['read', ref]);
     return ref === 'HEAD' ? head : parent;
@@ -42,6 +44,11 @@ const fixture = (options = {}) => {
       return {body: replacement};
     }
     const page = requestOptions.searchParams.page;
+    if (requestOptions.searchParams.state === 'closed') {
+      events.push(['history', page]);
+      if (options.failHistory) throw new Error('merged history unavailable');
+      return {body: history.slice((page - 1) * 100, page * 100)};
+    }
     if (url.endsWith('/comments')) {
       const number = Number(url.split('/').at(-2));
       events.push(['comments', number, page]);
@@ -64,7 +71,8 @@ const fixture = (options = {}) => {
     candidates.find(item => item.number === number).state = requestOptions.json.state;
   };
   const run = () => cleanupNodePullRequests(config, {request, readCommit});
-  return {config, replacement, head, parent, candidates, events, comments, associated, run, options};
+  const runAll = () => cleanupAllNodePullRequests(config, {request});
+  return {config, replacement, head, parent, candidates, events, comments, associated, history, run, runAll, options};
 };
 
 test('a merged Node PR comments before closing lower versions and keeps higher alternatives', async t => {
@@ -175,3 +183,120 @@ test('detection failure is non-fatal', async t => {
   await t.notThrowsAsync(f.run());
   t.false(f.events.some(event => ['list', 'comment', 'close'].includes(event[0])));
 });
+
+const mergedPr = (number, version, scope = 'api', prefix = 'update-node') => ({
+  ...pr(number, version, scope, prefix), state: 'closed', merged_at: '2026-11-09T12:00:00Z'
+});
+
+test('standalone cleanup closes even the newest open PR when a newer upgrade has merged', async t => {
+  const f = fixture();
+  f.history.push(mergedPr(201, '26.1.0'));
+  f.candidates.push(pr(4, '26.2.0'));
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'closed', 'open']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [
+    ['comment', 1, 'Superseeded by #201'],
+    ['comment', 2, 'Superseeded by #201'],
+    ['comment', 3, 'Superseeded by #201']
+  ]);
+  t.false(f.events.some(event => ['read', 'detect', 'summary-pr'].includes(event[0])));
+});
+
+test('standalone cleanup keeps the newest open PR independently within every major', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    pr(1, '22.1.0'), pr(2, '22.2.0'), pr(3, '22.3.0'),
+    pr(4, '24.1.0'), pr(5, '24.2.0'), pr(6, '26.0.0'));
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'open', 'closed', 'open', 'open']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [
+    ['comment', 1, 'Superseeded by #3'], ['comment', 2, 'Superseeded by #3'],
+    ['comment', 4, 'Superseeded by #5']
+  ]);
+});
+
+test('a qualifying merged replacement takes precedence over a newer open replacement', async t => {
+  const f = fixture();
+  f.candidates.splice(0, f.candidates.length, pr(1, '22.1.0'), pr(2, '22.3.0'));
+  f.history.splice(0, f.history.length, mergedPr(200, '22.2.0'));
+  await f.runAll();
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'open']);
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [['comment', 1, 'Superseeded by #200']]);
+});
+
+test('standalone cleanup keeps scope and prefix groups independent', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates.splice(0, f.candidates.length,
+    pr(1, '22.1.0'), pr(2, '22.3.0'),
+    pr(3, '22.1.0', 'web'), pr(4, '22.2.0', 'web'),
+    pr(5, '22.1.0', 'api', 'other'), pr(6, '22.4.0', 'api', 'other'));
+  await f.runAll();
+  t.deepEqual(f.events.filter(event => event[0] === 'comment'), [
+    ['comment', 1, 'Superseeded by #2'], ['comment', 3, 'Superseeded by #4'],
+    ['comment', 5, 'Superseeded by #6']
+  ]);
+});
+
+test('standalone cleanup scans every merged-history page before changing PR state', async t => {
+  const f = fixture();
+  f.history.splice(0, f.history.length,
+    ...Array.from({length: 100}, (_, i) => ({...mergedPr(300 + i, '26.0.0'), body: 'Manual change'})),
+    mergedPr(200, '24.10.3'));
+  await f.runAll();
+  const historyEvents = f.events.filter(event => event[0] === 'history');
+  t.deepEqual(historyEvents, [['history', 1], ['history', 2]]);
+  t.true(f.events.findIndex(event => event[0] === 'comment') > f.events.findIndex(event => event[0] === 'history' && event[1] === 2));
+  t.deepEqual(f.candidates.map(item => item.state), ['closed', 'closed', 'open']);
+});
+
+for (const mismatch of ['unmerged', 'author', 'fork', 'base', 'marker']) {
+  test(`a ${mismatch} historical PR cannot become a standalone replacement`, async t => {
+    const f = fixture();
+    f.candidates.splice(0, f.candidates.length, pr(1, '22.1.0'));
+    if (mismatch === 'unmerged') f.replacement.merged_at = null;
+    if (mismatch === 'author') f.replacement.user.login = 'human';
+    if (mismatch === 'fork') f.replacement.head.repo.full_name = 'fork/repo';
+    if (mismatch === 'base') f.replacement.base.ref = 'develop';
+    if (mismatch === 'marker') f.replacement.body = 'Manual bump';
+    await f.runAll();
+    t.is(f.candidates[0].state, 'open');
+    t.false(f.events.some(event => ['comment', 'close'].includes(event[0])));
+  });
+}
+
+test('standalone cleanup does not read history when there are no eligible open PRs', async t => {
+  const f = fixture();
+  f.candidates.forEach(item => { item.body = 'Manual PR'; });
+  await f.runAll();
+  t.deepEqual(f.events, [['actor'], ['list', 1]]);
+});
+
+test('standalone cleanup leaves foreign authors, forks and manual branches untouched', async t => {
+  const f = fixture();
+  f.history.length = 0;
+  f.candidates[1] = pr(2, '22.4.0');
+  f.candidates[0].user.login = 'human';
+  f.candidates.push({...pr(4, '22.0.0'), head: {...pr(4, '22.0.0').head, repo: {full_name: 'fork/repo'}}});
+  f.candidates.push({...pr(5, '22.0.0'), head: {...pr(5, '22.0.0').head, ref: 'manual'}});
+  await f.runAll();
+  t.false(f.events.some(event => ['comment', 'close'].includes(event[0])));
+});
+
+test('unavailable merged history does not cause speculative standalone closures', async t => {
+  const f = fixture({failHistory: true});
+  f.candidates.push(pr(4, '26.2.0'));
+  await t.notThrowsAsync(f.runAll());
+  t.false(f.events.some(event => ['comment', 'close'].includes(event[0])));
+});
+
+for (const local of [true, false]) {
+  test(`standalone cleanup skips GitHub with ${local ? 'local mode' : 'no token'}`, async t => {
+    const f = fixture();
+    if (local) f.config.local = true;
+    else delete f.config.token;
+    await f.runAll();
+    t.deepEqual(f.events, []);
+  });
+}

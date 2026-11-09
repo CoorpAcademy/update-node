@@ -3,8 +3,9 @@ const _ = require('lodash/fp');
 
 const bumpDependencies = require('./bump-dependencies');
 const {main: bumpVersion} = require('./bump-version');
+const {cleanupAllNodePullRequests} = require('./core/node-pull-requests');
 const {setup, validate} = require('./scaffold-config');
-const {UPGRADE, BUMP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
+const {UPGRADE, BUMP, CLEANUP, VALIDATE, SETUP, DIRTY, selectCommand} = require('./commands');
 const {cleanAndSyncRepo} = require('./core/git');
 const {getConfig} = require('./core/config');
 const {makeError} = require('./core/utils');
@@ -66,6 +67,11 @@ const yargs = require('yargs')()
     aliases: ['version', 'ab'],
     describe: 'Auto Bump package version',
     handler: setCommand(BUMP)
+  })
+  .command({
+    command: CLEANUP,
+    describe: 'Clean up superseded generated Node upgrade pull requests',
+    handler: setCommand(CLEANUP)
   })
   .command({
     command: VALIDATE,
@@ -173,6 +179,7 @@ const COMMANDS = {
     }
   ],
   [BUMP]: ['config', bumpVersion, AUTH_FLAGS],
+  [CLEANUP]: ['config', cleanupAllNodePullRequests, AUTH_FLAGS],
   [VALIDATE]: ['argv', validate, []],
   [SETUP]: ['argv', setup, []],
   [DIRTY]: [

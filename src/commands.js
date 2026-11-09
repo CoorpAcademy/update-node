@@ -4,6 +4,7 @@ const {headMessage, headBranch, headClean} = require('./core/git');
 const VALIDATE = 'validate';
 const UPGRADE = 'bump-dependencies';
 const BUMP = 'auto-bump';
+const CLEANUP = 'cleanup-prs';
 const SETUP = 'setup';
 const DIRTY = 'warn-dirty';
 const NOOP = 'noop';
@@ -20,6 +21,7 @@ const selectCommand = async config => {
 module.exports = {
   UPGRADE,
   BUMP,
+  CLEANUP,
   DIRTY,
   VALIDATE,
   SETUP,
