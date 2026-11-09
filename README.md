@@ -11,75 +11,91 @@ Requires Node.js 22.12.0 or newer.
 
 Running the tests with AVA requires Node 22.20+, Node 24.12+, or Node 26+. Use the development version in `.nvmrc`.
 
-```bash
-$ update-node [command]
+```text
+$ update-node --help
+update-node [command]
 
 Commands:
-  update-node bump-dependencies  Upgrades defined dependencies and open Pull
-                                 request for them            [aliases: upgrade, bd]
-  update-node auto-bump          Auto Bump package version   [aliases: version, ab]
-  update-node cleanup-prs        Clean up superseded generated Node upgrade PRs
-  update-node validate           Validate a update-node configuration
-                                                                   [aliases: check]
-  update-node setup              Scaffold a update-node configuration
-                                                                [aliases: scaffold]
+  update-node bump-dependencies  Upgrade Node.js and configured dependency
+                                 clusters, then open pull requests
+                                                          [aliases: upgrade, bd]
+  update-node auto-bump          Bump the package version and publish if
+                                 configured               [aliases: version, ab]
+  update-node cleanup-prs        Comment on and close superseded generated
+                                 Node.js upgrade pull requests
+  update-node validate           Check the update-node configuration against its
+                                 schema                         [aliases: check]
+  update-node setup              Create .update-node.json using detected
+                                 repository settings         [aliases: scaffold]
 
 Options:
       --version                        Show version number             [boolean]
-  -l, --local                          Run in local mode with github publication
+  -l, --local                          Keep upgrade commits local and skip
+                                       GitHub PR cleanup               [boolean]
+  -v, --verbose                        Include stack traces when a command fails
                                                                        [boolean]
-  -v, --verbose                        More log outputs                [boolean]
-  -t, --token                          Token to authentificate to github[string]
-  -a, --autoToken, --at, --auto-token  Get authentificated github token from gh
-                                       cli                             [boolean]
-  -A, --auto                           Select automatically behavior to adopt
-                                       based on current commit and branch
+  -t, --token                          GitHub token used for authentication
+                                                                        [string]
+  -a, --autoToken, --at, --auto-token  Use the GitHub token from gh auth token
                                                                        [boolean]
-  -F, --folder                         Run in a specific folder         [string]
-  -s, --scope                          Apply to a scope of the repository
-                                       (impact on title and branch name)[string]
-  -C, --config                         Override update-node configuration
-                                       default path                     [string]
-  -d, --default-config, --default      Override update-node configuration
-                                       default path                    [boolean]
-  -c, --clean                          Run on a clean state            [boolean]
-      --sync-lock                      Run npm install or yarn after patching
-                                       package.json (default, disable with
-                                       --no-sync-lock) [boolean] [default: true]
-  -b, --pre-commit-bump-command        Command to run before to commit (changes
-                                       will be commited)                 [array]
-  -p, --pre-clean-command              Run before to clean state         [array]
-  -P, --post-clean-command             Run on a clean state              [array]
-  -f, --force                          Git Push with force changes
-                                       (--force-with-lease is used by default)
-                                                                       [boolean]
+  -A, --auto                           Choose an upgrade or release from the
+                                       current branch and commit       [boolean]
+  -F, --folder                         Change to this folder before running the
+                                       command                          [string]
+  -s, --scope                          Scope for upgrade titles and branch
+                                       names; does not change folders   [string]
+  -C, --config                         Read configuration from this file instead
+                                       of .update-node.json             [string]
+  -d, --default-config, --default      Infer configuration when no configuration
+                                       file is found                   [boolean]
+  -c, --clean                          Stash changes, check out master and pull
+                                       its upstream                    [boolean]
+      --sync-lock                      Refresh lockfiles after a Node.js
+                                       upgrade; disable with --no-sync-lock
+                                                       [boolean] [default: true]
+  -b, --pre-commit-bump-command        Commands to run before committing a
+                                       Node.js upgrade; include their changes
+                                                                         [array]
+  -p, --pre-clean-command              Commands to run before stashing changes
+                                       and checking out master           [array]
+  -P, --post-clean-command             Commands to run after the clean checkout
+                                       and pull                          [array]
+  -f, --force                          Push with --force instead of
+                                       --force-with-lease              [boolean]
   -h, --help                           Show help                       [boolean]
 
 Upgrade related options:
-  -T, --target                           Node version to target         [string]
-      --ignoreDependencies, --only-node  Ignore depencies              [boolean]
-      --lerna                            Consider as learna monorepo (only
-                                         applies for node bump)        [boolean]
-  -m, --message                          Optional extra message to attach to the
-                                         commit and pull request        [string]
-  -r, --reviewers                        Extra reviewers to add to the pull
-                                         request                        [string]
-  -R, --teamReviewers                    Extra team reviewers to add to the pull
-                                         request                        [string]
-      --exact                            Keep exact version in engine version
-                                                      [boolean] [default: false]
-      --loose                            For loose version for nodes version.
-                                         This will replace exisiting range
-                                         constraint (^, ~ or none).
-                                         Use --no-loose to disable or place
-                                         loose: false in config in the node
-                                         section)      [boolean] [default: true]
+  -T, --target                           Node.js version or range to target
+                                                                        [string]
+      --ignoreDependencies, --only-node  Upgrade only Node.js; skip dependency
+                                         clusters                      [boolean]
+      --lerna                            Update package engines in Lerna
+                                         workspaces during a Node.js upgrade
+                                                                       [boolean]
+  -m, --message                          Append a message to upgrade commits and
+                                         pull requests                  [string]
+  -r, --reviewers                        Additional GitHub reviewers, separated
+                                         by commas                      [string]
+  -R, --teamReviewers                    Additional GitHub team reviewers,
+                                         separated by commas            [string]
+      --exact                            Use exact Node.js and npm engine
+                                         versions     [boolean] [default: false]
+      --loose                            Use >= for engine ranges; --no-loose
+                                         preserves existing prefixes
+                                                       [boolean] [default: true]
 
-Examples
-    update-node --token=TKN
-
-    update-node -t TKN --config .my-update-node-config.json
+Examples:
+  update-node setup                         Create a configuration for the
+                                            current repository
+  update-node bump-dependencies             Upgrade Node.js and configured
+  --auto-token                              dependencies
+  update-node auto-bump --auto-token        Create a release using the
+                                            configured rules
+  update-node cleanup-prs --repo            Clean up superseded Node.js upgrade
+  owner/name --auto-token                   PRs in any repository
 ```
+
+Run `update-node <command> --help` for command-specific options and examples.
 
 ### Configuration
 

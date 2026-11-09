@@ -17,160 +17,200 @@ const setCommand = _cmd => () => {
 
 // eslint-disable-next-line import/order
 const yargs = require('yargs')()
+  .scriptName('update-node')
   .command({
     command: UPGRADE,
     aliases: ['upgrade', 'bd'],
-    describe: 'Upgrades defined dependencies and open Pull request for them',
-    builder: {
-      target: {type: 'string', alias: 'T', describe: 'Node version to target'},
-      ignoreDependencies: {
-        desc: 'Ignore depencies',
-        alias: 'only-node',
-        boolean: true
-      },
-      lerna: {
-        desc: 'Consider as learna monorepo (only applies for node bump)',
-        boolean: true
-      },
-      message: {
-        describe: 'Optional extra message to attach to the commit and pull request',
-        string: true,
-        alias: 'm'
-      },
-      reviewers: {
-        describe: 'Extra reviewers to add to the pull request',
-        string: true,
-        alias: 'r'
-      },
-      teamReviewers: {
-        describe: 'Extra team reviewers to add to the pull request',
-        string: true,
-        alias: 'R'
-      },
-      exact: {
-        describe: 'Keep exact version in engine version',
-        boolean: true,
-        default: false
-      },
-      loose: {
-        describe: `For loose version for nodes version. This will replace exisiting range constraint (^, ~ or none).
-       Use --no-loose to disable or place loose: false in config in the node section)`,
-        boolean: true,
-        default: true
-      }
-    },
+    describe: 'Upgrade Node.js and configured dependency clusters, then open pull requests',
+    builder: command =>
+      command
+        .options({
+          target: {type: 'string', alias: 'T', describe: 'Node.js version or range to target'},
+          ignoreDependencies: {
+            desc: 'Upgrade only Node.js; skip dependency clusters',
+            alias: 'only-node',
+            boolean: true
+          },
+          lerna: {
+            desc: 'Update package engines in Lerna workspaces during a Node.js upgrade',
+            boolean: true
+          },
+          message: {
+            describe: 'Append a message to upgrade commits and pull requests',
+            string: true,
+            alias: 'm'
+          },
+          reviewers: {
+            describe: 'Additional GitHub reviewers, separated by commas',
+            string: true,
+            alias: 'r'
+          },
+          teamReviewers: {
+            describe: 'Additional GitHub team reviewers, separated by commas',
+            string: true,
+            alias: 'R'
+          },
+          exact: {
+            describe: 'Use exact Node.js and npm engine versions',
+            boolean: true,
+            default: false
+          },
+          loose: {
+            describe: 'Use >= for engine ranges; --no-loose preserves existing prefixes',
+            boolean: true,
+            default: true
+          }
+        })
+        .example('$0 bump-dependencies --auto-token', 'Upgrade Node.js and configured dependencies')
+        .example(
+          '$0 bump-dependencies --only-node --target 24 --auto-token',
+          'Upgrade only Node.js to the latest 24.x release'
+        )
+        .example(
+          '$0 bump-dependencies --only-node --local',
+          'Prepare Node.js upgrade commits locally'
+        )
+        .example(
+          '$0 bump-dependencies --folder packages/api --scope api --auto-token',
+          'Upgrade from a folder and label its PRs with a scope'
+        ),
     handler: setCommand(UPGRADE)
   })
   .alias('h', 'help')
   .command({
     command: BUMP,
     aliases: ['version', 'ab'],
-    describe: 'Auto Bump package version',
+    describe: 'Bump the package version and publish if configured',
+    builder: command =>
+      command.example('$0 auto-bump --auto-token', 'Create a release using the configured rules'),
     handler: setCommand(BUMP)
   })
   .command({
     command: CLEANUP,
-    describe: 'Clean up superseded generated Node upgrade pull requests',
-    builder: {
-      repo: {
-        type: 'string',
-        requiresArg: true,
-        describe: 'Target GitHub repository (owner/name), without requiring local configuration'
-      }
-    },
+    describe: 'Comment on and close superseded generated Node.js upgrade pull requests',
+    builder: command =>
+      command
+        .option('repo', {
+          type: 'string',
+          requiresArg: true,
+          describe: 'GitHub repository (owner/name); no local checkout or configuration needed'
+        })
+        .example(
+          '$0 cleanup-prs --auto-token',
+          'Clean up Node.js upgrade PRs for the configured repository'
+        )
+        .example(
+          '$0 cleanup-prs --repo owner/name --auto-token',
+          'Clean up another repository without a local checkout'
+        ),
     handler: setCommand(CLEANUP)
   })
   .command({
     command: VALIDATE,
     aliases: ['check'],
-    describe: 'Validate a update-node configuration',
+    describe: 'Check the update-node configuration against its schema',
+    builder: command =>
+      command
+        .example('$0 validate', 'Validate the discovered .update-node.json')
+        .example(
+          '$0 validate --config .update-node.api.json',
+          'Validate a specific configuration file'
+        ),
     handler: setCommand(VALIDATE)
   })
   .command({
     command: SETUP,
     aliases: ['scaffold'],
-    describe: 'Scaffold a update-node configuration',
+    describe: 'Create .update-node.json using detected repository settings',
+    builder: command =>
+      command.example('$0 setup', 'Create an initial configuration for this repository'),
     handler: setCommand(SETUP)
   })
   .option('local', {
-    describe: 'Run in local mode with github publication',
+    describe: 'Keep upgrade commits local and skip GitHub PR cleanup',
     boolean: true,
     alias: 'l'
   })
   .option('verbose', {
-    describe: 'More log outputs',
+    describe: 'Include stack traces when a command fails',
     boolean: true,
     alias: 'v'
   })
   .option('token', {
-    describe: 'Token to authentificate to github',
+    describe: 'GitHub token used for authentication',
     string: true,
     alias: 't'
   })
   .option('autoToken', {
-    describe: 'Get authentificated github token from gh cli',
+    describe: 'Use the GitHub token from gh auth token',
     boolean: true,
     alias: ['a', 'at', 'auto-token']
   })
   .option('auto', {
-    describe: 'Select automatically behavior to adopt based on current commit and branch',
+    describe: 'Choose an upgrade or release from the current branch and commit',
     boolean: true,
     alias: 'A'
   })
   .option('folder', {
-    describe: 'Run in a specific folder',
+    describe: 'Change to this folder before running the command',
     string: true,
     alias: 'F'
   })
   .option('scope', {
-    describe: 'Apply to a scope of the repository (impact on title and branch name)',
+    describe: 'Scope for upgrade titles and branch names; does not change folders',
     string: true,
     alias: 's'
   })
   .option('config', {
-    describe: 'Override update-node configuration default path',
+    describe: 'Read configuration from this file instead of .update-node.json',
     string: true,
     alias: 'C'
   })
   .option('default-config', {
-    describe: 'Override update-node configuration default path',
+    describe: 'Infer configuration when no configuration file is found',
     boolean: true,
     alias: ['d', 'default']
   })
   .option('clean', {
-    describe: 'Run on a clean state',
+    describe: 'Stash changes, check out master and pull its upstream',
     boolean: true,
     alias: 'c'
   })
   .option('sync-lock', {
-    describe:
-      'Run npm install or yarn after patching package.json (default, disable with --no-sync-lock)',
+    describe: 'Refresh lockfiles after a Node.js upgrade; disable with --no-sync-lock',
     boolean: true,
     default: true
   })
   .option('pre-commit-bump-command', {
-    describe: 'Command to run before to commit (changes will be commited)',
+    describe: 'Commands to run before committing a Node.js upgrade; include their changes',
     string: true,
     alias: 'b',
     array: true
   })
   .option('pre-clean-command', {
-    describe: 'Run before to clean state',
+    describe: 'Commands to run before stashing changes and checking out master',
     string: true,
     alias: 'p',
     array: true
   })
   .option('post-clean-command', {
-    describe: 'Run on a clean state',
+    describe: 'Commands to run after the clean checkout and pull',
     string: true,
     alias: 'P',
     array: true
   })
   .option('force', {
-    describe: 'Git Push with force changes (--force-with-lease is used by default)',
+    describe: 'Push with --force instead of --force-with-lease',
     boolean: true,
     alias: 'f'
-  });
+  })
+  .example('$0 setup', 'Create a configuration for the current repository')
+  .example('$0 bump-dependencies --auto-token', 'Upgrade Node.js and configured dependencies')
+  .example('$0 auto-bump --auto-token', 'Create a release using the configured rules')
+  .example(
+    '$0 cleanup-prs --repo owner/name --auto-token',
+    'Clean up superseded Node.js upgrade PRs in any repository'
+  );
 
 const AUTH_FLAGS = ['local', 'token', 'auto-token'];
 
