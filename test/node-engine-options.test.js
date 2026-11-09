@@ -65,7 +65,7 @@ for (const {name, resolved, node, expected} of cases) {
         ...${JSON.stringify(resolved)},
         node: {...${JSON.stringify(node)}, package: ${JSON.stringify(path.join(cwd, 'package.json'))}},
         local: true, baseBranch: 'master', argv: {syncLock: false}
-      }, {onlyNodeVersion: true}).catch(error => { console.error(error); process.exitCode = 1; });`
+      }, {onlyNodeVersion: true, nodeVersionOverride: '24'}).catch(error => { console.error(error); process.exitCode = 1; });`
     ]);
     const contents = JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8'));
     t.deepEqual(contents.engines, expected);
@@ -90,7 +90,7 @@ for (const {name, node, expected} of [
       require(${JSON.stringify(git)}).commitFiles = async () => {};
       const {getConfig} = require(${JSON.stringify(require.resolve('../src/core/config'))});
       getConfig({config: ${JSON.stringify(configPath)}, local: true, exact: false, loose: true, syncLock: false})
-        .then(config => require(${JSON.stringify(bump)})(config, {onlyNodeVersion: true}))
+        .then(config => require(${JSON.stringify(bump)})(config, {onlyNodeVersion: true, nodeVersionOverride: '24'}))
         .catch(error => {console.error(error); process.exitCode = 1;});
     `], {cwd});
     t.deepEqual(JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8')).engines, expected);

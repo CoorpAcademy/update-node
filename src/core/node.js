@@ -1,14 +1,12 @@
 const {keyBy, pipe, get, filter, trimCharsStart, keys} = require('lodash/fp');
 const got = require('got').default;
-const {compare, satisfies, valid, prerelease, major, Range} = require('semver');
+const {compare, satisfies, valid, prerelease, major} = require('semver');
 const pReduce = require('p-reduce').default;
 
 const NODE_VERSIONS = 'https://nodejs.org/dist/index.json';
 const NODE_SCHEDULE = 'https://raw.githubusercontent.com/nodejs/Release/main/schedule.json';
 
 const getNodeSchedule = () => got(NODE_SCHEDULE).json();
-
-const isLowerBoundRange = range => /^\s*>=\s*\d/.test(range) && new Range(range).set.length === 1;
 
 const getNodeVersions = () =>
   got(NODE_VERSIONS, {responseType: 'json'}).then(response => {
@@ -99,4 +97,4 @@ const findSupportedVersions = async (
   );
 };
 
-module.exports = {findLatest, getNodeVersions, findSupportedVersions, isLowerBoundRange};
+module.exports = {findLatest, getNodeVersions, findSupportedVersions};

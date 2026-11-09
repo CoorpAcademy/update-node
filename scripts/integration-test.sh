@@ -18,11 +18,11 @@ if [ -d .git ]; then
 fi
 
 echo "> Setting up integration folder"
-# Exercise automatic alternatives instead of the legacy caret-range upgrade.
+# Exercise higher stable majors even when the engine range is limited to Node 22.
 node <<'JS'
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-pkg.engines.node = '>=22.12.0';
+pkg.engines.node = '^22.22.2';
 fs.writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`);
 JS
 git init --initial-branch=master

@@ -11,7 +11,7 @@ const main = async () => {
   const base = process.argv[2];
   const original = await jsonAt(base, 'package.json');
   const minimum = semver.minVersion(original.engines.node);
-  const versions = await findSupportedVersions(original.engines.node);
+  const versions = await findSupportedVersions(`>=${minimum.version}`);
   assert.deepEqual(versions.map(release => semver.major(release.version)), [22, 24, 26],
     'The end-to-end test must prepare Node 22, 24 and 26');
   const branches = [];

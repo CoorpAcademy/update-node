@@ -21,7 +21,7 @@ const updateDockerfile = require('./updatees/dockerfile');
 const {commitFiles, currentUser} = require('./core/git');
 const {getNodeVersionRunner} = require('./core/node-version-manager');
 const {syncGithub, publishGithub} = require('./core/github');
-const {findLatest, findSupportedVersions, isLowerBoundRange} = require('./core/node');
+const {findLatest, findSupportedVersions} = require('./core/node');
 const {nodeUpgradeBase, onNodeBranch} = require('./core/node-branches');
 const {
   createNodeUpgradeTarget,
@@ -221,13 +221,14 @@ module.exports = async (
     _.getOr('^18', 'packageContent.engines.node', config);
   const nodeErrors = [];
   if (config.node) {
-    if (nodeVersionOverride || !isLowerBoundRange(config.packageContent?.engines?.node || '')) {
+    if (nodeVersionOverride) {
       const latestNode = await findLatest(RANGE);
       if (!latestNode) throw makeError(`No available Node release matches ${RANGE}`);
       const bumpCommitConfig = await prepareNodeUpgrade(latestNode, config);
       await _commitAndMakePullRequest(bumpCommitConfig);
     } else {
-      const versions = await findSupportedVersions(RANGE);
+      const range = config.node_range || `>=${semver.minVersion(RANGE)}`;
+      const versions = await findSupportedVersions(range);
       if (versions.length === 0) {
         process.stdout.write('- No supported even Node releases match this range.\n');
       } else {

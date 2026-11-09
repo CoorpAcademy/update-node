@@ -153,9 +153,20 @@ const workflow = (f, options = {}) =>
   const paths = ${JSON.stringify(modules)};
   const options = ${JSON.stringify(options)};
   const versions = require(paths.versions);
+  const selectSupportedVersions = versions.findSupportedVersions;
   const events = [];
   versions.findSupportedVersions = async range => {
     events.push(['range', range]);
+    if (options.realSelection) return selectSupportedVersions(range, {
+      getVersions: async () => options.versions.map(version => ({version: 'v' + version, npm: '11.6.0'})),
+      getSchedule: async () => ({
+        v20: {start: '2023-04-18', end: '2026-04-30'},
+        v22: {start: '2024-04-24', end: '2027-04-30'},
+        v24: {start: '2025-05-06', end: '2028-04-30'},
+        v26: {start: '2026-04-21', end: '2029-04-30'}
+      }),
+      isAvailable: async () => true, now: new Date('2026-11-09')
+    });
     return (options.versions || ['22.20.0', '24.10.3', '26.0.0']).map(v => ({version: 'v' + v, npm: '11.6.0'}));
   };
   versions.findLatest = async range => {
@@ -289,7 +300,7 @@ test.serial(
   'effective ranges are passed through, and no-sync-lock still runs precommit commands',
   async t => {
     const f = await fixture(t);
-    const result = await workflow(f, {range: '>=24 <26', versions: ['24.10.3'], syncLock: false});
+    const result = await workflow(f, {range: '>=24 <26', versions: ['24.10.3', '26.0.0'], realSelection: true, syncLock: false});
     t.is(result.exitCode, 0, result.stderr);
     t.deepEqual(events(result).slice(0, 2), [
       ['range', '>=24 <26'],
@@ -312,12 +323,42 @@ test.serial('an unchanged candidate creates no commit or PR', async t => {
   t.is(f.git('rev-parse', 'HEAD'), f.base);
 });
 
-test.serial('non-lower-bound ranges preserve legacy single-upgrade behavior', async t => {
-  const f = await fixture(t, {node: '^22.12.0'});
-  const result = await workflow(f);
+test.serial('a caret engine range publishes independent PRs for Node 22, 24 and 26', async t => {
+  const originalEngines = {node: '^22.22.2', npm: '^10.0.0'};
+  const f = await fixture(t, originalEngines);
+  const result = await workflow(f, {
+    remote: true, realSelection: true,
+    versions: ['20.19.0', '22.22.1', '22.23.4', '24.22.2', '26.13.0']
+  });
   t.is(result.exitCode, 0, result.stderr);
-  t.deepEqual(events(result)[0], ['legacy', '^22.12.0']);
-  t.is(pkgAt(f, 'master').engines.node, '>=24.10.3');
+  t.deepEqual(events(result).filter(event => event[0] === 'publish'), [
+    ['publish', 'update-node-api-v22.23'],
+    ['publish', 'update-node-api-v24.22'],
+    ['publish', 'update-node-api-v26.13']
+  ]);
+  t.deepEqual(pkgAt(f, 'update-node-api-v22.23').engines, originalEngines);
+  t.deepEqual(pkgAt(f, 'update-node-api-v24.22').engines, {node: '>=24.22.2', npm: '>=11.6.0'});
+  t.deepEqual(pkgAt(f, 'update-node-api-v26.13').engines, {node: '>=26.13.0', npm: '>=11.6.0'});
+  for (const branch of ['update-node-api-v22.23', 'update-node-api-v24.22', 'update-node-api-v26.13'])
+    t.is(f.git('rev-parse', `${branch}^`), f.base);
+  t.is(f.git('rev-parse', 'HEAD'), f.base);
+  t.is(f.git('branch', '--show-current'), 'master');
+  t.deepEqual(pkgAt(f, 'master').engines, originalEngines);
+});
+
+test.serial('automatic upgrades ignore engine upper bounds while retaining their minimum', async t => {
+  const f = await fixture(t, {node: '>=24.9 <26'});
+  const result = await workflow(f, {
+    remote: true, realSelection: true,
+    versions: ['22.20.0', '24.10.3', '26.0.0']
+  });
+  t.is(result.exitCode, 0, result.stderr);
+  t.deepEqual(events(result).filter(event => event[0] === 'publish'), [
+    ['publish', 'update-node-api-v24.10'], ['publish', 'update-node-api-v26.0']
+  ]);
+  t.is(f.git('branch', '--list', 'update-node-api-v22.*'), '');
+  t.is(pkgAt(f, 'update-node-api-v24.10').engines.node, '>=24.9 <26');
+  t.is(pkgAt(f, 'update-node-api-v26.0').engines.node, '>=26.0.0');
 });
 
 test.serial(

@@ -53,7 +53,7 @@ const fixture = async t => {
           require(${JSON.stringify(gitPath)}).commitFiles = async () => {};
           const bump = require(${JSON.stringify(bumpPath)});
           bump({node: {nvmrc: '.nvmrc'}, local: true, baseBranch: 'master',
-            packageManager: 'npm', argv: ${JSON.stringify(argv)}}, {onlyNodeVersion: true})
+            packageManager: 'npm', argv: ${JSON.stringify(argv)}}, {onlyNodeVersion: true, nodeVersionOverride: '22'})
             .catch(err => { console.error(err.message); process.exitCode = err.exitCode || 2; });`
         ],
         {cwd, env, reject: false}

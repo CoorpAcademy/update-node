@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('ava').default;
 const {execa} = require('execa');
-const {findSupportedVersions, isLowerBoundRange} = require('../src/core/node');
+const {findSupportedVersions} = require('../src/core/node');
 const {updatePackageEngines} = require('../src/updatees/package');
 const {
   createNodeUpgradeTarget,
@@ -100,11 +100,6 @@ test('default reporting explains when Docker availability excludes a major', asy
     }).then(versions => console.log(JSON.stringify(versions)));
   `]);
   t.is(stdout, '- No available Docker release for Node 22; skipping.\n[]');
-});
-
-test('only lower-bound ranges opt into alternatives', t => {
-  for (const range of ['>=22', ' >= 22.12.0', '>=22 <26']) t.true(isLowerBoundRange(range));
-  for (const range of ['^22', '~22', '22', '', '>=22 || ^20']) t.false(isLowerBoundRange(range));
 });
 
 const packageFixture = async (t, contents) => {

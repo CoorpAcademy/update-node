@@ -14,7 +14,7 @@ const checkAlternatives = async (versions, preserveSameMajor) => {
   const write = (file, content) => writeFile(path.join(cwd, file), content);
   const jsonAt = async (branch, file) => JSON.parse(await git('show', `${branch}:${file}`));
   const minimumMajor = semver.major(versions[0].version);
-  const engines = {node: `>=${minimumMajor}.0.0`, npm: '>=10.0.0'};
+  const engines = {node: `^${minimumMajor}.0.0`, npm: '>=10.0.0'};
   try {
     await write('package.json', JSON.stringify({
       name: 'node-upgrade-integration', version: '1.0.0', private: true, engines
