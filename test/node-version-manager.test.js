@@ -50,7 +50,7 @@ const fixture = async t => {
         [
           '-e',
           `require(${JSON.stringify(versionsPath)}).findLatest = async () => ({version: 'v22.9.0'});
-          require(${JSON.stringify(gitPath)}).commitFiles = async () => {};
+          require(${JSON.stringify(gitPath)}).commitFiles = async () => true;
           const bump = require(${JSON.stringify(bumpPath)});
           bump({node: {nvmrc: '.nvmrc'}, local: true, baseBranch: 'master',
             packageManager: 'npm', argv: ${JSON.stringify(argv)}}, {onlyNodeVersion: true, nodeVersionOverride: '22'})

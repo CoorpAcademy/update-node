@@ -60,7 +60,7 @@ for (const {name, resolved, node, expected} of cases) {
     await exec(process.execPath, [
       '-e',
       `require(${JSON.stringify(versions)}).findLatest = async () => ({version: 'v24.10.3', npm: '11.6.0'});
-      require(${JSON.stringify(git)}).commitFiles = async () => {};
+      require(${JSON.stringify(git)}).commitFiles = async () => true;
       require(${JSON.stringify(bump)})({
         ...${JSON.stringify(resolved)},
         node: {...${JSON.stringify(node)}, package: ${JSON.stringify(path.join(cwd, 'package.json'))}},
@@ -87,7 +87,7 @@ for (const {name, node, expected} of [
     }));
     await exec(process.execPath, ['-e', `
       require(${JSON.stringify(versions)}).findLatest = async () => ({version: 'v24.10.3', npm: '11.6.0'});
-      require(${JSON.stringify(git)}).commitFiles = async () => {};
+      require(${JSON.stringify(git)}).commitFiles = async () => true;
       const {getConfig} = require(${JSON.stringify(require.resolve('../src/core/config'))});
       getConfig({config: ${JSON.stringify(configPath)}, local: true, exact: false, loose: true, syncLock: false})
         .then(config => require(${JSON.stringify(bump)})(config, {onlyNodeVersion: true, nodeVersionOverride: '24'}))
