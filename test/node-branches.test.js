@@ -187,6 +187,12 @@ const workflow = (f, options = {}) =>
     if (options.failPublish === details.branch) throw new Error('push failed');
     return {...details, pullRequest: {number: 123, html_url: 'https://example.com/pr'}};
   };
+  if (options.failLegacyPublish) {
+    require(paths.github).syncGithub = async (repo, base, branch) => {
+      events.push(['sync', branch]);
+      return {branch, commit: 'candidate', error: new Error('push failed')};
+    };
+  }
   require(paths.prs).closeSupersededNodePullRequests = async (config, pr, target) => {
     events.push(['close', target.major]);
   };
@@ -294,6 +300,14 @@ test.serial('explicit targets stay on the legacy path and respect formatting fla
   t.is(result.exitCode, 0, result.stderr);
   t.deepEqual(events(result)[0], ['legacy', '24']);
   t.is(pkgAt(f, 'master').engines.node, '24.10.3');
+});
+
+test.serial('an explicit target reports publication failures and fails the command', async t => {
+  const f = await fixture(t);
+  const result = await workflow(f, {target: '24', remote: true, failLegacyPublish: true});
+  t.is(result.exitCode, 2);
+  t.regex(result.stdout, /Failed update-node-api-v24\.10\.3: push failed/);
+  t.regex(result.stderr, /Node upgrades failed: update-node-api-v24\.10\.3/);
 });
 
 test.serial(

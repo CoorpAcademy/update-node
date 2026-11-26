@@ -1,5 +1,74 @@
+const {randomUUID} = require('crypto');
 const {execaSync: execSync} = require('execa');
 const {executeScript} = require('./script');
+
+const pushDestination = () => {
+  const result = execSync('git', ['remote', 'get-url', '--push', '--all', 'gh'], {reject: false});
+  const destinations = result.stdout.trim().split(/\r?\n/).filter(Boolean);
+  if (result.exitCode !== 0 || destinations.length !== 1)
+    throw new Error('Could not resolve a single GitHub push destination');
+  return destinations[0];
+};
+
+const remoteBranchTip = (branch, destination) => {
+  const ref = `refs/heads/${branch}`;
+  const result = execSync('git', ['ls-remote', '--exit-code', destination, ref], {reject: false});
+  if (result.exitCode === 2 && !result.stdout) return '';
+  if (result.exitCode !== 0) throw new Error(`Could not read remote branch ${branch}`);
+  const [oid, remoteRef] = result.stdout.trim().split(/\s+/);
+  if (remoteRef !== ref || !/^(?:[a-f\d]{40}|[a-f\d]{64})$/i.test(oid || ''))
+    throw new Error(`Could not read remote branch ${branch}`);
+  return oid;
+};
+
+const verifyDiscardedCommitAuthors = (branch, expectedOid, candidateRef, destination) => {
+  if (!expectedOid) return;
+  const tempRef = `refs/update-node/lease/${randomUUID()}`;
+  try {
+    try {
+      execSync('git', ['fetch', '--quiet', destination, `+refs/heads/${branch}:${tempRef}`]);
+    } catch {
+      throw new Error(`Could not inspect authorship of remote branch ${branch}`);
+    }
+    const fetchedOid = execSync('git', ['rev-parse', tempRef]).stdout.trim();
+    if (fetchedOid !== expectedOid)
+      throw new Error(`Remote branch ${branch} changed while checking its ownership`);
+    const discarded = execSync('git', [
+      'rev-list',
+      expectedOid,
+      '--not',
+      candidateRef
+    ]).stdout.trim();
+    if (!discarded) return;
+    const configuredName = execSync('git', ['config', 'user.name'], {reject: false}).stdout.trim();
+    const configuredEmail = execSync('git', ['config', 'user.email'], {
+      reject: false
+    }).stdout.trim();
+    if (!configuredName || !configuredEmail)
+      throw new Error(
+        `Cannot verify authorship of commits on ${branch}: generator identity is not configured`
+      );
+    const authors = execSync('git', [
+      'log',
+      '--format=%an%x00%ae',
+      expectedOid,
+      '--not',
+      candidateRef
+    ])
+      .stdout.trim()
+      .split('\n');
+    const foreignAuthor = authors.some(author => {
+      const [name, email] = author.split('\0');
+      return name !== configuredName || email !== configuredEmail;
+    });
+    if (foreignAuthor)
+      throw new Error(
+        `Skipping ${branch}: its commits include an author other than the configured generator`
+      );
+  } finally {
+    execSync('git', ['update-ref', '-d', tempRef], {reject: false});
+  }
+};
 
 const commitFiles = async (branch, message, baseBranch = 'master') => {
   try {
@@ -54,13 +123,38 @@ const pushFiles = (
   repoSlug,
   {tags = false, forceFlag = '--force-with-lease'}
 ) =>
-  executeScript([
-    `git config remote.gh.url >/dev/null || git remote add gh https://x-access-token:${githubToken}@github.com/${repoSlug}.git`,
-    `(git push gh ${branch}:refs/heads/${branch} ${forceFlag} ${
-      tags ? '&& git push gh --tags)' : ')'
-    }|| (git remote remove gh && exit 12)`,
-    'git remote remove gh'
-  ]);
+  (async () => {
+    const configuredRemote =
+      execSync('git', ['config', 'remote.gh.url'], {reject: false}).exitCode === 0;
+    let remoteAdded = false;
+    try {
+      if (!configuredRemote) {
+        try {
+          await executeScript([
+            `git remote add gh https://x-access-token:${githubToken}@github.com/${repoSlug}.git`
+          ]);
+          remoteAdded = true;
+        } catch {
+          throw new Error('Could not configure the GitHub remote');
+        }
+      }
+      if (forceFlag === '--force') {
+        await executeScript([
+          `git push gh ${branch}:refs/heads/${branch} --force${tags ? ' && git push gh --tags' : ''}`
+        ]);
+        return;
+      }
+      const destination = pushDestination();
+      const expectedOid = remoteBranchTip(branch, destination);
+      verifyDiscardedCommitAuthors(branch, expectedOid, branch, destination);
+      const lease = `--force-with-lease=refs/heads/${branch}:${expectedOid}`;
+      await executeScript([
+        `git push gh ${branch}:refs/heads/${branch} ${lease}${tags ? ' && git push gh --tags' : ''}`
+      ]);
+    } finally {
+      if (remoteAdded) await executeScript(['git remote remove gh']);
+    }
+  })();
 
 module.exports = {
   commitFiles,
