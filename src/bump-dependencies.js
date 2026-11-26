@@ -208,6 +208,26 @@ const commitAndMakePullRequest = config => async options => {
   return status;
 };
 
+const reportClusterDetails = clusterDetails => {
+  const errors = [];
+  _.forEach(clusterDetail => {
+    if (!clusterDetail.branch) return;
+    if (clusterDetail.error) {
+      const error = clusterDetail.error.message || String(clusterDetail.error);
+      errors.push({branch: clusterDetail.branch, error});
+      process.stdout.write(`- ${c.bold.red(clusterDetail.branch)}: publication failed: ${error}\n`);
+      return;
+    }
+    if (clusterDetail.pullRequest)
+      process.stdout.write(
+        `- ${c.bold.green(clusterDetail.branch)}: ${c.dim.bold(
+          clusterDetail.pullRequest.html_url
+        )}\n`
+      );
+  }, clusterDetails);
+  return errors;
+};
+
 module.exports = async (
   config,
   {nodeVersionOverride, onlyNodeVersion = false, ignoreDependencies = false} = {}
@@ -225,7 +245,11 @@ module.exports = async (
       const latestNode = await findLatest(RANGE);
       if (!latestNode) throw makeError(`No available Node release matches ${RANGE}`);
       const bumpCommitConfig = await prepareNodeUpgrade(latestNode, config);
-      await _commitAndMakePullRequest(bumpCommitConfig);
+      const publication = await _commitAndMakePullRequest(bumpCommitConfig);
+      if (publication.error) {
+        nodeErrors.push({branch: publication.branch, error: publication.error});
+        process.stdout.write(`- Failed ${publication.branch}: ${publication.error.message}\n`);
+      }
     } else {
       const range = config.node_range || `>=${semver.minVersion(RANGE)}`;
       const versions = await findSupportedVersions(range);
@@ -263,16 +287,17 @@ module.exports = async (
     process.stdout.write(`${err.stack}\n`);
     return process.exit(1);
   });
-  _.forEach(clusterDetail => {
-    if (clusterDetail.branch)
-      process.stdout.write(
-        `- ${c.bold.green(clusterDetail.branch)}: ${c.dim.bold(
-          clusterDetail.pullRequest.html_url
-        )}\n`
-      );
-  }, clusterDetails);
+  const publicationErrors = reportClusterDetails(clusterDetails);
   if (nodeErrors.length > 0)
     throw makeError(`Node upgrades failed: ${nodeErrors.map(result => result.branch).join(', ')}`);
+  if (publicationErrors.length > 0)
+    throw makeError(
+      `Dependency publication failed: ${publicationErrors
+        .map(({branch, error}) => `${branch} (${error})`)
+        .join(', ')}`
+    );
   process.stdout.write(c.bold.green('\n\nUpdate-node run with success 📤\n'));
   process.stdout.write('\n');
 };
+
+module.exports.reportClusterDetails = reportClusterDetails;

@@ -16,6 +16,18 @@ const authenticate = async operation => {
       requests.push(url);
       throw new Error('Git authentication must not require an API lookup');
     }};
+    if (${JSON.stringify(operation)} === 'push') {
+      const execaPath = require.resolve('execa');
+      const execa = require(execaPath);
+      const original = execa.execaSync;
+      require.cache[execaPath].exports = {...execa, execaSync: (command, args, options) => {
+        if (args[0] === 'config' && args[1] === 'remote.gh.url') return {exitCode: 1, stdout: ''};
+        if (args[0] === 'remote' && args[1] === 'get-url')
+          return {exitCode: 0, stdout: 'https://github.com/org/repo.git'};
+        if (args[0] === 'ls-remote') return {exitCode: 2, stdout: ''};
+        return original(command, args, options);
+      }};
+    }
     require(${JSON.stringify(scriptModule)}).executeScript = async commands => scripts.push(commands);
     const git = require(${JSON.stringify(gitModule)});
     git.headClean = () => true;
@@ -45,12 +57,30 @@ for (const operation of ['push', 'sync', 'merge']) {
     t.is(remote.password, token);
     t.is(remote.hostname, 'github.com');
     t.is(remote.pathname, '/org/repo.git');
-    t.is(commands.at(-1), 'git remote remove gh');
+    t.true(scripts.some(group => group.includes('git remote remove gh')));
     if (operation === 'push') {
-      t.true(commands[1].includes('git push gh feature:refs/heads/feature --force-with-lease'));
-      t.true(commands[1].includes('git push gh --tags'));
+      const pushCommand = scripts.flat().find(command => command.includes('git push gh feature:refs/heads/feature'));
+      t.true(pushCommand.includes('--force-with-lease=refs/heads/feature:'));
+      t.true(pushCommand.includes('git push gh --tags'));
     } else {
       t.true(commands.some(command => command.includes('refs/heads/release')));
     }
   });
 }
+
+test('script output and command errors redact remote credentials', async t => {
+  const scriptModule = require.resolve('../src/core/script');
+  const secret = 'credential-that-must-not-appear';
+  const remote = `https://x-access-token:${secret}@github.com/org/repo.git`;
+  const {stdout} = await execa(process.execPath, [
+    '-e',
+    `require(${JSON.stringify(scriptModule)}).executeScript(${JSON.stringify([
+      `printf '%s\\n' '${remote}'`,
+      `printf '%s\\n' '${remote}' >&2; exit 17`
+    ])}).catch(error => console.log('ERROR:' + error.message))`
+  ]);
+
+  t.false(stdout.includes(secret));
+  t.true(stdout.includes('<REDACTED>@github.com/org/repo.git'));
+  t.regex(stdout, /ERROR:Command failed with exit code 17/);
+});
